@@ -24,7 +24,7 @@ const QuickLinks = () => {
           key={item.id}
           href={`https://www.google.com/maps/search/${encodeURIComponent(`${item.query} in ${district ? `${district} ${city}` : city}`)}`}
           onClick={onClick(item.query)}
-          className="bg-gray-100 text-dark-blue p-2 px-4 rounded-full font-medium text-xs whitespace-nowrap hover:bg-gray-300 transition-colors"
+          className="bg-gray-100 text-brand-dark-blue p-2 px-4 rounded-full font-medium text-xs whitespace-nowrap hover:bg-gray-300 transition-colors"
         >
           {item.label}
         </a>

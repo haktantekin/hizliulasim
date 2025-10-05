@@ -83,7 +83,7 @@ const Header = () => {
   return (
     <div className="fixed top-0 left-0 w-full z-50 border-b border-gray-100 bg-white">
       <div className="container mx-auto p-4 flex items-center justify-between">
-        <Link href={'/'} className="font-black text-dark-blue tracking-wide flex items-center gap-2">
+        <Link href={'/'} className="font-black text-brand-dark-blue tracking-wide flex items-center gap-2">
           <LogoIcon className="h-6 w-6" ariaHidden />
           <span>HIZLI ULAŞIM</span>
         </Link>

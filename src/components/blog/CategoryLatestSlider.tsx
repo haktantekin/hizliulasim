@@ -98,7 +98,7 @@ export default function CategoryLatestSlider({ posts, categorySlug, title = "En 
       {pages.length > 1 && (
         <div className="flex items-center justify-center gap-2 mt-3">
           {pages.map((_, i) => (
-            <button key={i} onClick={() => goto(i)} className={`h-2 w-2 rounded-full ${i === pageIndex ? 'bg-dark-blue' : 'bg-gray-300'}`} aria-label={`Sayfa ${i + 1}`} />
+            <button key={i} onClick={() => goto(i)} className={`h-2 w-2 rounded-full ${i === pageIndex ? 'bg-brand-dark-blue' : 'bg-gray-300'}`} aria-label={`Sayfa ${i + 1}`} />
           ))}
         </div>
       )}

@@ -28,7 +28,7 @@ const BottomBar = () => {
 
   return (
     <div className="fixed bottom-3 left-0 w-full">
-      <nav className="flex justify-around items-center max-w-md w-[90%] mx-auto py-2 shadow-md bg-dark-blue rounded-4xl">
+      <nav className="flex justify-around items-center max-w-md w-[90%] mx-auto py-2 shadow-md bg-brand-dark-blue rounded-full">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const IconComponent = item.icon;
@@ -40,8 +40,8 @@ const BottomBar = () => {
               href={item.href}
               className={`flex items-center justify-center transition-colors ${
                 isHome 
-                  ? `p-2 rounded-full ${isActive ? 'text-green' : 'text-white hover:bg-yellow'}`
-                  : `p-1 rounded-full ${isActive ? 'text-green ' : 'text-white hover:text-soft-blue hover:bg-light-blue'}`
+                  ? `p-2 rounded-full ${isActive ? 'text-brand-green' : 'text-white hover:bg-brand-yellow'}`
+                  : `p-1 rounded-full ${isActive ? 'text-brand-green ' : 'text-white hover:text-brand-soft-blue hover:bg-brand-light-blue'}`
               }`}
             >
               <IconComponent strokeWidth={1} size={isHome ? 25 : 25} />

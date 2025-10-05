@@ -1,0 +1,21 @@
+{
+  "name": "Hızlı Ulaşım",
+  "short_name": "Hızlı Ulaşım",
+  "description": "Toplu taşıma, rota ve şehir yaşamı hakkında pratik bilgileri keşfedin.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#272445",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -9,12 +9,12 @@ export default function CategoriesPage() {
 
   const getCategoryColor = (index: number) => {
     const colors = [
-      'bg-soft-blue hover:bg-dark-blue',
-      'bg-dark-blue hover:bg-soft-blue', 
-      'bg-light-blue hover:bg-soft-blue text-gray-800',
-      'bg-yellow hover:bg-green text-gray-800',
-      'bg-green hover:bg-yellow text-gray-800',
-      'bg-gray hover:bg-dark-blue text-gray-800',
+      'bg-brand-soft-blue hover:bg-brand-dark-blue',
+      'bg-brand-dark-blue hover:bg-brand-soft-blue', 
+      'bg-brand-light-blue hover:bg-brand-soft-blue text-gray-800',
+      'bg-brand-yellow hover:bg-brand-green text-gray-800',
+      'bg-brand-green hover:bg-brand-yellow text-gray-800',
+      'bg-brand-gray hover:bg-brand-dark-blue text-gray-800',
     ];
     return colors[index % colors.length];
   };
@@ -29,7 +29,7 @@ export default function CategoriesPage() {
           </p>
           <button 
             onClick={() => window.location.reload()}
-            className="bg-soft-blue text-white px-4 py-2 rounded hover:bg-dark-blue transition-colors"
+            className="bg-brand-soft-blue text-white px-4 py-2 rounded hover:bg-brand-dark-blue transition-colors"
           >
             Tekrar Dene
           </button>
@@ -43,7 +43,7 @@ export default function CategoriesPage() {
       {/* Header */}
       <div className="mb-12">
         <nav className="flex text-sm text-gray-600 mb-6">
-          <Link href="/blog" className="hover:text-soft-blue">
+          <Link href="/blog" className="hover:text-brand-soft-blue">
             Blog
           </Link>
           <span className="mx-2">/</span>
@@ -91,7 +91,7 @@ export default function CategoriesPage() {
                 {/* Category Content */}
                 <div className="p-6">
                   <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 group-hover:text-soft-blue transition-colors">
+                    <h4 className="font-semibold text-gray-900 group-hover:text-brand-soft-blue transition-colors">
                       {category.name}
                     </h4>
                   </div>
@@ -104,7 +104,7 @@ export default function CategoriesPage() {
                     <span className="text-sm text-gray-500">
                       {category.postCount} gönderi
                     </span>
-                    <span className="text-soft-blue text-sm font-medium group-hover:text-dark-blue">
+                    <span className="text-brand-soft-blue text-sm font-medium group-hover:text-brand-dark-blue">
                       Keşfet →
                     </span>
                   </div>
@@ -128,7 +128,7 @@ export default function CategoriesPage() {
           </p>
           <Link 
             href="/blog"
-            className="text-soft-blue hover:text-dark-blue font-medium"
+            className="text-brand-soft-blue hover:text-brand-dark-blue font-medium"
           >
             ← Blog ana sayfasına dön
           </Link>
@@ -147,7 +147,7 @@ export default function CategoriesPage() {
             </p>
             <Link 
               href="/blog"
-              className="inline-flex items-center px-6 py-3 bg-soft-blue text-white rounded-lg hover:bg-dark-blue transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-brand-soft-blue text-white rounded-lg hover:bg-brand-dark-blue transition-colors"
             >
               Tüm Gönderileri Gör
             </Link>

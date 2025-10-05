@@ -54,7 +54,7 @@ export default function DirectionsForm({ onNavigate, onChange, onSubmit, showDet
           onClick={openDirections}
           title="Rota Oluştur"
           aria-label="Rota Oluştur"
-          className="p-2 rounded-lg bg-dark-blue text-white hover:opacity-90"
+          className="p-2 rounded-lg bg-brand-dark-blue text-white hover:opacity-90"
         >
           <ArrowRight className="w-5 h-5" />
         </button>

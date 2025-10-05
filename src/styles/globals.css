@@ -26,7 +26,7 @@ body {
   @apply font-bold text-base mt-4 mb-2;
 }
 .post-detail a{
-  @apply underline text-soft-blue font-semibold;
+  @apply underline text-brand-soft-blue font-semibold;
 }
 .post-detail ul{
   @apply mb-4 mt-2;

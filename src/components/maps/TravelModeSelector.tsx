@@ -22,8 +22,8 @@ export default function TravelModeSelector({ mode, onChange, detailsOpen, onTogg
           aria-label={label}
           className={`p-2 rounded-full border ${
             key === mode
-              ? 'bg-dark-blue text-white border-dark-blue'
-              : 'bg-white text-dark-blue border-gray-200 hover:bg-gray-100'
+              ? 'bg-brand-dark-blue text-white border-brand-dark-blue'
+              : 'bg-white text-brand-dark-blue border-gray-200 hover:bg-gray-100'
           }`}
         >
           {icon}
@@ -35,7 +35,7 @@ export default function TravelModeSelector({ mode, onChange, detailsOpen, onTogg
           onClick={onToggleDetails}
           title={detailsOpen ? 'Detayları Gizle' : 'Detayları Göster'}
           aria-label={detailsOpen ? 'Detayları Gizle' : 'Detayları Göster'}
-          className={`p-2 rounded-full border bg-white text-dark-blue border-gray-200 hover:bg-gray-100`}
+          className={`p-2 rounded-full border bg-white text-brand-dark-blue border-gray-200 hover:bg-gray-100`}
         >
           {detailsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>

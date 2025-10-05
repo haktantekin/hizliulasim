@@ -18,7 +18,7 @@ const ExploreCategories = () => {
         const Icon = group.icon;
         return (
           <div key={group.title}>
-            <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-dark-blue">
+            <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-brand-dark-blue">
               {Icon ? <Icon size={18} strokeWidth={1.5} /> : null}
               <span>{group.title}</span>
             </div>
@@ -29,7 +29,7 @@ const ExploreCategories = () => {
                   onClick={() => openMaps(item.slug)}
                   className="text-center px-3 py-2 bg-gray-300 rounded-full"
                 >
-                  <div className="text-sm text-dark-blue">{item.label}</div>
+                  <div className="text-sm text-brand-dark-blue">{item.label}</div>
                 </button>
               ))}
             </div>

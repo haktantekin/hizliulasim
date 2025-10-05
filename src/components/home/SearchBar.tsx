@@ -73,7 +73,7 @@ const SearchBar = () => {
           type="button"
           onClick={doSearch}
           aria-label="Google Haritalar'da ara"
-          className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-dark-blue text-white flex items-center justify-center hover:opacity-90"
+          className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-brand-dark-blue text-white flex items-center justify-center hover:opacity-90"
         >
           <Search size={18} />
         </button>
@@ -98,7 +98,7 @@ const SearchBar = () => {
         </select>
         <ChevronDown
           size={16}
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-dark-blue"
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-brand-dark-blue"
           aria-hidden
         />
         {!loading && error && (

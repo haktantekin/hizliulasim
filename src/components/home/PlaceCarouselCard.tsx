@@ -45,10 +45,10 @@ export default function PlaceCarouselCard({ name, address, rating, city, distric
         )}
       </div>
       <div className="mt-3 flex gap-2">
-        <button onClick={onDirections} className="px-3 py-1.5 text-xs bg-dark-blue text-white rounded-full hover:opacity-90 flex items-center gap-1">
+        <button onClick={onDirections} className="px-3 py-1.5 text-xs bg-brand-dark-blue text-white rounded-full hover:opacity-90 flex items-center gap-1">
           Yol Tarifi <ChevronRight size={14} />
         </button>
-        <button onClick={onOpenMaps} className="px-3 py-1.5 text-xs bg-gray-100 text-dark-blue rounded-full hover:bg-gray-200 flex items-center gap-1">
+        <button onClick={onOpenMaps} className="px-3 py-1.5 text-xs bg-gray-100 text-brand-dark-blue rounded-full hover:bg-gray-200 flex items-center gap-1">
           Haritada Aç <ExternalLink size={14} />
         </button>
       </div>

@@ -134,7 +134,7 @@ export default function CategoryPage() {
             <button
               type="submit"
               aria-label="Kategori içinde ara"
-              className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-dark-blue text-white flex items-center justify-center hover:opacity-90"
+              className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-brand-dark-blue text-white flex items-center justify-center hover:opacity-90"
             >
               <SearchIcon size={18} />
             </button>
@@ -165,7 +165,7 @@ export default function CategoryPage() {
           <p className="text-gray-500">Bu kategoride henüz gönderi bulunmuyor.</p>
           <Link 
             href="/blog"
-            className="text-soft-blue hover:text-dark-blue font-medium mt-4 inline-block"
+            className="text-brand-soft-blue hover:text-brand-dark-blue font-medium mt-4 inline-block"
           >
             ← Blog&apos;a geri dön
           </Link>

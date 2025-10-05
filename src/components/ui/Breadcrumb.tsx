@@ -22,7 +22,7 @@ export default function Breadcrumb({ items, className = "" }: Props) {
         <React.Fragment key={`${c.label}-${idx}`}>
           {idx > 0 && <span className="mx-2">/</span>}
           {c.href ? (
-            <Link href={c.href} className="hover:text-soft-blue">
+            <Link href={c.href} className="hover:text-brand-soft-blue">
               {c.label}
             </Link>
           ) : (

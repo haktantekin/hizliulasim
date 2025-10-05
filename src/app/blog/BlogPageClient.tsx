@@ -117,7 +117,7 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
           <button
             type="submit"
             aria-label="Blog'da ara"
-            className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-dark-blue text-white flex items-center justify-center hover:opacity-90"
+            className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-brand-dark-blue text-white flex items-center justify-center hover:opacity-90"
           >
             <Search size={18} />
           </button>

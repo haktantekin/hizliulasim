@@ -8,12 +8,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'soft-blue': 'var(--soft-blue)',
-        'dark-blue': 'var(--dark-blue)',
-        'light-blue': 'var(--light-blue)',
-        'yellow': 'var(--yellow)',
-        'green': 'var(--green)',
-        'gray': 'var(--gray)',
+        // Brand colors - extend, don't override
+        'brand-soft-blue': 'var(--soft-blue)',
+        'brand-dark-blue': 'var(--dark-blue)', 
+        'brand-light-blue': 'var(--light-blue)',
+        'brand-yellow': 'var(--yellow)',
+        'brand-green': 'var(--green)',
       },
     },
   },

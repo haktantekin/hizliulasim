@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import '../styles/globals.css';
 import QueryProvider from '../components/prodivers/QueryProvider';
@@ -17,12 +17,12 @@ export const metadata: Metadata = {
   },
   description: 'Toplu taşıma, rota ve şehir yaşamı hakkında pratik bilgileri keşfedin.',
   applicationName: 'Hızlı Ulaşım',
-  themeColor: '#272445',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
       { url: '/favicon.ico' },
-      { url: '/icon.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180' },
@@ -45,6 +45,10 @@ export const metadata: Metadata = {
       follow: true,
     },
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#272445',
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';

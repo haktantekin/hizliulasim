@@ -29,8 +29,8 @@ export default function CategoryScroller({ categories, activeSlug, className = "
             href={`/blog/${cat.slug}`}
             className={`snap-start shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm transition-colors whitespace-nowrap ${
               active
-                ? "bg-dark-blue text-white border-dark-blue"
-                : "bg-white text-dark-blue border-gray-200 hover:bg-gray-50"
+                ? "bg-brand-dark-blue text-white border-dark-blue"
+                : "bg-white text-brand-dark-blue border-gray-200 hover:bg-gray-50"
             }`}
             title={`${cat.name}${cat.postCount ? ` (${cat.postCount})` : ""}`}
           >
