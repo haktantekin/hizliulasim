@@ -1,0 +1,16 @@
+export const quickLinksData = [
+  { id: 13, label: 'Ulaşım', query: 'toplu taşıma' },
+  { id: 1, label: 'ATM', query: 'ATM' },
+  { id: 2, label: 'Hastane', query: 'hastane' },
+  { id: 3, label: 'Eczane', query: 'eczane' },
+  { id: 12, label: 'Banka', query: 'banka' },
+  { id: 4, label: 'Otopark', query: 'otopark' },
+  { id: 14, label: 'Benzinlik', query: 'benzin istasyonu' },
+  { id: 5, label: 'Şarj İstasyonu', query: 'elektrikli araç şarj istasyonu' },
+  { id: 6, label: 'Market', query: 'market' },
+  { id: 7, label: 'Okul', query: 'okul' },
+  { id: 8, label: 'Cami', query: 'cami' },
+  { id: 9, label: 'Kafe', query: 'kafe' },
+  { id: 10, label: 'Restoran', query: 'restoran' },
+  { id: 11, label: 'AVM', query: 'alışveriş merkezi' },
+];
