@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { blogs, BlogPost } from "@/data/blogs";
 
-export const revalidate = 60 * 60; // 1 hour cache for the list
+export const revalidate = 3600; // 1 hour cache for the list
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
