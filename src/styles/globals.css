@@ -1,18 +1,19 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-soft-blue: #2D4B73;
-  --color-dark-blue: #272445;
-  --color-light-blue: #B4D4E0;
-  --color-yellow: #F0EB8A;
-  --color-green: #83C9A0;
-  --color-gray: #B4BEC9;
+:root {
+  --soft-blue: #2D4B73;
+  --dark-blue: #272445;
+  --light-blue: #B4D4E0;
+  --yellow: #F0EB8A;
+  --green: #83C9A0;
+  --gray: #B4BEC9;
 }
 
 body {
   color: #111827;
 }
-
 
 .post-detail{
   @apply font-light
@@ -34,5 +35,6 @@ body {
   @apply list-disc ml-6;
 }
 .post-detail hr{
-  @apply border-gray-200;
+  border-top: 1px solid #d1d5db;
+  margin: 1rem 0;
 }
