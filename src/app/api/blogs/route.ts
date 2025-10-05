@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { blogs, BlogPost } from "@/data/blogs";
+import { blogs, BlogPost } from "../../../data/blogs";
 
 export const revalidate = 3600; // 1 hour cache for the list
 
