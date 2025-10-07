@@ -21,9 +21,11 @@ const Header = () => {
         dispatch(setCityLoading(true));
         const res = await fetch('/api/ip-location', { cache: 'no-store' });
         const data = await res.json();
+        console.log('IP Location API response:', data); // Debug
         if (!mounted) return;
         dispatch(setCity(data.city || 'İstanbul'));
-      } catch {
+      } catch (err) {
+        console.error('Failed to fetch city:', err);
         if (!mounted) return;
         dispatch(setCity('İstanbul'));
       } finally {
