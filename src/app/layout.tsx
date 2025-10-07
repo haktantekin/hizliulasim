@@ -6,6 +6,7 @@ import ReduxProvider from '../components/providers/ReduxProvider';
 import BottomBar from '../components/ui/BottomBar';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
+import Script from "next/script";
 
 const outfit = Outfit({ subsets: ["latin"], display: "swap" });
 
@@ -62,7 +63,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* JSON-LD: WebSite + SearchAction */}
-        <script
+        <Script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -79,7 +80,7 @@ export default function RootLayout({
           }}
         />
         {/* JSON-LD: Organization */}
-        <script
+        <Script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -90,6 +91,18 @@ export default function RootLayout({
             }),
           }}
         />
+           <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-XJ33LRDG0G"
+        strategy="afterInteractive"
+      />
+      <Script id="ga-setup" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){window.dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-XJ33LRDG0G');
+        `}
+      </Script>
       </head>
   <body className={outfit.className}>
         <ReduxProvider>
