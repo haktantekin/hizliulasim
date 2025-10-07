@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Search, Map, FileText } from 'lucide-react';
+import { Home, Search, Map, FileText, Compass } from 'lucide-react';
 
 const BottomBar = () => {
   const pathname = usePathname();
@@ -15,6 +15,10 @@ const BottomBar = () => {
     {
       href: '/harita',
       icon: Map
+    },
+    {
+      href: '/gezi',
+      icon: Compass
     },
     {
       href: '/kesfet',

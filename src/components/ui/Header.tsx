@@ -19,14 +19,10 @@ const Header = () => {
 
     const getCityFromCoords = async (lat: number, lon: number) => {
       try {
-        // Use Nominatim reverse geocoding
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=tr`,
-          { headers: { 'User-Agent': 'HizliUlasim/1.0' } }
-        );
+        // Use our API proxy to avoid CORS issues
+        const res = await fetch(`/api/geocode/reverse?lat=${lat}&lon=${lon}`);
         const data = await res.json();
-        const city = data.address?.province || data.address?.city || data.address?.town || 'İstanbul';
-        return city;
+        return data.city || 'İstanbul';
       } catch {
         return 'İstanbul';
       }
