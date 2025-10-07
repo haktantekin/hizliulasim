@@ -64,6 +64,7 @@ export default function RootLayout({
       <head>
         {/* JSON-LD: WebSite + SearchAction */}
         <Script
+          id="schema-website"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -81,6 +82,7 @@ export default function RootLayout({
         />
         {/* JSON-LD: Organization */}
         <Script
+          id="schema-organization"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({

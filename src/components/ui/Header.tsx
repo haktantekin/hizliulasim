@@ -16,14 +16,52 @@ const Header = () => {
 
   useEffect(() => {
     let mounted = true;
+
+    const getCityFromCoords = async (lat: number, lon: number) => {
+      try {
+        // Use Nominatim reverse geocoding
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=tr`,
+          { headers: { 'User-Agent': 'HizliUlasim/1.0' } }
+        );
+        const data = await res.json();
+        const city = data.address?.province || data.address?.city || data.address?.town || 'İstanbul';
+        return city;
+      } catch {
+        return 'İstanbul';
+      }
+    };
+
     const fetchCity = async () => {
       try {
         dispatch(setCityLoading(true));
+
+        // Try browser geolocation first (client-side, real user location)
+        if ('geolocation' in navigator) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 5000,
+              maximumAge: 300000, // Cache for 5 minutes
+            });
+          });
+
+          if (!mounted) return;
+          const city = await getCityFromCoords(position.coords.latitude, position.coords.longitude);
+          dispatch(setCity(city));
+          console.log('Location from browser geolocation:', city);
+          return;
+        }
+      } catch {
+        console.log('Browser geolocation failed or denied, falling back to IP location');
+      }
+
+      // Fallback to IP-based location
+      try {
         const res = await fetch('/api/ip-location', { cache: 'no-store' });
         const data = await res.json();
-        console.log('IP Location API response:', data); // Debug
         if (!mounted) return;
         dispatch(setCity(data.city || 'İstanbul'));
+        console.log('Location from IP:', data.city);
       } catch (err) {
         console.error('Failed to fetch city:', err);
         if (!mounted) return;
@@ -32,6 +70,7 @@ const Header = () => {
         if (mounted) dispatch(setCityLoading(false));
       }
     };
+
     fetchCity();
     return () => {
       mounted = false;
