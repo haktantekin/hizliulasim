@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --soft-blue: #2D4B73;
-  --dark-blue: #272445;
-  --light-blue: #B4D4E0;
-  --yellow: #F0EB8A;
-  --green: #83C9A0;
-  --gray: #B4BEC9;
+  --soft-blue: #1e3a5f; /* Daha koyu - kontrast için */
+  --dark-blue: #1a1835; /* Daha koyu - kontrast için */
+  --light-blue: #a0c4d5; /* Biraz daha koyu */
+  --yellow: #e8df6f; /* Daha koyu sarı - kontrast için */
+  --green: #6bb88c; /* Daha koyu yeşil - kontrast için */
+  --gray: #6b7280; /* Daha koyu gri - kontrast için */
 }
 
 body {

@@ -10,23 +10,28 @@ const BottomBar = () => {
   const navItems = [
     {
       href: '/',
-      icon: Home
+      icon: Home,
+      label: 'Ana Sayfa'
     },
     {
       href: '/harita',
-      icon: Map
+      icon: Map,
+      label: 'Harita'
     },
     {
       href: '/gezi',
-      icon: Compass
+      icon: Compass,
+      label: 'Gezi Rotaları'
     },
     {
       href: '/kesfet',
-      icon: Search
+      icon: Search,
+      label: 'Keşfet'
     },
     {
       href: '/blog',
-      icon: FileText
+      icon: FileText,
+      label: 'Blog'
     }
   ];
 
@@ -42,13 +47,15 @@ const BottomBar = () => {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex items-center justify-center transition-colors ${
                 isHome 
                   ? `p-2 rounded-full ${isActive ? 'text-brand-green' : 'text-white hover:bg-brand-yellow'}`
                   : `p-1 rounded-full ${isActive ? 'text-brand-green ' : 'text-white hover:text-brand-soft-blue hover:bg-brand-light-blue'}`
               }`}
             >
-              <IconComponent strokeWidth={1} size={isHome ? 25 : 25} />
+              <IconComponent strokeWidth={1} size={isHome ? 25 : 25} aria-hidden="true" />
             </Link>
           );
         })}
