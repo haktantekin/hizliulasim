@@ -9,6 +9,13 @@ export function middleware(request: NextRequest) {
   const protocol = requestHeaders.get('x-forwarded-proto');
   const host = requestHeaders.get('host') || '';
   
+  // Redirect www to non-www (canonical URL)
+  if (host.startsWith('www.')) {
+    const url = request.nextUrl.clone();
+    url.host = host.replace('www.', '');
+    return NextResponse.redirect(url, 301); // Permanent redirect
+  }
+  
   // Redirect HTTP to HTTPS (only in production, not on localhost)
   if (
     protocol === 'http' && 
