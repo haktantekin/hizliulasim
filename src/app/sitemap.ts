@@ -9,7 +9,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: 'daily',
-      priority: 1,
+      priority: 1.0, // Ana sayfa en yüksek
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.95, // Blog ana sayfa çok önemli
     },
     {
       url: `${baseUrl}/harita`,
@@ -27,13 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/kesfet`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/blog`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
+      priority: 0.85,
     },
     {
       url: `${baseUrl}/blog/kategoriler`,
@@ -96,7 +96,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url: `${baseUrl}/blog/${categorySlug}/${post.slug}`,
           lastModified: new Date(post.modified),
           changeFrequency: 'weekly' as const,
-          priority: 0.7,
+          priority: 0.8, // Blog yazıları önemli
         };
       });
     }
@@ -118,8 +118,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .map((cat) => ({
           url: `${baseUrl}/blog/${cat.slug}`,
           lastModified: new Date(),
-          changeFrequency: 'weekly' as const,
-          priority: 0.6,
+          changeFrequency: 'daily' as const, // Kategoriler sık güncellenir
+          priority: 0.75,
         }));
     }
   } catch (error) {

@@ -13,12 +13,19 @@ const outfit = Outfit({ subsets: ["latin"], display: "swap" });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com'),
   title: {
-    default: 'Hızlı Ulaşım',
+    default: 'Hızlı Ulaşım - Ulaşım Rehberi, Rota Planlama ve Gezi Önerileri',
     template: '%s | Hızlı Ulaşım',
   },
-  description: 'Toplu taşıma, rota ve şehir yaşamı hakkında pratik bilgileri keşfedin.',
+  description: 'Türkiye\'nin en kapsamlı ulaşım rehberi. Toplu taşıma bilgileri, rota planlama, gezilecek yerler, blog yazıları ve şehir yaşamı hakkında güncel bilgiler.',
+  keywords: ['ulaşım', 'toplu taşıma', 'rota planlama', 'harita', 'gezi rehberi', 'İstanbul ulaşım', 'otobüs saatleri', 'metro hatları', 'gezilecek yerler'],
+  authors: [{ name: 'Hızlı Ulaşım' }],
+  creator: 'Hızlı Ulaşım',
+  publisher: 'Hızlı Ulaşım',
   applicationName: 'Hızlı Ulaşım',
   manifest: '/manifest.webmanifest',
+  alternates: {
+    canonical: 'https://hizliulasim.com',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -30,12 +37,17 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
+    title: 'Hızlı Ulaşım - Ulaşım Rehberi ve Rota Planlama',
+    description: 'Türkiye\'nin en kapsamlı ulaşım rehberi. Toplu taşıma, rota planlama ve gezi önerileri.',
+    url: 'https://hizliulasim.com',
     siteName: 'Hızlı Ulaşım',
     locale: 'tr_TR',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Hızlı Ulaşım',
+    description: 'Ulaşım rehberi, rota planlama ve gezi önerileri',
   },
   robots: {
     index: true,
@@ -44,6 +56,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
 };
@@ -68,6 +83,9 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        
+        {/* RSS Feed */}
+        <link rel="alternate" type="application/rss+xml" title="Hızlı Ulaşım Blog RSS" href="/feed.xml" />
         
         {/* JSON-LD: WebSite + SearchAction */}
         <Script

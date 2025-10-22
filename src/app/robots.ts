@@ -13,6 +13,16 @@ export default function robots(): MetadataRoute.Robots {
           '/_next/',
           '/private/',
         ],
+        crawlDelay: 0, // Allow fast crawling
+      },
+      {
+        userAgent: 'Googlebot',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/_next/',
+        ],
+        crawlDelay: 0,
       },
       {
         userAgent: 'GPTBot',
