@@ -83,7 +83,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        
+        <meta name="google-adsense-account" content="ca-pub-1553576433251144"/>
         {/* RSS Feed */}
         <link rel="alternate" type="application/rss+xml" title="Hızlı Ulaşım Blog RSS" href="/feed.xml" />
         
