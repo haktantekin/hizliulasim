@@ -57,7 +57,7 @@ const SearchBar = () => {
   }, [q, selectedDistrict, city]);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-row gap-2">
       <div className="relative flex-1">
         <input
           type="text"
@@ -66,23 +66,23 @@ const SearchBar = () => {
           onKeyDown={(e) => {
             if (e.key === 'Enter') doSearch();
           }}
-          placeholder="Nereye gitmek istersin?"
-          className="w-full bg-gray-100 rounded-full px-4 py-3 pr-12 text-gray-700 placeholder-gray-500 transition-colors"
+          placeholder="Nereye gidelim?"
+          className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-12 text-gray-400 placeholder-gray-500 transition-colors"
         />
         <button
           type="button"
           onClick={doSearch}
           aria-label="Google Haritalar'da ara"
-          className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-brand-dark-blue text-white flex items-center justify-center hover:opacity-90"
+          className="absolute right-1.5 top-1.5 h-9 w-9 text-white flex items-center justify-center hover:opacity-90"
         >
-          <Search size={18} />
+          <Search size={18} color='#121212' />
         </button>
       </div>
-      <div className="w-full relative">
+      <div className="flex-1 relative">
         <select
           value={selectedDistrict}
           onChange={(e) => dispatch(setDistrict(e.target.value))}
-          className="w-full bg-gray-100 rounded-full px-3 pr-10 py-3 text-gray-700 appearance-none"
+          className="w-full border border-brand-light-blue rounded-full px-3 pr-10 py-3 text-gray-400 appearance-none"
           aria-label="İlçe seçiniz"
           disabled={loading}
         >

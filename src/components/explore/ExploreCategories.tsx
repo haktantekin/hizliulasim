@@ -27,7 +27,7 @@ const ExploreCategories = () => {
                 <button
                   key={item.slug}
                   onClick={() => openMaps(item.slug)}
-                  className="text-center px-3 py-2 bg-gray-300 rounded-full"
+                  className="text-left px-3  rounded-full"
                 >
                   <div className="text-sm text-brand-dark-blue">{item.label}</div>
                 </button>

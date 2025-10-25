@@ -6,7 +6,7 @@ export default async function BlogPage() {
   const initialPosts = await fetchPosts({ per_page: 12, page: 1, orderby: 'date', order: 'desc' });
   return (
     <div className="container mx-auto px-4 py-6 space-y-4">
-      <h1 className="text-2xl font-bold">Blog</h1>
+      <h1 className="text-2xl font-bold text-brand-soft-blue">Blog</h1>
       {/* JSON-LD: CollectionPage and BreadcrumbList */}
       <script
         type="application/ld+json"

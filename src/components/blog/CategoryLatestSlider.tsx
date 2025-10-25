@@ -48,14 +48,14 @@ export default function CategoryLatestSlider({ posts, categorySlug, title = "En 
             <button
               onClick={() => goto(pageIndex - 1)}
               disabled={pageIndex === 0}
-              className="px-3 py-1.5 rounded border border-gray-200 text-sm disabled:opacity-40"
+              className="px-3 py-1.5 rounded border border-brand-light-blue text-sm disabled:opacity-40"
             >
               ←
             </button>
             <button
               onClick={() => goto(pageIndex + 1)}
               disabled={pageIndex >= pages.length - 1}
-              className="px-3 py-1.5 rounded border border-gray-200 text-sm disabled:opacity-40"
+              className="px-3 py-1.5 rounded border border-brand-light-blue text-sm disabled:opacity-40"
             >
               →
             </button>
@@ -69,7 +69,7 @@ export default function CategoryLatestSlider({ posts, categorySlug, title = "En 
             <div key={i} className="snap-start shrink-0 w-full px-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {group.map((post) => (
-                  <Link key={post.id} href={`/blog/${categorySlug}/${post.slug}`} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-sm transition-shadow block">
+                  <Link key={post.id} href={`/blog/${categorySlug}/${post.slug}`} className="border border-brand-light-blue rounded-lg overflow-hidden hover:shadow-sm transition-shadow block">
                     <div className="h-36 bg-gray-100 relative">
                       {post.featuredImage ? (
                         <Image

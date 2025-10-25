@@ -44,7 +44,7 @@ export default function AutocompleteInput({
   return (
     <div className="relative">
       <input
-        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+        className="w-full border border-brand-light-blue rounded-lg px-3 py-2"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -52,7 +52,7 @@ export default function AutocompleteInput({
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
       {open && suggestions.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow">
+        <div className="absolute z-10 mt-1 w-full bg-white border border-brand-light-blue rounded-lg shadow">
           {suggestions.map((s: Prediction) => (
             <button
               key={s.description}

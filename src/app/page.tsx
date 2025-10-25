@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <div className="container mx-auto pb-4 px-4 pt-10 h-auto relative">
       <div className='text-gray-400 text-lg'>
-        <span className='text-brand-dark-blue font-bold text-xl'>Hızlı Ulaşım</span>&apos;a hoş geldiniz!
+        <span className='text-brand-soft-blue font-bold text-xl'>Hızlı Ulaşım</span>&apos;a hoş geldiniz!
       </div>
       <div className="w-full mt-3">
         <SearchBar />

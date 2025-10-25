@@ -70,7 +70,7 @@ export default function CategoryPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+              <div key={index} className="border border-brand-light-blue rounded-lg overflow-hidden">
                 <div className="h-48 bg-gray-200"></div>
                 <div className="p-6">
                   <div className="w-full h-6 bg-gray-200 rounded mb-3"></div>
@@ -96,36 +96,36 @@ export default function CategoryPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <Breadcrumb
-        className="mb-8"
+        className="mb-4"
         items={[{ label: 'Blog', href: '/blog' }]}
       />
 
       {/* Category Header */}
-      <div className="mb-8">
+      <div className="mb-6">
   
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">
+        <h1 className="text-2xl font-bold mb-1 text-brand-soft-blue">
           {category.name}
         </h1>
-        <p className="text-md text-gray-400 mb-2">
+        <p className="text-sm text-gray-400 mb-2 font-light">
           {category.description || `${category.name} kategorisindeki yazılar`}
         </p>
     
 
     {/* Search Bar scoped to this category */}
-        <div className="mt-4">
+        <div className="mt-3">
           <form onSubmit={onSubmitSearch} className="relative">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={`${category.name} içinde ara`}
-              className="w-full bg-gray-100 rounded-full px-4 py-3 pr-28 text-gray-700 placeholder-gray-500 transition-colors"
+              className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-28 text-gray-700 font-light placeholder-gray-500 transition-colors text-sm"
             />
             {searching && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-12 top-1.5 h-9 px-3 rounded-full bg-gray-200 text-gray-700 text-sm hover:bg-gray-300"
+                className="absolute right-12 top-1.5 h-9 px-3 rounded-full text-gray-700 text-sm hover:bg-gray-300"
                 title="Aramayı temizle"
               >
                 Temizle
@@ -134,7 +134,7 @@ export default function CategoryPage() {
             <button
               type="submit"
               aria-label="Kategori içinde ara"
-              className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-brand-dark-blue text-white flex items-center justify-center hover:opacity-90"
+              className="absolute right-1.5 top-1 h-9 w-9 rounded-full text-gray-500 flex items-center justify-center hover:opacity-90"
             >
               <SearchIcon size={18} />
             </button>

@@ -38,8 +38,8 @@ export default function DirectionsSteps({ origin, destination, mode, open }: { o
   if (!open || !destination) return null;
 
   return (
-    <div className="rounded-xl border border-gray-200">
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between text-sm text-gray-700">
+    <div className="rounded-xl border border-brand-light-blue">
+      <div className="px-4 py-3 border-b border-brand-light-blue flex items-center justify-between text-sm text-gray-700">
         <div>Adım adım yol tarifi</div>
         {meta && (
           <div className="flex gap-3">

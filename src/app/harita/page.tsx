@@ -14,7 +14,7 @@ export default function HaritaPage() {
 
   return (
     <>
-      <div className="container mx-auto pb-4 px-4 pt-4 space-y-4">
+      <div className="container mx-auto pb-4 px-4 pt-9 space-y-4">
         <DirectionsForm
           onNavigate={(url) => setMapSrc(url)}
           onChange={({ origin, destination, mode }) => {

@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-gray-200 bg-white">
+    <footer className="border-t border-brand-light-blue bg-white">
       <nav aria-label="Alt menü" className="container mx-auto px-4 py-4">
         <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600">
           <li>

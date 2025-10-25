@@ -18,31 +18,33 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
   const perPage = 12;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset and load first page when category changes
+  // Initial load only - don't run again
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      if (isSearching) return; // Don't auto-load category when searching
-      if (posts.length > 0 && page === 1) return; // already have SSR posts
-      setLoading(true);
-      setHasMore(true);
-      setPage(1);
-      try {
-        const data = await fetchPosts({ per_page: perPage, page: 1 });
-        if (!mounted) return;
-        setPosts(data);
-        if (data.length < perPage) setHasMore(false);
-      } catch {
-        if (!mounted) return;
-        setPosts([]);
+    // Only run if we don't have initial posts from SSR
+    if (initialPosts.length === 0) {
+      const load = async () => {
+        setLoading(true);
+        setHasMore(true);
+        try {
+          const data = await fetchPosts({ per_page: perPage, page: 1 });
+          setPosts(data);
+          if (data.length < perPage) setHasMore(false);
+        } catch {
+          setPosts([]);
+          setHasMore(false);
+        } finally {
+          setLoading(false);
+        }
+      };
+      load();
+    } else {
+      // We have SSR posts, check if there might be more
+      if (initialPosts.length < perPage) {
         setHasMore(false);
-      } finally {
-        if (mounted) setLoading(false);
       }
-    };
-    load();
-    return () => { mounted = false; };
-  }, [isSearching, page, perPage, posts.length]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -62,7 +64,7 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, isSearching, loadingMore, page, searchTerm]);
+  }, [hasMore, isSearching, loadingMore, page, perPage, searchTerm]);
 
   // Observe sentinel to trigger infinite load
   useEffect(() => {
@@ -112,12 +114,12 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Blog'da ara"
-            className="w-full bg-gray-100 rounded-full px-4 py-3 pr-12 text-gray-700 placeholder-gray-500 transition-colors"
+            className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-12 text-gray-700 placeholder-brand-soft-blue transition-colors"
           />
           <button
             type="submit"
             aria-label="Blog'da ara"
-            className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full bg-brand-dark-blue text-white flex items-center justify-center hover:opacity-90"
+            className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full text-brand-soft-blue flex items-center justify-center hover:opacity-90"
           >
             <Search size={18} />
           </button>
@@ -133,7 +135,7 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="border border-gray-200 rounded-lg overflow-hidden animate-pulse">
+              <div key={i} className="border border-brand-light-blue rounded-lg overflow-hidden animate-pulse">
                 <div className="h-40 bg-gray-200" />
                 <div className="p-4 space-y-2">
                   <div className="h-4 bg-gray-200 w-2/3" />

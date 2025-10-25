@@ -23,8 +23,8 @@ export default function PlaceCarouselCard({ name, address, rating, city, distric
     <div className={`${containerBase}${containerVariant}${className}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-semibold text-gray-800 line-clamp-1">{name}</div>
-          <div className="text-xs text-gray-500 line-clamp-1">{address}</div>
+          <div className="font-medium text-gray-800 line-clamp-1 text-sm text-brand-soft-blue">{name}</div>
+          <div className="text-xs text-gray-500 line-clamp-1 font-light">{address}</div>
         </div>
         {ratingPlacement === 'header' && (
           <div className="flex items-center gap-1 text-amber-500">

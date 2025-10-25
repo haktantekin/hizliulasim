@@ -95,7 +95,7 @@ export default function GeziPage() {
           <select
             value={selectedDistrict}
             onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-soft-blue focus:border-transparent outline-none"
+            className="flex-1 px-4 py-3 border border-brand-light-blue rounded-lg focus:ring-2 focus:ring-brand-soft-blue focus:border-transparent outline-none"
           >
             <option value="">İlçe seçin...</option>
             {istanbulDistricts.map((district) => (

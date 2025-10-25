@@ -44,7 +44,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
         ]}
       />
 
-      <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
+      <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
 
 
       {post.featuredImage && (

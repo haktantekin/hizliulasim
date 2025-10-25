@@ -12,7 +12,7 @@ export default async function HowToGoRecent() {
     <section className="mt-8">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-brand-dark-blue">Nasıl Giderim?</h2>
-        <Link href="/blog/nasil-giderim" className="text-sm text-blue-600 hover:underline">Hepsini gör</Link>
+        <Link href="/blog/nasil-giderim" className="text-sm text-brand-orange hover:underline">Hepsini gör</Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {items.map((post) => (

@@ -14,7 +14,7 @@ export default function PostListItem({ post, href, className = "" }: Props) {
   return (
     <Link
       href={href}
-      className={`flex items-start gap-3 relative justify-between border-b border-gray-200 pb-5 last:border-0 ${className}`}
+      className={`flex items-start gap-3 relative justify-between border-b border-brand-light-blue pb-5 last:border-0 ${className}`}
     >
        <div className="relative bg-gray-100 rounded-md overflow-hidden flex-none w-28 h-28 md:w-32 md:h-32">
         {post.featuredImage ? (
@@ -30,10 +30,10 @@ export default function PostListItem({ post, href, className = "" }: Props) {
         )}
       </div>
       <div className="flex flex-col mr-auto">
-        <div className="text-xs text-gray-500">{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</div>
-        <h3 className="font-bold line-clamp-2 my-1 text-base">{post.title}</h3>
+        <div className="text-xs text-gray-400 font-light">{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</div>
+        <h3 className="font-medium line-clamp-2 my-1 text-base leading-[20px]">{post.title}</h3>
         {post.excerpt && (
-          <p className="text-sm font-light text-gray-400 line-clamp-3">{post.excerpt}</p>
+          <p className="text-xs font-light text-gray-400 line-clamp-3">{post.excerpt}</p>
         )}
       </div>
      
