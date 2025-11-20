@@ -47,11 +47,7 @@ export const fetchPageSeoBySlug = async (slug: string): Promise<PageSEO | null> 
     const description = y?.description || (p.excerpt?.rendered ? stripHtml(p.excerpt.rendered) : undefined);
     const canonical = y?.canonical || p.link;
     const ogImages = y?.og_image;
-    const robots = y?.robots ? {
-      index: y.robots.index !== 'noindex',
-      follow: y.robots.follow !== 'nofollow',
-    } : undefined;
-    return { title, description, canonical, ogImages, robots };
+    return { title, description, canonical, ogImages };
   } catch (err) {
     console.error('Error fetching page SEO:', err);
     return null;
