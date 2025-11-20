@@ -4,6 +4,8 @@ import BlogPageClient from "@/app/blog/BlogPageClient";
 export default async function BlogPage() {
   const categories = await fetchCategories();
   const initialPosts = await fetchPosts({ per_page: 12, page: 1, orderby: 'date', order: 'desc' });
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
+
   return (
     <div className="container mx-auto px-4 py-6 space-y-4">
       <h1 className="text-2xl font-bold text-brand-soft-blue">Blog</h1>
@@ -15,7 +17,7 @@ export default async function BlogPage() {
             '@context': 'https://schema.org',
             '@type': 'CollectionPage',
             name: 'Blog',
-            url: '/blog',
+            url: `${baseUrl}/blog`,
           }),
         }}
       />
@@ -26,8 +28,8 @@ export default async function BlogPage() {
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
             itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: '/' },
-              { '@type': 'ListItem', position: 2, name: 'Blog', item: '/blog' },
+              { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: `${baseUrl}/` },
+              { '@type': 'ListItem', position: 2, name: 'Blog', item: `${baseUrl}/blog` },
             ],
           }),
         }}

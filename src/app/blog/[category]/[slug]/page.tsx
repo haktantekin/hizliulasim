@@ -73,7 +73,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
             image: post.featuredImage?.url,
             mainEntityOfPage: {
               '@type': 'WebPage',
-              '@id': `/blog/${category}/${post.slug}`,
+              '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com'}/blog/${category}/${post.slug}`,
             },
           }),
         }}
@@ -133,6 +133,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
 export async function generateMetadata({ params }: { params: Promise<{ category: string; slug: string }> }): Promise<Metadata> {
   const { slug, category } = await params;
   const post = await fetchPostBySlug(slug);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
+  
   // Fallbacks if post not found
   if (!post) {
     return {
@@ -147,7 +149,7 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
 
   const title = post.title;
   const description = post.excerpt || post.title;
-  const canonical = `/blog/${category}/${post.slug}`;
+  const canonical = `${baseUrl}/blog/${category}/${post.slug}`;
   const images = post.featuredImage
     ? [
       {

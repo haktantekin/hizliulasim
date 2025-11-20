@@ -3,10 +3,20 @@ import { fetchPageSeoBySlug } from '@/services/wordpress';
 
 export async function generateMetaForSlug(slug: string): Promise<Metadata> {
   const seo = await fetchPageSeoBySlug(slug);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
+  
+  // Ensure canonical URL is non-www version
+  let canonicalUrl = seo?.canonical;
+  if (canonicalUrl) {
+    canonicalUrl = canonicalUrl.replace(/https:\/\/www\./, 'https://');
+  } else {
+    canonicalUrl = `${baseUrl}/${slug}`;
+  }
+
   return {
     title: seo?.title,
     description: seo?.description,
-    alternates: seo?.canonical ? { canonical: seo.canonical } : undefined,
+    alternates: { canonical: canonicalUrl },
     openGraph: seo?.ogImages ? { images: seo.ogImages.map(i => ({ url: i.url, width: i.width, height: i.height, alt: i.alt })) } : undefined,
     robots: seo?.robots ? { index: seo.robots.index, follow: seo.robots.follow } : undefined,
   };
