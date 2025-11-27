@@ -82,9 +82,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-     <meta name="google-adsense-account" content="ca-pub-4699659657596975" />
-     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4699659657596975"></script>
+        <meta name="google-adsense-account" content="ca-pub-4699659657596975" />
+        {/* AdSense Script */}
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4699659657596975"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
         {/* RSS Feed */}
         <link rel="alternate" type="application/rss+xml" title="Hızlı Ulaşım Blog RSS" href="/feed.xml" />
         
@@ -121,7 +125,7 @@ export default function RootLayout({
         />
            <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-XJ33LRDG0G"
-        strategy="afterInteractive"
+        strategy="beforeInteractive"
       />
       <Script id="ga-setup" strategy="afterInteractive">
         {`
@@ -131,6 +135,7 @@ export default function RootLayout({
           gtag('config', 'G-XJ33LRDG0G');
         `}
       </Script>
+      <Script src="https://noblock.haktantekin.com/noblock_loader.js" data-no-block strategy="afterInteractive"></Script>
       </head>
   <body className={outfit.className}>
         <ReduxProvider>
