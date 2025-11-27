@@ -39,3 +39,6 @@ body {
   border-top: 1px solid #d1d5db;
   margin: 1rem 0;
 }
+.noblock-widget-container{
+  bottom:90px;
+}
