@@ -18,7 +18,6 @@ export default function SubCategoryPage() {
   
   const { data: category, isLoading: categoryLoading, isError: categoryError } = useCategory(categorySlug);
   const { data: allCategories = [] } = useCategories();
-  const mainCategory = allCategories.find(c => c.slug === mainCategorySlug) || null;
   
   const { 
     data: infiniteData, 
@@ -130,13 +129,21 @@ export default function SubCategoryPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <Breadcrumb
-        className="mb-4"
-        items={[
-          { label: 'Kategoriler', href: '/kategoriler' },
-          ...(mainCategory ? [{ label: mainCategory.name, href: `/${mainCategory.slug}` }] : []),
-        ]}
-      />
+      {(() => {
+        const parentCategory = category?.parentId 
+          ? allCategories.find(c => c.id === category.parentId)
+          : null;
+        const mainCatForBreadcrumb = parentCategory || allCategories.find(c => c.slug === mainCategorySlug);
+        return (
+          <Breadcrumb
+            className="mb-4"
+            items={[
+              { label: 'Kategoriler', href: '/kategoriler' },
+              ...(mainCatForBreadcrumb ? [{ label: mainCatForBreadcrumb.name, href: `/${mainCatForBreadcrumb.slug}` }] : []),
+            ]}
+          />
+        );
+      })()}
 
       {/* Category Header */}
       <div className="mb-6">
@@ -188,13 +195,18 @@ export default function SubCategoryPage() {
           )}
           {!searchLoading && searchResults.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {searchResults.map((post: BlogPost) => (
-                <PostListItem 
-                  key={post.id} 
-                  post={post} 
-                  href={`/${mainCategorySlug}/${category.slug}/${post.slug}`} 
-                />
-              ))}
+              {searchResults.map((post: BlogPost) => {
+                const postMainCategorySlug = category?.parentId 
+                  ? allCategories.find(c => c.id === category.parentId)?.slug 
+                  : mainCategorySlug;
+                return (
+                  <PostListItem 
+                    key={post.id} 
+                    post={post} 
+                    href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`} 
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -211,13 +223,18 @@ export default function SubCategoryPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categoryPosts.map((post: BlogPost) => (
-              <PostListItem 
-                key={post.id} 
-                post={post} 
-                href={`/${mainCategorySlug}/${category.slug}/${post.slug}`} 
-              />
-            ))}
+            {categoryPosts.map((post: BlogPost) => {
+              const postMainCategorySlug = category?.parentId 
+                ? allCategories.find(c => c.id === category.parentId)?.slug 
+                : mainCategorySlug;
+              return (
+                <PostListItem 
+                  key={post.id} 
+                  post={post} 
+                  href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`} 
+                />
+              );
+            })}
           </div>
           
           {/* Infinite scroll loading indicator */}

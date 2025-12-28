@@ -17,6 +17,7 @@ import SearchBar from "../components/home/SearchBar";
 import TopCafesCarousel from "../components/home/TopCafesCarousel";
 import HowToGoRecent from "../components/home/HowToGoRecent";
 import TopRestaurantsCarousel from "../components/home/TopRestaurantsCarousel";
+import CategoryPostsGrid from "../components/home/CategoryPostsGrid";
 
 export default function Home() {
   return (
@@ -33,6 +34,10 @@ export default function Home() {
       <HowToGoRecent />
       <TopRestaurantsCarousel />
       <HomeCards/>
+
+      <div className="mt-12">
+        <CategoryPostsGrid />
+      </div>
     </div>
   );
 }

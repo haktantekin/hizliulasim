@@ -198,9 +198,13 @@ export default function MainCategoryPage() {
                 const postCategory = post.categoryIds?.[0] 
                   ? allCategories.find(c => c.id === post.categoryIds[0])
                   : null;
-                const href = postCategory && postCategory.slug !== mainCategory.slug
-                  ? `/${mainCategory.slug}/${postCategory.slug}/${post.slug}`
-                  : `/${mainCategory.slug}/#/${post.slug}`;
+                // Eğer post alt kategoriye ait ise, ana kategorisini bul
+                const postMainCategory = postCategory?.parentId 
+                  ? allCategories.find(c => c.id === postCategory.parentId)
+                  : postCategory;
+                const href = postCategory && postCategory.id !== mainCategory.id
+                  ? `/${postMainCategory?.slug || mainCategory.slug}/${postCategory.slug}/${post.slug}`
+                  : `/${mainCategory.slug}/${postCategory?.slug || ''}/${post.slug}`.replace(/\/$/, '');
                 return (
                   <PostListItem 
                     key={post.id} 
@@ -229,9 +233,13 @@ export default function MainCategoryPage() {
               const postCategory = post.categoryIds?.[0] 
                 ? allCategories.find(c => c.id === post.categoryIds[0])
                 : null;
-              const href = postCategory && postCategory.slug !== mainCategory.slug
-                ? `/${mainCategory.slug}/${postCategory.slug}/${post.slug}`
-                : `/${mainCategory.slug}/#/${post.slug}`;
+              // Eğer post alt kategoriye ait ise, ana kategorisini bul
+              const postMainCategory = postCategory?.parentId 
+                ? allCategories.find(c => c.id === postCategory.parentId)
+                : postCategory;
+              const href = postCategory && postCategory.id !== mainCategory.id
+                ? `/${postMainCategory?.slug || mainCategory.slug}/${postCategory.slug}/${post.slug}`
+                : `/${mainCategory.slug}/${postCategory?.slug || ''}/${post.slug}`.replace(/\/$/, '');
               return (
                 <PostListItem 
                   key={post.id} 
