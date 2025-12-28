@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCategory, usePostsByCategory, useCategories } from '../../../hooks/useWordPress';
+import { useCategory, useInfinitePostsByCategory, useCategories } from '../../../hooks/useWordPress';
 import { BlogPost } from '../../../types/WordPress';
 import PostListItem from '@/components/blog/PostListItem';
 import CategoryScroller from '@/components/blog/CategoryScroller';
@@ -15,20 +15,51 @@ export default function CategoryPage() {
   const params = useParams<{ category: string }>();
   const categorySlug = Array.isArray(params.category) ? params.category[0] : params.category;
   const { data: category, isLoading: categoryLoading, isError: categoryError } = useCategory(categorySlug);
-  const { data: categoryPosts, isLoading: postsLoading, isError: postsError } = usePostsByCategory(
-    category?.id || 0,
-    20
-  );
+  const { 
+    data: infiniteData, 
+    isLoading: postsLoading, 
+    isError: postsError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfinitePostsByCategory(category?.id || 0);
   const { data: allCategories = [] } = useCategories();
 
   const isLoading = categoryLoading || postsLoading;
   const isError = categoryError || postsError;
+
+  // Get all posts from infinite pages
+  const categoryPosts = infiniteData?.pages.flatMap(page => page) || [];
 
   // Local state for category-scoped search
   const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<BlogPost[]>([]);
+
+  // Intersection observer for infinite scroll
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage && !searching) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, searching]);
 
   const onSubmitSearch = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,11 +202,26 @@ export default function CategoryPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categoryPosts.map((post: BlogPost) => (
-            <PostListItem key={post.id} post={post} href={`/blog/${category.slug}/${post.slug}`} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categoryPosts.map((post: BlogPost) => (
+              <PostListItem key={post.id} post={post} href={`/blog/${category.slug}/${post.slug}`} />
+            ))}
+          </div>
+          
+          {/* Infinite scroll loading indicator */}
+          <div ref={observerTarget} className="mt-8 flex justify-center">
+            {isFetchingNextPage && (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-soft-blue"></div>
+                <span className="text-sm text-gray-600">Daha fazla yazı yükleniyor…</span>
+              </div>
+            )}
+            {!hasNextPage && categoryPosts.length > 0 && (
+              <p className="text-sm text-gray-500">Tüm yazılar yüklendi</p>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

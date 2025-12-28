@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { 
   fetchCategories, 
   fetchPosts, 
@@ -152,6 +152,30 @@ export const useLatestPostsByCategory = (categoryId: number, limit: number = 9) 
     }),
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 5,
+    retry: 2,
+    enabled: !!categoryId,
+  });
+};
+
+// Infinite Posts by Category Hook (for infinite scroll)
+export const useInfinitePostsByCategory = (categoryId: number) => {
+  return useInfiniteQuery<BlogPost[], Error>({
+    queryKey: ['posts', 'category', 'infinite', categoryId],
+    queryFn: ({ pageParam = 1 }) => 
+      fetchPosts({
+        categoryId,
+        per_page: 20,
+        page: pageParam as number,
+        orderby: 'date',
+        order: 'desc',
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      // If the last page returned fewer than 20 items, there are no more pages
+      return lastPage.length === 20 ? allPages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
     enabled: !!categoryId,
   });
