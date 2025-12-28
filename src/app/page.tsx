@@ -15,7 +15,6 @@ export async function generateMetadata(): Promise<Metadata> {
 import QuickLinks from "../components/home/QuickLinks";
 import SearchBar from "../components/home/SearchBar";
 import TopCafesCarousel from "../components/home/TopCafesCarousel";
-import HowToGoRecent from "../components/home/HowToGoRecent";
 import TopRestaurantsCarousel from "../components/home/TopRestaurantsCarousel";
 import CategoryPostsGrid from "../components/home/CategoryPostsGrid";
 
@@ -29,11 +28,10 @@ export default function Home() {
         <SearchBar />
       </div>
       <QuickLinks />
-
+    <HomeCards/>
       <TopCafesCarousel />
-      <HowToGoRecent />
       <TopRestaurantsCarousel />
-      <HomeCards/>
+  
 
       <div className="mt-12">
         <CategoryPostsGrid />

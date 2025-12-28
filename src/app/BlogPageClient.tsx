@@ -152,8 +152,15 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
           const postCategoryId = post.categoryIds?.[0];
           const postCategory = postCategoryId ? categories.find(c => c.id === postCategoryId) : null;
           
-          // If no category found, create fallback URL
-          const href = postCategory 
+          // If category has a parent, build hierarchical URL
+          const postMainCategory = postCategory?.parentId 
+            ? categories.find(c => c.id === postCategory.parentId)
+            : null;
+          
+          // Build href
+          const href = postMainCategory && postCategory && postCategory.parentId
+            ? `/${postMainCategory.slug}/${postCategory.slug}/${post.slug}`
+            : postCategory && !postCategory.parentId
             ? `/${postCategory.slug}/${post.slug}`
             : `/#/${post.slug}`;
           

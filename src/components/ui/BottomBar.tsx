@@ -29,7 +29,7 @@ const BottomBar = () => {
       label: 'Keşfet'
     },
     {
-      href: '/blog',
+      href: '/kategoriler',
       icon: FileText,
       label: 'Blog'
     }
