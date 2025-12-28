@@ -116,7 +116,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       categoryRoutes = categories
         .filter((cat) => cat.count > 0) // Only categories with posts
         .map((cat) => ({
-          url: `${baseUrl}/blog/${cat.slug}`,
+          url: `${baseUrl}/${cat.slug}`,
           lastModified: new Date(),
           changeFrequency: 'daily' as const, // Kategoriler sık güncellenir
           priority: 0.75,

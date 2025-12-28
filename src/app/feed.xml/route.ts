@@ -12,14 +12,14 @@ export async function GET() {
      xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Hızlı Ulaşım Blog</title>
-    <link>${baseUrl}/blog</link>
+    <link>${baseUrl}</link>
     <description>Ulaşım, gezi ve şehir yaşamı hakkında blog yazıları</description>
     <language>tr</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${baseUrl}/feed.xml" rel="self" type="application/rss+xml"/>
     ${posts.map(post => {
       const pubDate = new Date(post.publishedAt).toUTCString();
-      const link = `${baseUrl}/blog/${post.slug}`;
+      const link = `${baseUrl}/${post.slug}`;
       
       return `
     <item>

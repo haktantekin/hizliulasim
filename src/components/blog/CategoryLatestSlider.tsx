@@ -8,11 +8,12 @@ import type { BlogPost } from "@/types/WordPress";
 interface Props {
   posts: BlogPost[];
   categorySlug: string;
+  mainCategorySlug?: string; // optional main category slug for proper URL routing
   title?: string;
 }
 
 // Groups posts into pages of 3 and renders a simple scroll-snap carousel with prev/next controls
-export default function CategoryLatestSlider({ posts, categorySlug, title = "En Yeni Yazılar" }: Props) {
+export default function CategoryLatestSlider({ posts, categorySlug, mainCategorySlug, title = "En Yeni Yazılar" }: Props) {
   const pages = useMemo(() => {
     const chunks: BlogPost[][] = [];
     for (let i = 0; i < posts.length; i += 3) {
@@ -68,27 +69,32 @@ export default function CategoryLatestSlider({ posts, categorySlug, title = "En 
           {pages.map((group, i) => (
             <div key={i} className="snap-start shrink-0 w-full px-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {group.map((post) => (
-                  <Link key={post.id} href={`/blog/${categorySlug}/${post.slug}`} className="border border-brand-light-blue rounded-lg overflow-hidden hover:shadow-sm transition-shadow block">
-                    <div className="h-36 bg-gray-100 relative">
-                      {post.featuredImage ? (
-                        <Image
-                          src={post.featuredImage.url}
-                          alt={post.featuredImage.alt}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-gray-400 text-sm">Görsel yok</div>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h3 className="font-medium text-sm line-clamp-2 mb-1">{post.title}</h3>
-                      <div className="text-xs text-gray-500">{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</div>
-                    </div>
-                  </Link>
-                ))}
+                {group.map((post) => {
+                  const href = mainCategorySlug 
+                    ? `/${mainCategorySlug}/${categorySlug}/${post.slug}`
+                    : `/${categorySlug}/${post.slug}`;
+                  return (
+                    <Link key={post.id} href={href} className="border border-brand-light-blue rounded-lg overflow-hidden hover:shadow-sm transition-shadow block">
+                      <div className="h-36 bg-gray-100 relative">
+                        {post.featuredImage ? (
+                          <Image
+                            src={post.featuredImage.url}
+                            alt={post.featuredImage.alt}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-gray-400 text-sm">Görsel yok</div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="font-medium text-sm line-clamp-2 mb-1">{post.title}</h3>
+                        <div className="text-xs text-gray-500">{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           ))}
