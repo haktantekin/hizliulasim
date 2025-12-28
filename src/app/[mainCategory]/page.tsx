@@ -177,7 +177,8 @@ export default function MainCategoryPage() {
         {/* Sub-categories scroller */}
         {subCategories.length > 0 && (
           <CategoryScroller 
-            categories={subCategories} 
+            categories={subCategories}
+            allCategories={allCategories}
             showCounts 
             className="mt-3" 
           />

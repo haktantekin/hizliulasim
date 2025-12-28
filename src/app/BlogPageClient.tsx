@@ -113,7 +113,7 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
   return (
     <div className="space-y-6">
       {/* Category Scroller */}
-      <CategoryScroller categories={categories} showCounts className="pt-4 pb-2" mainOnly={mainCategoriesOnly} />
+      <CategoryScroller categories={categories} allCategories={categories} showCounts className="pt-4 pb-2" mainOnly={mainCategoriesOnly} />
 
       {/* Search Bar */}
       <form onSubmit={onSubmitSearch} className="relative flex gap-2">

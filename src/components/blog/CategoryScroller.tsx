@@ -6,13 +6,14 @@ import type { BlogCategory } from "@/types/WordPress";
 
 interface CategoryScrollerProps {
   categories: BlogCategory[];
+  allCategories?: BlogCategory[]; // all categories for finding parent slugs
   activeSlug?: string; // highlight current category if provided
   className?: string;
   showCounts?: boolean;
   mainOnly?: boolean; // if true, only show categories without parent (main categories)
 }
 
-export default function CategoryScroller({ categories, activeSlug, className = "", showCounts = false, mainOnly = false }: CategoryScrollerProps) {
+export default function CategoryScroller({ categories, allCategories = [], activeSlug, className = "", showCounts = false, mainOnly = false }: CategoryScrollerProps) {
   const sorted = useMemo(
     () => {
       const filtered = mainOnly 
@@ -29,10 +30,17 @@ export default function CategoryScroller({ categories, activeSlug, className = "
     <div className={`flex items-center gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide ${className}`}>
       {sorted.map(cat => {
         const active = activeSlug === cat.slug;
+        // If category has a parent, build hierarchical URL
+        const parentCategory = cat.parentId 
+          ? allCategories.find(c => c.id === cat.parentId)
+          : null;
+        const href = parentCategory
+          ? `/${parentCategory.slug}/${cat.slug}`
+          : `/${cat.slug}`;
         return (
           <Link
             key={cat.id}
-            href={`/${cat.slug}`}
+            href={href}
             className={`snap-start shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm transition-colors whitespace-nowrap`}
             title={`${cat.name}${cat.postCount ? ` (${cat.postCount})` : ""}`}
           >
