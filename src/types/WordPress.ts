@@ -144,6 +144,8 @@ export interface BlogCategory {
   slug: string;
   description: string;
   postCount: number;
+  parentId?: number;
+  parentSlug?: string;
 }
 
 export interface BlogPost {

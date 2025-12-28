@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import PostListItem from "@/components/blog/PostListItem";
 import CategoryScroller from "@/components/blog/CategoryScroller";
 
-export default function BlogPageClient({ categories, initialPosts = [] as BlogPost[] }: { categories: BlogCategory[]; initialPosts?: BlogPost[] }) {
+export default function BlogPageClient({ categories, initialPosts = [] as BlogPost[], mainCategoriesOnly = false }: { categories: BlogCategory[]; initialPosts?: BlogPost[]; mainCategoriesOnly?: boolean }) {
   const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -113,7 +113,7 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
   return (
     <div className="space-y-6">
       {/* Category Scroller */}
-      <CategoryScroller categories={categories} showCounts className="pt-4 pb-2" />
+      <CategoryScroller categories={categories} showCounts className="pt-4 pb-2" mainOnly={mainCategoriesOnly} />
 
       {/* Search Bar */}
       <form onSubmit={onSubmitSearch} className="relative flex gap-2">
@@ -147,9 +147,20 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
 
       {/* Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts.map((post) => (
-          <PostListItem key={post.id} post={post} href={`/${post.slug}`} />
-        ))}
+        {posts.map((post) => {
+          // Find the post's category
+          const postCategoryId = post.categoryIds?.[0];
+          const postCategory = postCategoryId ? categories.find(c => c.id === postCategoryId) : null;
+          
+          // If no category found, create fallback URL
+          const href = postCategory 
+            ? `/${postCategory.slug}/${post.slug}`
+            : `/#/${post.slug}`;
+          
+          return (
+            <PostListItem key={post.id} post={post} href={href} />
+          );
+        })}
       </div>
 
       {/* Load More Sentinel */}

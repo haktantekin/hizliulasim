@@ -112,6 +112,7 @@ export const fetchCategories = async (): Promise<BlogCategory[]> => {
         slug: category.slug,
         description: stripHtml(category.description) || `${category.name} kategorisindeki yazılar`,
         postCount: category.count,
+        parentId: category.parent || undefined,
       }));
   } catch (error) {
     console.error('Error fetching categories:', error);

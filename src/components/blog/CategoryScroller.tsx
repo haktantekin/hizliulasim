@@ -9,12 +9,18 @@ interface CategoryScrollerProps {
   activeSlug?: string; // highlight current category if provided
   className?: string;
   showCounts?: boolean;
+  mainOnly?: boolean; // if true, only show categories without parent (main categories)
 }
 
-export default function CategoryScroller({ categories, activeSlug, className = "", showCounts = false }: CategoryScrollerProps) {
+export default function CategoryScroller({ categories, activeSlug, className = "", showCounts = false, mainOnly = false }: CategoryScrollerProps) {
   const sorted = useMemo(
-    () => [...categories].sort((a, b) => (b.postCount || 0) - (a.postCount || 0)),
-    [categories]
+    () => {
+      const filtered = mainOnly 
+        ? categories.filter(cat => !cat.parentId) 
+        : categories;
+      return [...filtered].sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
+    },
+    [categories, mainOnly]
   );
 
   if (!sorted.length) return null;
@@ -26,7 +32,7 @@ export default function CategoryScroller({ categories, activeSlug, className = "
         return (
           <Link
             key={cat.id}
-            href={`/blog/${cat.slug}`}
+            href={`/${cat.slug}`}
             className={`snap-start shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm transition-colors whitespace-nowrap`}
             title={`${cat.name}${cat.postCount ? ` (${cat.postCount})` : ""}`}
           >
@@ -37,3 +43,4 @@ export default function CategoryScroller({ categories, activeSlug, className = "
     </div>
   );
 }
+

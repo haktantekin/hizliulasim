@@ -34,7 +34,7 @@ export default async function KategorilerPage() {
           }),
         }}
       />
-      <BlogPageClient categories={categories} initialPosts={initialPosts} />
+      <BlogPageClient categories={categories} initialPosts={initialPosts} mainCategoriesOnly={true} />
     </div>
   );
 }
