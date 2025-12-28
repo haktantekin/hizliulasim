@@ -100,74 +100,62 @@ export default function BlogPageClient({ categories, initialPosts = [] as BlogPo
     } finally {
       setLoading(false);
     }
-  }, [perPage, searchTerm]);
+  }, [perPage]);
 
-  // Note: clear search handled implicitly by selecting a category or submitting empty term
+  const clearSearch = useCallback(() => {
+    setIsSearching(false);
+    setPosts(initialPosts);
+    setSearchTerm("");
+    setPage(1);
+    setHasMore(true);
+  }, [initialPosts]);
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-3">
-        {/* Search Bar (styled like home SearchBar) */}
-        <form onSubmit={onSubmitSearch} className="relative">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Blog'da ara"
-            className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-12 text-gray-700 placeholder-brand-soft-blue transition-colors"
-          />
-          <button
-            type="submit"
-            aria-label="Blog'da ara"
-            className="absolute right-1.5 top-1.5 h-9 w-9 rounded-full text-brand-soft-blue flex items-center justify-center hover:opacity-90"
-          >
-            <Search size={18} />
-          </button>
-        </form>
+    <div className="space-y-6">
+      {/* Category Scroller */}
+      <CategoryScroller categories={categories} showCounts className="pt-4 pb-2" />
 
-        <CategoryScroller categories={categories} showCounts />
+      {/* Search Bar */}
+      <form onSubmit={onSubmitSearch} className="relative flex gap-2">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Yazılarda ara..."
+          className="flex-1 border border-brand-light-blue rounded-full px-4 py-3 text-gray-700 font-light placeholder-gray-500 transition-colors text-sm"
+        />
+        {isSearching && (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="px-4 py-2 rounded-full text-gray-700 text-sm hover:bg-gray-300"
+          >
+            Temizle
+          </button>
+        )}
+        <button
+          type="submit"
+          className="px-6 py-2 rounded-full bg-brand-soft-blue text-white text-sm hover:bg-brand-dark-blue"
+        >
+          <Search size={18} className="inline" />
+        </button>
+      </form>
+
+      {/* Status Messages */}
+      {loading && <div className="text-center text-gray-500">Yükleniyor…</div>}
+      {!loading && posts.length === 0 && <div className="text-center text-gray-500">Yazı bulunamadı.</div>}
+
+      {/* Posts Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map((post) => (
+          <PostListItem key={post.id} post={post} href={`/${post.slug}`} />
+        ))}
       </div>
 
-      <div>
-        <h2 className="text-lg font-semibold mb-3">
-          {isSearching ? `“${searchTerm.trim()}” için sonuçlar` : `${selectedName} Gönderiler`}
-        </h2>
-        {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="border border-brand-light-blue rounded-lg overflow-hidden animate-pulse">
-                <div className="h-40 bg-gray-200" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 bg-gray-200 w-2/3" />
-                  <div className="h-3 bg-gray-200 w-full" />
-                  <div className="h-3 bg-gray-200 w-3/4" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {!loading && posts && posts.length === 0 && (
-          <div className="text-gray-600 text-sm">Bu kategoride gönderi bulunamadı.</div>
-        )}
-        {!loading && posts && posts.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post) => (
-              <PostListItem
-                key={post.id}
-                post={post}
-                href={`/blog/${(categories.find(c => post.categoryIds.includes(c.id))?.slug) || 'genel'}/${post.slug}`}
-              />
-            ))}
-          </div>
-        )}
-        {/* Infinite scroll sentinel */}
-        <div ref={sentinelRef} className="h-8" />
-        {loadingMore && (
-          <div className="text-center text-sm text-gray-500">Yükleniyor…</div>
-        )}
-        {!hasMore && posts.length > 0 && (
-          <div className="text-center text-xs text-gray-400 mt-2">Hepsi yüklendi.</div>
-        )}
+      {/* Load More Sentinel */}
+      <div ref={sentinelRef} className="py-8 flex justify-center">
+        {loadingMore && <div className="text-sm text-gray-500">Daha fazla yazı yükleniyor…</div>}
+        {!hasMore && posts.length > 0 && <div className="text-sm text-gray-500">Tüm yazılar yüklendi</div>}
       </div>
     </div>
   );

@@ -38,8 +38,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
       <Breadcrumb
         className="mb-6"
         items={[
-          { label: "Blog", href: "/blog" },
-          ...(cat ? [{ label: cat.name, href: `/blog/${cat.slug}` }] : []),
+          { label: "Kategoriler", href: "/kategoriler" },
+          ...(cat ? [{ label: cat.name, href: `/${cat.slug}` }] : []),
           // current page omitted per request
         ]}
       />
@@ -73,7 +73,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
             image: post.featuredImage?.url,
             mainEntityOfPage: {
               '@type': 'WebPage',
-              '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com'}/blog/${category}/${post.slug}`,
+              '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com'}/${category}/${post.slug}`,
             },
           }),
         }}
@@ -94,8 +94,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
               {
                 '@type': 'ListItem',
                 position: 2,
-                name: 'Blog',
-                item: '/blog',
+                name: 'Kategoriler',
+                item: '/kategoriler',
               },
               ...(cat
                 ? [
@@ -103,7 +103,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                     '@type': 'ListItem',
                     position: 3,
                     name: cat.name,
-                    item: `/blog/${cat.slug}`,
+                    item: `/${cat.slug}`,
                   },
                 ]
                 : []),
@@ -119,7 +119,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
               <PostListItem
                 key={rp.id}
                 post={rp}
-                href={`/blog/${(cat?.slug || category)}/${rp.slug}`}
+                href={`/${(cat?.slug || category)}/${rp.slug}`}
                 className="py-3"
               />
             ))}
@@ -149,7 +149,7 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
 
   const title = post.title;
   const description = post.excerpt || post.title;
-  const canonical = `${baseUrl}/blog/${category}/${post.slug}`;
+  const canonical = `${baseUrl}/${category}/${post.slug}`;
   const images = post.featuredImage
     ? [
       {

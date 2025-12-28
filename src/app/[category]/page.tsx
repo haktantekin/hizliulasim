@@ -3,8 +3,8 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCategory, useInfinitePostsByCategory, useCategories } from '../../../hooks/useWordPress';
-import { BlogPost } from '../../../types/WordPress';
+import { useCategory, useInfinitePostsByCategory, useCategories } from '../../hooks/useWordPress';
+import { BlogPost } from '../../types/WordPress';
 import PostListItem from '@/components/blog/PostListItem';
 import CategoryScroller from '@/components/blog/CategoryScroller';
 import { Search as SearchIcon } from 'lucide-react';
@@ -128,7 +128,7 @@ export default function CategoryPage() {
       {/* Breadcrumb */}
       <Breadcrumb
         className="mb-4"
-        items={[{ label: 'Blog', href: '/blog' }]}
+        items={[{ label: 'Kategoriler', href: '/kategoriler' }]}
       />
 
       {/* Category Header */}
@@ -178,7 +178,7 @@ export default function CategoryPage() {
       {/* Posts Grid (match Blog page design). If searching, show results scoped to this category */}
       {searching ? (
         <div>
-          <h2 className="text-lg font-semibold mb-3">“{searchTerm.trim()}” için sonuçlar</h2>
+          <h2 className="text-lg font-semibold mb-3">"{searchTerm.trim()}" için sonuçlar</h2>
           {searchLoading && <div className="text-sm text-gray-500">Yükleniyor…</div>}
           {!searchLoading && searchResults.length === 0 && (
             <div className="text-gray-600 text-sm">Sonuç bulunamadı.</div>
@@ -186,7 +186,7 @@ export default function CategoryPage() {
           {!searchLoading && searchResults.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {searchResults.map((post: BlogPost) => (
-                <PostListItem key={post.id} post={post} href={`/blog/${category.slug}/${post.slug}`} />
+                <PostListItem key={post.id} post={post} href={`/${category.slug}/${post.slug}`} />
               ))}
             </div>
           )}
@@ -195,17 +195,17 @@ export default function CategoryPage() {
         <div className="text-center py-12">
           <p className="text-gray-500">Bu kategoride henüz gönderi bulunmuyor.</p>
           <Link 
-            href="/blog"
+            href="/kategoriler"
             className="text-brand-soft-blue hover:text-brand-dark-blue font-medium mt-4 inline-block"
           >
-            ← Blog&apos;a geri dön
+            ← Kategoriler&apos;e geri dön
           </Link>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categoryPosts.map((post: BlogPost) => (
-              <PostListItem key={post.id} post={post} href={`/blog/${category.slug}/${post.slug}`} />
+              <PostListItem key={post.id} post={post} href={`/${category.slug}/${post.slug}`} />
             ))}
           </div>
           

@@ -77,6 +77,22 @@ const nextConfig: NextConfig = {
   // Force HTTPS in production
   async redirects() {
     return [
+      // Redirect old /blog routes to new structure
+      {
+        source: '/blog',
+        destination: '/kategoriler',
+        permanent: true,
+      },
+      {
+        source: '/blog/:category',
+        destination: '/:category',
+        permanent: true,
+      },
+      {
+        source: '/blog/:category/:slug',
+        destination: '/:category/:slug',
+        permanent: true,
+      },
       {
         source: '/:path*',
         has: [
