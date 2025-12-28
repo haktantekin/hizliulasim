@@ -195,16 +195,18 @@ export default function MainCategoryPage() {
           {!searchLoading && searchResults.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {searchResults.map((post: BlogPost) => {
-                const postCategory = post.categoryIds?.[0] 
-                  ? allCategories.find(c => c.id === post.categoryIds[0])
+                const postCategoryId = post.categoryIds?.[0];
+                const postCategory = postCategoryId
+                  ? allCategories.find(c => c.id === postCategoryId)
                   : null;
-                // Eğer post alt kategoriye ait ise, ana kategorisini bul
-                const postMainCategory = postCategory?.parentId 
+                const postMainCategory = postCategory?.parentId
                   ? allCategories.find(c => c.id === postCategory.parentId)
-                  : postCategory;
-                const href = postCategory && postCategory.id !== mainCategory.id
-                  ? `/${postMainCategory?.slug || mainCategory.slug}/${postCategory.slug}/${post.slug}`
-                  : `/${mainCategory.slug}/${postCategory?.slug || ''}/${post.slug}`.replace(/\/$/, '');
+                  : null;
+                const href = postMainCategory && postCategory && postCategory.parentId
+                  ? `/${postMainCategory.slug}/${postCategory.slug}/${post.slug}`
+                  : postCategory && !postCategory.parentId
+                  ? `/${postCategory.slug}/${post.slug}`
+                  : `/${mainCategory.slug}/#/${post.slug}`;
                 return (
                   <PostListItem 
                     key={post.id} 
@@ -230,16 +232,18 @@ export default function MainCategoryPage() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categoryPosts.map((post: BlogPost) => {
-              const postCategory = post.categoryIds?.[0] 
-                ? allCategories.find(c => c.id === post.categoryIds[0])
+              const postCategoryId = post.categoryIds?.[0];
+              const postCategory = postCategoryId
+                ? allCategories.find(c => c.id === postCategoryId)
                 : null;
-              // Eğer post alt kategoriye ait ise, ana kategorisini bul
-              const postMainCategory = postCategory?.parentId 
+              const postMainCategory = postCategory?.parentId
                 ? allCategories.find(c => c.id === postCategory.parentId)
-                : postCategory;
-              const href = postCategory && postCategory.id !== mainCategory.id
-                ? `/${postMainCategory?.slug || mainCategory.slug}/${postCategory.slug}/${post.slug}`
-                : `/${mainCategory.slug}/${postCategory?.slug || ''}/${post.slug}`.replace(/\/$/, '');
+                : null;
+              const href = postMainCategory && postCategory && postCategory.parentId
+                ? `/${postMainCategory.slug}/${postCategory.slug}/${post.slug}`
+                : postCategory && !postCategory.parentId
+                ? `/${postCategory.slug}/${post.slug}`
+                : `/${mainCategory.slug}/#/${post.slug}`;
               return (
                 <PostListItem 
                   key={post.id} 

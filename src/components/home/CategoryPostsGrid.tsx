@@ -60,15 +60,16 @@ const CategoryPostsGrid = async () => {
                     ? allCategories.find(c => c.id === postCategoryId)
                     : null;
 
-                  // If post is in a sub-category, use main/sub format
+                  // If post is in a sub-category, find the main category
                   const postMainCategory = postCategory?.parentId
                     ? allCategories.find(c => c.id === postCategory.parentId)
-                    : postCategory;
+                    : null;
 
-                  const href = postCategory
-                    ? postMainCategory && postMainCategory.id !== category.id
-                      ? `/${postMainCategory?.slug || category.slug}/${postCategory.slug}/${post.slug}`
-                      : `/${category.slug}/${postCategory.slug}/${post.slug}`
+                  // Build href - only use main/sub format if post has a parent category
+                  const href = postMainCategory && postCategory && postCategory.parentId
+                    ? `/${postMainCategory.slug}/${postCategory.slug}/${post.slug}`
+                    : postCategory && !postCategory.parentId
+                    ? `/${postCategory.slug}/${post.slug}`
                     : `/${category.slug}/#/${post.slug}`;
 
                   return (
