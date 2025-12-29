@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { fetchCategories, fetchPosts } from '@/services/wordpress';
 import PostListItem from '../blog/PostListItem';
+import TopRestaurantsCarousel from './TopRestaurantsCarousel';
+import TopCafesCarousel from './TopCafesCarousel';
 
 const CategoryPostsGrid = async () => {
   try {
@@ -28,6 +30,7 @@ const CategoryPostsGrid = async () => {
 
     return (
       <div>
+              <TopRestaurantsCarousel />
         {categoryPosts.map(({ category, posts }) => {
           if (posts.length === 0) return null;
 
@@ -50,6 +53,9 @@ const CategoryPostsGrid = async () => {
                   Tümünü Gör
                 </Link>
               </div>
+
+                    <TopCafesCarousel />
+
 
               {/* Posts Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
