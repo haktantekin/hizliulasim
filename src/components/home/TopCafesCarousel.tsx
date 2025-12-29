@@ -76,7 +76,7 @@ const TopCafesCarousel = () => {
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt- mb-6">
       <div className="flex items-center justify-between mb-2">
   <h3 className="text-lg font-semibold text-brand-dark-blue">{district || city} Popüler 10 Kafe</h3>
       </div>

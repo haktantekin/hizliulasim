@@ -99,7 +99,8 @@ const CategoryPostsGrid = async () => {
     return (
       <div>
         {/* 1. grup kategoriler */}
-        {group1Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
+         {group3Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
+     
 
         {/* Araya restoranlar */}
         <TopRestaurantsCarousel />
@@ -111,7 +112,7 @@ const CategoryPostsGrid = async () => {
         <TopCafesCarousel />
 
         {/* 3. grup kategoriler */}
-        {group3Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
+          {group1Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
       </div>
     );
   } catch (error) {
