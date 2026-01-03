@@ -134,42 +134,7 @@ const CategoryPostsGrid = async () => {
          {group3Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
      
         {/* Ulaşım Rehberi alt kategorileri */}
-        {ulasimSubCategoryPosts.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold text-brand-soft-blue mb-8">
-              Ulaşım Rehberi
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {ulasimSubCategoryPosts.flatMap(({ category, posts }) =>
-                posts.slice(0, 6).map((post) => {
-                  // Find the main category for proper link building
-                  const postCategoryId = post.categoryIds?.[0];
-                  const postCategory = postCategoryId
-                    ? allCategories.find(c => c.id === postCategoryId)
-                    : null;
-
-                  const postMainCategory = postCategory?.parentId
-                    ? allCategories.find(c => c.id === postCategory.parentId)
-                    : null;
-
-                  const href = postMainCategory && postCategory && postCategory.parentId
-                    ? `/${postMainCategory.slug}/${postCategory.slug}/${post.slug}`
-                    : postCategory && !postCategory.parentId
-                    ? `/${postCategory.slug}/${post.slug}`
-                    : `/#/${post.slug}`;
-
-                  return (
-                    <PostListItem
-                      key={post.id}
-                      post={post}
-                      href={href}
-                    />
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
+        {ulasimSubCategoryPosts.length > 0 && ulasimSubCategoryPosts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
 
         {/* Araya restoranlar */}
         <TopRestaurantsCarousel />
