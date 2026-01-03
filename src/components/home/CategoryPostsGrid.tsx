@@ -39,6 +39,37 @@ const CategoryPostsGrid = async () => {
     const group2Posts = await fetchCategoryGroup(group2);
     const group3Posts = await fetchCategoryGroup(group3);
 
+    // Get sub-categories for group3
+    const group3SubCategories = allCategories.filter(cat => 
+      group3.some(mainCat => mainCat.id === cat.parentId)
+    );
+
+    // Fetch 6 posts from group3 sub-categories
+    let group3SubCategoryPosts: Array<{ category: typeof mainCategories[0]; posts: Awaited<ReturnType<typeof fetchPosts>> }> = [];
+    if (group3SubCategories.length > 0) {
+      try {
+        const subCategoryPostsData = await Promise.all(
+          group3SubCategories.map(async (subCat) => {
+            try {
+              const posts = await fetchPosts({
+                categoryId: subCat.id,
+                per_page: 6,
+                page: 1,
+                orderby: 'date',
+                order: 'desc',
+              });
+              return { category: subCat, posts };
+            } catch {
+              return { category: subCat, posts: [] };
+            }
+          })
+        );
+        group3SubCategoryPosts = subCategoryPostsData;
+      } catch (error) {
+        console.error('Error fetching group3 sub-categories posts:', error);
+      }
+    }
+
     const renderCategoryBlock = (category: (typeof mainCategories)[number], posts: Awaited<ReturnType<typeof fetchPosts>>) => {
       if (!posts || posts.length === 0) return null;
 
@@ -101,6 +132,43 @@ const CategoryPostsGrid = async () => {
         {/* 1. grup kategoriler */}
          {group3Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
      
+        {/* Group3 alt kategorileri */}
+        {group3SubCategoryPosts.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold text-brand-soft-blue mb-8">
+              Kategorileri Keşfet
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {group3SubCategoryPosts.flatMap(({ category, posts }) =>
+                posts.slice(0, 6).map((post) => {
+                  // Find the main category for proper link building
+                  const postCategoryId = post.categoryIds?.[0];
+                  const postCategory = postCategoryId
+                    ? allCategories.find(c => c.id === postCategoryId)
+                    : null;
+
+                  const postMainCategory = postCategory?.parentId
+                    ? allCategories.find(c => c.id === postCategory.parentId)
+                    : null;
+
+                  const href = postMainCategory && postCategory && postCategory.parentId
+                    ? `/${postMainCategory.slug}/${postCategory.slug}/${post.slug}`
+                    : postCategory && !postCategory.parentId
+                    ? `/${postCategory.slug}/${post.slug}`
+                    : `/#/${post.slug}`;
+
+                  return (
+                    <PostListItem
+                      key={post.id}
+                      post={post}
+                      href={href}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Araya restoranlar */}
         <TopRestaurantsCarousel />
