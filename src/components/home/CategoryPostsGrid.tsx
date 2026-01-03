@@ -39,17 +39,18 @@ const CategoryPostsGrid = async () => {
     const group2Posts = await fetchCategoryGroup(group2);
     const group3Posts = await fetchCategoryGroup(group3);
 
-    // Get sub-categories for group3
-    const group3SubCategories = allCategories.filter(cat => 
-      group3.some(mainCat => mainCat.id === cat.parentId)
-    );
+    // Get Ulaşım Rehberi category and its sub-categories
+    const ulasimRehberiCategory = allCategories.find(cat => cat.slug === 'ulasim-rehberi');
+    const ulasimSubCategories = ulasimRehberiCategory 
+      ? allCategories.filter(cat => cat.parentId === ulasimRehberiCategory.id)
+      : [];
 
-    // Fetch 6 posts from group3 sub-categories
-    let group3SubCategoryPosts: Array<{ category: typeof mainCategories[0]; posts: Awaited<ReturnType<typeof fetchPosts>> }> = [];
-    if (group3SubCategories.length > 0) {
+    // Fetch 6 posts from Ulaşım Rehberi sub-categories
+    let ulasimSubCategoryPosts: Array<{ category: typeof mainCategories[0]; posts: Awaited<ReturnType<typeof fetchPosts>> }> = [];
+    if (ulasimSubCategories.length > 0) {
       try {
         const subCategoryPostsData = await Promise.all(
-          group3SubCategories.map(async (subCat) => {
+          ulasimSubCategories.map(async (subCat) => {
             try {
               const posts = await fetchPosts({
                 categoryId: subCat.id,
@@ -64,9 +65,9 @@ const CategoryPostsGrid = async () => {
             }
           })
         );
-        group3SubCategoryPosts = subCategoryPostsData;
+        ulasimSubCategoryPosts = subCategoryPostsData;
       } catch (error) {
-        console.error('Error fetching group3 sub-categories posts:', error);
+        console.error('Error fetching Ulaşım Rehberi sub-categories posts:', error);
       }
     }
 
@@ -132,14 +133,14 @@ const CategoryPostsGrid = async () => {
         {/* 1. grup kategoriler */}
          {group3Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
      
-        {/* Group3 alt kategorileri */}
-        {group3SubCategoryPosts.length > 0 && (
+        {/* Ulaşım Rehberi alt kategorileri */}
+        {ulasimSubCategoryPosts.length > 0 && (
           <div className="mb-12">
             <h2 className="text-3xl font-bold text-brand-soft-blue mb-8">
-              Kategorileri Keşfet
+              Ulaşım Rehberi
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {group3SubCategoryPosts.flatMap(({ category, posts }) =>
+              {ulasimSubCategoryPosts.flatMap(({ category, posts }) =>
                 posts.slice(0, 6).map((post) => {
                   // Find the main category for proper link building
                   const postCategoryId = post.categoryIds?.[0];
