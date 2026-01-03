@@ -74,6 +74,16 @@ const CategoryPostsGrid = async () => {
     const renderCategoryBlock = (category: (typeof mainCategories)[number], posts: Awaited<ReturnType<typeof fetchPosts>>) => {
       if (!posts || posts.length === 0) return null;
 
+      // Check if category has a parent (sub-category)
+      const parentCategory = category.parentId 
+        ? allCategories.find(c => c.id === category.parentId)
+        : null;
+
+      // Build category link
+      const categoryHref = parentCategory 
+        ? `/${parentCategory.slug}/${category.slug}`
+        : `/${category.slug}`;
+
       return (
         <div key={category.id} className="mb-12">
           {/* Category Header */}
@@ -87,7 +97,7 @@ const CategoryPostsGrid = async () => {
               </p>
             </div>
             <Link
-              href={`/${category.slug}`}
+              href={categoryHref}
               className="px-4 py-2 bg-brand-soft-blue text-white rounded-lg hover:bg-brand-dark-blue transition-colors text-sm font-medium whitespace-nowrap"
             >
               Tümünü Gör
@@ -136,14 +146,8 @@ const CategoryPostsGrid = async () => {
         {/* Ulaşım Rehberi alt kategorileri */}
         {ulasimSubCategoryPosts.length > 0 && ulasimSubCategoryPosts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
 
-        {/* Araya restoranlar */}
-        <TopRestaurantsCarousel />
-
         {/* 2. grup kategoriler */}
         {group2Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
-
-        {/* Araya kafeler */}
-        <TopCafesCarousel />
 
         {/* 3. grup kategoriler */}
           {group1Posts.map(({ category, posts }) => renderCategoryBlock(category, posts))}
