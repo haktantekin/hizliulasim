@@ -19,6 +19,7 @@ export default function Footer() {
           </li>
         </ul>
       </nav>
+<div id="noblock"></div>
     </footer>
   );
 }
