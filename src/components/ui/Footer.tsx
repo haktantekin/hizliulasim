@@ -19,7 +19,8 @@ export default function Footer() {
           </li>
         </ul>
       </nav>
-<div id="noblock"></div>
+<div id="noblock" className='relative bottom-0'></div>
+
     </footer>
   );
 }
