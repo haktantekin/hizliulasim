@@ -135,7 +135,6 @@ export default function RootLayout({
           gtag('config', 'G-XJ33LRDG0G');
         `}
       </Script>
-      <Script src="https://noblock.haktantekin.com/noblock_loader.js" data-no-block strategy="afterInteractive"></Script>
       </head>
   <body className={outfit.className}>
         <ReduxProvider>

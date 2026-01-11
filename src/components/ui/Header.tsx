@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Sun, Cloud, CloudRain, Snowflake, Zap } from 'lucide-react';
+import { Sun, Cloud, CloudRain, Snowflake, Zap, Facebook } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setCity, setCityLoading } from '../../store/slices/citySlice';
 import LogoIcon from '../icons/LogoIcon';
@@ -125,15 +125,15 @@ const Header = () => {
           <span className='text-brand-orange'>HIZLI ULAŞIM</span>
         </Link>
         <div className="flex items-center gap-2 text-sm text-gray-700">
-          {city && <span className="font-medium">{city}</span>}
-          {weatherLoading ? (
-            <span className="text-gray-500">…</span>
-          ) : weather ? (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100">
-              {getWeatherIcon(weather.code)}
-              <span>{weather.temp}°</span>
-            </span>
-          ) : null}
+          <a 
+            href="https://www.facebook.com/hizliulasim/" 
+            target="_blank" 
+            rel="nofollow noopener noreferrer"
+            className="flex items-center gap-1 hover:text-brand-orange transition-colors"
+            aria-label="Facebook"
+          >
+            <Facebook size={20} />
+          </a>
         </div>
       </div>
     </div>

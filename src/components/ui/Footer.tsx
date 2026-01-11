@@ -1,3 +1,4 @@
+import { AccessibilityWidget } from '@haktantekin/noblock';
 import Link from 'next/link';
 
 export default function Footer() {
@@ -19,7 +20,27 @@ export default function Footer() {
           </li>
         </ul>
       </nav>
-<div id="noblock" className='relative bottom-0'></div>
+ <AccessibilityWidget
+        title="Accessibility"
+        resetText="Reset"
+        fontSize={1}
+        lineHeight={1.5}
+        letterSpacing={0}
+        color="#10366e"
+        fontSizeLabel="Font Size"
+        lineHeightLabel="Line Height"
+        letterSpacingLabel="Letter Spacing"
+        labelHighContrast="High Contrast"
+        labelInvertColors="Invert Colors"
+        labelGrayscale="Grayscale"
+        labelReadableFont="Readable Font"
+        labelUnderlineLinks="Underline Links"
+        labelLargeCursor="Large Cursor"
+        labelPauseAnimations="Pause Animations"
+        labelSimplifyPage="Simplify Page"
+        labelDyslexiaFriendly="Dyslexia Friendly"
+        labelHideImages="Hide Images"
+      />
 
     </footer>
   );
