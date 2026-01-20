@@ -49,7 +49,11 @@ export interface WPPost {
   sticky: boolean;
   template: string;
   format: string;
-  meta: Record<string, unknown>[];
+  meta: {
+    _hizliulasim_latitude?: string | string[];
+    _hizliulasim_longitude?: string | string[];
+    [key: string]: unknown;
+  };
   categories: number[];
   tags: number[];
   _embedded?: {
@@ -169,4 +173,8 @@ export interface BlogPost {
     height: number;
   };
   tags: number[];
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
 }

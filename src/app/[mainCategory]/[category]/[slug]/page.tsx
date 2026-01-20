@@ -3,6 +3,8 @@ import { fetchPostBySlug, fetchCategories, fetchPosts } from "@/services/wordpre
 import type { Metadata } from "next";
 import PostListItem from "@/components/blog/PostListItem";
 import Breadcrumb from "@/components/ui/Breadcrumb";
+import { Fragment } from "react";
+import PostLocationMap from "@/components/blog/PostLocationMap";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -58,9 +60,36 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
       <div className="text-xs text-gray-500 mb-4">
         <span>{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</span>
       </div>
-      <article className="post-detail">
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+
+      {/* İçerikte [map] shortcode'u varsa, haritayı oraya göm */}
+      <article className="post-detail space-y-6">
+        {post.location && post.content.includes('[map]') ? (
+          post.content.split('[map]').map((part, idx, arr) => (
+            <Fragment key={idx}>
+              {part && <div dangerouslySetInnerHTML={{ __html: part }} />}
+              {idx < arr.length - 1 && (
+                <PostLocationMap
+                  latitude={post.location.latitude}
+                  longitude={post.location.longitude}
+                  title={post.title}
+                />
+              )}
+            </Fragment>
+          ))
+        ) : (
+          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        )}
       </article>
+
+      {/* Shortcode kullanılmadıysa fallback olarak haritayı göster */}
+      {!post.content.includes('[map]') && post.location && (
+        <PostLocationMap
+          latitude={post.location.latitude}
+          longitude={post.location.longitude}
+          title={post.title}
+        />
+      )}
+
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"

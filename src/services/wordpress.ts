@@ -162,6 +162,26 @@ export const fetchPosts = async (params?: {
       // Get embedded featured media
       const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0] as WPMedia;
 
+      // Parse location from meta
+      let location: { latitude: number; longitude: number } | undefined = undefined;
+      
+      if (post.meta?._hizliulasim_latitude && post.meta?._hizliulasim_longitude) {
+        // WordPress meta can be string or array
+        let latStr = post.meta._hizliulasim_latitude;
+        let lngStr = post.meta._hizliulasim_longitude;
+        
+        // If array, get first element
+        if (Array.isArray(latStr)) latStr = latStr[0];
+        if (Array.isArray(lngStr)) lngStr = lngStr[0];
+        
+        const lat = parseFloat(latStr as string);
+        const lng = parseFloat(lngStr as string);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          location = { latitude: lat, longitude: lng };
+        }
+      }
+
       return {
         id: post.id,
         title: decodeHtml(stripHtml(post.title.rendered)),
@@ -184,6 +204,7 @@ export const fetchPosts = async (params?: {
           height: featuredMedia.media_details?.height || 600,
         } : undefined,
         tags: post.tags,
+        location,
       };
     });
   } catch (error) {
@@ -216,6 +237,26 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
     const authorData = post._embedded?.['author']?.[0] as WPAuthor;
     const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0] as WPMedia;
 
+    // Parse location from meta
+    let location: { latitude: number; longitude: number } | undefined = undefined;
+    
+    if (post.meta?._hizliulasim_latitude && post.meta?._hizliulasim_longitude) {
+      // WordPress meta can be string or array
+      let latStr = post.meta._hizliulasim_latitude;
+      let lngStr = post.meta._hizliulasim_longitude;
+      
+      // If array, get first element
+      if (Array.isArray(latStr)) latStr = latStr[0];
+      if (Array.isArray(lngStr)) lngStr = lngStr[0];
+      
+      const lat = parseFloat(latStr as string);
+      const lng = parseFloat(lngStr as string);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        location = { latitude: lat, longitude: lng };
+      }
+    }
+
     return {
       id: post.id,
       title: decodeHtml(stripHtml(post.title.rendered)),
@@ -238,6 +279,7 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
         height: featuredMedia.media_details?.height || 600,
       } : undefined,
       tags: post.tags,
+      location,
     };
   } catch (error) {
     console.error('Error fetching post by slug:', error);
