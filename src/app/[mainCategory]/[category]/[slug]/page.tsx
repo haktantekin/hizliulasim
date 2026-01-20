@@ -67,7 +67,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
           post.content.split('[map]').map((part, idx, arr) => (
             <Fragment key={idx}>
               {part && <div dangerouslySetInnerHTML={{ __html: part }} />}
-              {idx < arr.length - 1 && (
+              {idx < arr.length - 1 && post.location && (
                 <PostLocationMap
                   latitude={post.location.latitude}
                   longitude={post.location.longitude}
