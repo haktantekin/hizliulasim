@@ -4,16 +4,18 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { BlogPost } from "@/types/WordPress";
+import { getDummyImageForCategory } from "@/lib/getDummyImage";
 
 interface Props {
   posts: BlogPost[];
   categorySlug: string;
   mainCategorySlug?: string; // optional main category slug for proper URL routing
   title?: string;
+  categoryName?: string;
 }
 
 // Groups posts into pages of 3 and renders a simple scroll-snap carousel with prev/next controls
-export default function CategoryLatestSlider({ posts, categorySlug, mainCategorySlug, title = "En Yeni Yazılar" }: Props) {
+export default function CategoryLatestSlider({ posts, categorySlug, mainCategorySlug, title = "En Yeni Yazılar", categoryName = "" }: Props) {
   const pages = useMemo(() => {
     const chunks: BlogPost[][] = [];
     for (let i = 0; i < posts.length; i += 3) {
@@ -73,6 +75,12 @@ export default function CategoryLatestSlider({ posts, categorySlug, mainCategory
                   const href = mainCategorySlug 
                     ? `/${mainCategorySlug}/${categorySlug}/${post.slug}`
                     : `/${categorySlug}/${post.slug}`;
+                  
+                  // Resim yoksa kategori bazlı dummy resim kontrolü
+                  const dummyImage = !post.featuredImage && categorySlug
+                    ? getDummyImageForCategory(categorySlug, post.title)
+                    : null;
+                  
                   return (
                     <Link key={post.id} href={href} className="border border-brand-light-blue rounded-lg overflow-hidden hover:shadow-sm transition-shadow block">
                       <div className="h-36 bg-gray-100 relative">
@@ -80,6 +88,14 @@ export default function CategoryLatestSlider({ posts, categorySlug, mainCategory
                           <Image
                             src={post.featuredImage.url}
                             alt={post.featuredImage.alt}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
+                        ) : dummyImage ? (
+                          <Image
+                            src={dummyImage.url}
+                            alt={dummyImage.alt}
                             fill
                             className="object-cover"
                             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"

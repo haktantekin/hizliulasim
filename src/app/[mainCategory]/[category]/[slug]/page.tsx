@@ -5,6 +5,7 @@ import PostListItem from "@/components/blog/PostListItem";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { Fragment } from "react";
 import PostLocationMap from "@/components/blog/PostLocationMap";
+import { getDummyImageForCategory } from "@/lib/getDummyImage";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -52,11 +53,18 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
       <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
 
 
-      {post.featuredImage && (
+      {post.featuredImage ? (
         <div className="relative w-full h-64 md:h-96 mb-6">
           <Image src={post.featuredImage.url} alt={post.featuredImage.alt} fill className="object-cover rounded-lg" priority />
         </div>
-      )}
+      ) : (() => {
+        const dummyImage = getDummyImageForCategory(mainCat?.slug, post.title);
+        return dummyImage ? (
+          <div className="relative w-full h-64 md:h-96 mb-6">
+            <Image src={dummyImage.url} alt={dummyImage.alt} fill className="object-cover rounded-lg" priority />
+          </div>
+        ) : null;
+      })()}
       <div className="text-xs text-gray-500 mb-4">
         <span>{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</span>
       </div>
@@ -163,6 +171,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
                 post={rp}
                 href={`/${mainCategory}/${(cat?.slug || category)}/${rp.slug}`}
                 className="py-3"
+                categorySlug={cat?.slug}
+                categoryName={cat?.name}
               />
             ))}
           </div>

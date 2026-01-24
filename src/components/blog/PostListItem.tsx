@@ -3,14 +3,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { BlogPost } from "@/types/WordPress";
+import { getDummyImageForCategory } from "@/lib/getDummyImage";
 
 interface Props {
   post: BlogPost;
   href: string;
   className?: string;
+  categorySlug?: string;
+  categoryName?: string;
 }
 
-export default function PostListItem({ post, href, className = "" }: Props) {
+export default function PostListItem({ post, href, className = "", categorySlug, categoryName }: Props) {
+  // Resim yoksa kategori bazlı dummy resim kontrolü
+  const dummyImage = !post.featuredImage && categorySlug
+    ? getDummyImageForCategory(categorySlug, post.title)
+    : null;
   return (
     <Link
       href={href}
@@ -21,6 +28,14 @@ export default function PostListItem({ post, href, className = "" }: Props) {
           <Image
             src={post.featuredImage.url}
             alt={post.featuredImage.alt}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 112px, 128px"
+          />
+        ) : dummyImage ? (
+          <Image
+            src={dummyImage.url}
+            alt={dummyImage.alt}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 112px, 128px"

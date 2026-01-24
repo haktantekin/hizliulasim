@@ -213,6 +213,8 @@ export default function MainCategoryPage() {
                     key={post.id} 
                     post={post} 
                     href={href}
+                    categorySlug={postCategory?.slug}
+                    categoryName={postCategory?.name}
                   />
                 );
               })}
@@ -250,6 +252,8 @@ export default function MainCategoryPage() {
                   key={post.id} 
                   post={post} 
                   href={href}
+                  categorySlug={postCategory?.slug}
+                  categoryName={postCategory?.name}
                 />
               );
             })}

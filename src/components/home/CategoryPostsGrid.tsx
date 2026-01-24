@@ -130,6 +130,8 @@ const CategoryPostsGrid = async () => {
                   key={post.id}
                   post={post}
                   href={href}
+                  categorySlug={postCategory?.slug}
+                  categoryName={postCategory?.name}
                 />
               );
             })}

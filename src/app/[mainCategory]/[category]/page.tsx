@@ -11,6 +11,7 @@ import CategoryScroller from '@/components/blog/CategoryScroller';
 import { Search as SearchIcon } from 'lucide-react';
 import { fetchPosts } from '@/services/wordpress';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import { getDummyImageForCategory } from '@/lib/getDummyImage';
 
 export default function SubCategoryPage() {
   const params = useParams<{ mainCategory: string; category: string }>();
@@ -149,7 +150,7 @@ export default function SubCategoryPage() {
 
         <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
 
-        {post.featuredImage && (
+        {post.featuredImage ? (
           <div className="relative w-full h-64 md:h-96 mb-6">
             <Image
               src={post.featuredImage.url}
@@ -159,7 +160,20 @@ export default function SubCategoryPage() {
               priority
             />
           </div>
-        )}
+        ) : (() => {
+          const dummyImage = getDummyImageForCategory(postMainCategory?.slug, post.title);
+          return dummyImage ? (
+            <div className="relative w-full h-64 md:h-96 mb-6">
+              <Image
+                src={dummyImage.url}
+                alt={dummyImage.alt}
+                fill
+                className="object-cover rounded-lg"
+                priority
+              />
+            </div>
+          ) : null;
+        })()}
 
         <div className="text-xs text-gray-500 mb-4">
           <span>{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</span>
@@ -191,6 +205,8 @@ export default function SubCategoryPage() {
                     post={rp}
                     href={href}
                     className="py-3"
+                    categorySlug={rpCategory?.slug}
+                    categoryName={rpCategory?.name}
                   />
                 );
               })}
@@ -284,7 +300,9 @@ export default function SubCategoryPage() {
                   <PostListItem 
                     key={post.id} 
                     post={post} 
-                    href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`} 
+                    href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`}
+                    categorySlug={category?.slug}
+                    categoryName={category?.name}
                   />
                 );
               })}
@@ -312,7 +330,9 @@ export default function SubCategoryPage() {
                 <PostListItem 
                   key={post.id} 
                   post={post} 
-                  href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`} 
+                  href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`}
+                  categorySlug={category?.slug}
+                  categoryName={category?.name}
                 />
               );
             })}
