@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { act, useMemo } from "react";
+import { useMemo } from "react";
 import type { BlogCategory } from "@/types/WordPress";
+
+const EMPTY_CATEGORIES: BlogCategory[] = [];
 
 interface CategoryScrollerProps {
   categories: BlogCategory[];
-  allCategories?: BlogCategory[]; // all categories for finding parent slugs
-  activeSlug?: string; // highlight current category if provided
+  allCategories?: BlogCategory[];
+  activeSlug?: string;
   className?: string;
   showCounts?: boolean;
-  mainOnly?: boolean; // if true, only show categories without parent (main categories)
+  mainOnly?: boolean;
 }
 
-export default function CategoryScroller({ categories, allCategories = [], activeSlug, className = "", showCounts = false, mainOnly = false }: CategoryScrollerProps) {
+export default function CategoryScroller({ categories, allCategories = EMPTY_CATEGORIES, activeSlug, className = "", showCounts = false, mainOnly = false }: CategoryScrollerProps) {
   const sorted = useMemo(
     () => {
       const filtered = mainOnly 

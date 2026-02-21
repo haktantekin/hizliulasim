@@ -1,49 +1,31 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Search, ChevronDown } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setDistrict } from '../../store/slices/locationSlice';
 
 const SearchBar = () => {
   const [q, setQ] = useState('');
-  const [districts, setDistricts] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const selectedDistrict = useAppSelector((s) => s.location.district);
   const city = useAppSelector((s) => s.city.name);
   const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
+  const { data: districts = [], isLoading: loading, error } = useQuery<string[], Error>({
+    queryKey: ['districts', city],
+    queryFn: async () => {
       const effectiveCity = (city && city.trim()) || 'İstanbul';
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/maps/districts?city=${encodeURIComponent(effectiveCity)}&country=TR`, { cache: 'no-store' });
-        const data = await res.json();
-        if (!mounted) return;
-        if (Array.isArray(data?.districts)) {
-          setDistricts(data.districts);
-        } else {
-          setDistricts([]);
-        }
-        if (!res.ok) {
-          setError(data?.error || 'İlçeler yüklenemedi');
-        }
-      } catch {
-        if (mounted) {
-          setDistricts([]);
-          setError('İlçeler yüklenemedi');
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    load();
-    return () => { mounted = false; };
-  }, [city]);
+      const res = await fetch(`/api/maps/districts?city=${encodeURIComponent(effectiveCity)}&country=TR`, { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'İlçeler yüklenemedi');
+      if (Array.isArray(data?.districts)) return data.districts;
+      return [];
+    },
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
 
   const doSearch = useCallback(() => {
     const query = q.trim();
@@ -102,7 +84,7 @@ const SearchBar = () => {
           aria-hidden
         />
         {!loading && error && (
-          <p className="mt-1 text-xs text-red-600">{error}</p>
+          <p className="mt-1 text-xs text-red-600">{error.message}</p>
         )}
       </div>
     </div>

@@ -1,39 +1,32 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 type Step = { instruction: string; distance: string; duration: string; maneuver?: string };
 
 export default function DirectionsSteps({ origin, destination, mode, open }: { origin: string; destination: string; mode: 'driving' | 'walking' | 'bicycling' | 'transit'; open: boolean }) {
-  const [loading, setLoading] = useState(false);
-  const [steps, setSteps] = useState<Step[]>([]);
-  const [meta, setMeta] = useState<{ distance?: string; duration?: string; status?: string; error_message?: string } | null>(null);
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['directions', origin, destination, mode],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        origin: origin || '',
+        destination,
+        mode,
+      });
+      const res = await fetch(`/api/maps/directions?${params.toString()}`);
+      return res.json();
+    },
+    enabled: open && !!destination && !!origin,
+  });
 
-  useEffect(() => {
-    const fetchSteps = async () => {
-      if (!open) { setSteps([]); setMeta(null); return; }
-      if (!destination) { setSteps([]); setMeta(null); return; }
-      if (!origin) { setSteps([]); setMeta({ status: 'MISSING_ORIGIN' }); return; }
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          origin: origin || '',
-          destination,
-          mode,
-        });
-        const res = await fetch(`/api/maps/directions?${params.toString()}`);
-        const data = await res.json();
-        setSteps(data.steps || []);
-        setMeta({ distance: data.distance, duration: data.duration, status: data.status, error_message: data.error_message });
-      } catch {
-        setSteps([]);
-        setMeta(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSteps();
-  }, [origin, destination, mode, open]);
+  const steps: Step[] = data?.steps || [];
+  const meta = !open || !destination
+    ? null
+    : !origin
+    ? { status: 'MISSING_ORIGIN' as const }
+    : data
+    ? { distance: data.distance, duration: data.duration, status: data.status, error_message: data.error_message }
+    : null;
 
   if (!open || !destination) return null;
 
@@ -62,7 +55,7 @@ export default function DirectionsSteps({ origin, destination, mode, open }: { o
           </li>
         )}
         {!loading && steps.map((s, i) => (
-          <li key={i} className="px-4 py-3 text-sm">
+          <li key={`${s.instruction}-${s.distance}`} className="px-4 py-3 text-sm">
             <div className="font-medium text-gray-900">{i + 1}. {s.instruction}</div>
             <div className="text-gray-500 text-xs mt-0.5">{s.distance}{s.duration ? ` • ${s.duration}` : ''}</div>
           </li>

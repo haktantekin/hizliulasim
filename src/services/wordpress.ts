@@ -23,7 +23,7 @@ type WPPage = {
   };
 };
 
-export type PageSEO = {
+type PageSEO = {
   title?: string;
   description?: string;
   canonical?: string;
@@ -323,6 +323,6 @@ export const fetchCategoryBySlug = async (slug: string): Promise<BlogCategory | 
 };
 
 // Convenience: recent posts for a category
-export const fetchRecentPostsByCategory = async (categoryId: number, limit = 5): Promise<BlogPost[]> => {
+const fetchRecentPostsByCategory = async (categoryId: number, limit = 5): Promise<BlogPost[]> => {
   return fetchPosts({ categoryId, per_page: limit });
 };

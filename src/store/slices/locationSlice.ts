@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export interface LocationState {
+interface LocationState {
   city: string;
   district: string;
   coordinates: {
@@ -8,7 +8,7 @@ export interface LocationState {
     lon: number;
   } | null;
   isLoading: boolean;
-  place: string; // Google Maps için "İlçe, İl" formatı
+  place: string;
 }
 
 const initialState: LocationState = {
@@ -57,6 +57,6 @@ export const locationSlice = createSlice({
   },
 });
 
-export const { setLocation, setCoordinates, setDistrict, setLoading, resetToDefault } = locationSlice.actions;
+export const { setDistrict } = locationSlice.actions;
 
 export default locationSlice.reducer;

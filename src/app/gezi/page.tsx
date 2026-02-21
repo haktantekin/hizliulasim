@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer } from 'react';
 import Image from 'next/image';
 import { MapPin, Star, ExternalLink, Loader2 } from 'lucide-react';
 
@@ -28,6 +28,41 @@ interface AttractionsResponse {
   totalDistance?: string;
 }
 
+interface GeziState {
+  selectedDistrict: string;
+  loading: boolean;
+  data: AttractionsResponse | null;
+  error: string | null;
+  viewMode: 'grid' | 'route';
+}
+
+type GeziAction =
+  | { type: 'SET_DISTRICT'; value: string }
+  | { type: 'SET_VIEW_MODE'; value: 'grid' | 'route' }
+  | { type: 'SEARCH_START' }
+  | { type: 'SEARCH_SUCCESS'; data: AttractionsResponse }
+  | { type: 'SEARCH_FAIL'; error: string }
+  | { type: 'SET_ERROR'; error: string };
+
+function geziReducer(state: GeziState, action: GeziAction): GeziState {
+  switch (action.type) {
+    case 'SET_DISTRICT':
+      return { ...state, selectedDistrict: action.value };
+    case 'SET_VIEW_MODE':
+      return { ...state, viewMode: action.value };
+    case 'SEARCH_START':
+      return { ...state, loading: true, error: null, data: null };
+    case 'SEARCH_SUCCESS':
+      return { ...state, loading: false, data: action.data };
+    case 'SEARCH_FAIL':
+      return { ...state, loading: false, error: action.error };
+    case 'SET_ERROR':
+      return { ...state, error: action.error };
+    default:
+      return state;
+  }
+}
+
 // İstanbul districts list
 const istanbulDistricts = [
   'Adalar', 'Arnavutköy', 'Ataşehir', 'Avcılar', 'Bağcılar', 'Bahçelievler',
@@ -40,25 +75,25 @@ const istanbulDistricts = [
 ];
 
 export default function GeziPage() {
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<AttractionsResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'route'>('route'); // Default to route view
+  const [state, dispatch] = useReducer(geziReducer, {
+    selectedDistrict: '',
+    loading: false,
+    data: null,
+    error: null,
+    viewMode: 'route',
+  });
 
   const handleSearch = async () => {
-    if (!selectedDistrict) {
-      setError('Lütfen bir ilçe seçin');
+    if (!state.selectedDistrict) {
+      dispatch({ type: 'SET_ERROR', error: 'Lütfen bir ilçe seçin' });
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setData(null);
+    dispatch({ type: 'SEARCH_START' });
 
     try {
       const res = await fetch(
-        `/api/places/attractions?district=${encodeURIComponent(selectedDistrict)}&city=İstanbul`
+        `/api/places/attractions?district=${encodeURIComponent(state.selectedDistrict)}&city=İstanbul`
       );
       
       if (!res.ok) {
@@ -66,11 +101,9 @@ export default function GeziPage() {
       }
 
       const result = await res.json();
-      setData(result);
+      dispatch({ type: 'SEARCH_SUCCESS', data: result });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu');
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'SEARCH_FAIL', error: err instanceof Error ? err.message : 'Bir hata oluştu' });
     }
   };
 
@@ -88,13 +121,14 @@ export default function GeziPage() {
 
       {/* District Selector */}
       <div className="bg-white rounded-xl shadow-sm mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="district-select" className="block text-sm font-medium text-gray-700 mb-2">
           İlçe Seçin
         </label>
         <div className="flex gap-3">
           <select
-            value={selectedDistrict}
-            onChange={(e) => setSelectedDistrict(e.target.value)}
+            id="district-select"
+            value={state.selectedDistrict}
+            onChange={(e) => dispatch({ type: 'SET_DISTRICT', value: e.target.value })}
             className="flex-1 px-4 py-3 border border-brand-light-blue rounded-lg focus:ring-2 focus:ring-brand-soft-blue focus:border-transparent outline-none"
           >
             <option value="">İlçe seçin...</option>
@@ -106,10 +140,10 @@ export default function GeziPage() {
           </select>
           <button
             onClick={handleSearch}
-            disabled={loading || !selectedDistrict}
+            disabled={state.loading || !state.selectedDistrict}
             className="px-6 py-3 bg-brand-soft-blue text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {loading ? (
+            {state.loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Aranıyor...
@@ -122,23 +156,23 @@ export default function GeziPage() {
       </div>
 
       {/* Error Message */}
-      {error && (
+      {state.error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-8">
-          {error}
+          {state.error}
         </div>
       )}
 
       {/* Results */}
-      {data && (
+      {state.data && (
         <div>
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {data.district} - Gezilecek Yerler
+              {state.data.district} - Gezilecek Yerler
             </h2>
             <p className="text-gray-600 mt-1">
-              {data.places.length} sonuç bulundu
-              {data.route && data.totalDistance && (
-                <span className="ml-2">• Toplam mesafe: {data.totalDistance} km</span>
+              {state.data.places.length} sonuç bulundu
+              {state.data.route && state.data.totalDistance && (
+                <span className="ml-2">• Toplam mesafe: {state.data.totalDistance} km</span>
               )}
             </p>
           </div>
@@ -147,9 +181,9 @@ export default function GeziPage() {
           <div className="flex justify-center mb-6">
             <div className="inline-flex gap-2 bg-gray-100 p-1 rounded-lg">
               <button
-                onClick={() => setViewMode('route')}
+                onClick={() => dispatch({ type: 'SET_VIEW_MODE', value: 'route' })}
                 className={`px-6 py-2.5 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'route'
+                  state.viewMode === 'route'
                     ? 'bg-white text-brand-soft-blue shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
@@ -157,9 +191,9 @@ export default function GeziPage() {
                 🗺️ Rota Önerisi
               </button>
               <button
-                onClick={() => setViewMode('grid')}
+                onClick={() => dispatch({ type: 'SET_VIEW_MODE', value: 'grid' })}
                 className={`px-6 py-2.5 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'grid'
+                  state.viewMode === 'grid'
                     ? 'bg-white text-brand-soft-blue shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
@@ -169,13 +203,13 @@ export default function GeziPage() {
             </div>
           </div>
 
-          {data.places.length === 0 ? (
+          {state.data.places.length === 0 ? (
             <div className="bg-gray-50 rounded-lg p-12 text-center">
               <p className="text-gray-600">
                 Bu bölgede kayıtlı gezilecek yer bulunamadı.
               </p>
             </div>
-          ) : viewMode === 'route' && data.route ? (
+          ) : state.viewMode === 'route' && state.data.route ? (
             /* Timeline Route View */
             <div className="max-w-4xl mx-auto">
               <div className="bg-brand-soft-blue/10 border border-brand-soft-blue/30 rounded-lg p-4 mb-6">
@@ -188,10 +222,10 @@ export default function GeziPage() {
               </div>
 
               <div className="space-y-6">
-                {data.route.map((place, index) => (
+                {state.data.route.map((place, index) => (
                   <div key={place.id} className="relative">
                     {/* Timeline Line */}
-                    {index < data.route!.length - 1 && (
+                    {index < state.data!.route!.length - 1 && (
                       <div className="absolute left-6 top-24 bottom-0 w-0.5 bg-gradient-to-b from-brand-soft-blue to-brand-soft-blue/30 -mb-6" />
                     )}
 
@@ -215,6 +249,7 @@ export default function GeziPage() {
                                 fill
                                 className="object-cover"
                                 unoptimized
+                                sizes="(max-width: 768px) 100vw, 192px"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -257,9 +292,9 @@ export default function GeziPage() {
                             {/* Types */}
                             {place.types && place.types.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mb-3">
-                                {place.types.slice(0, 4).map((type, i) => (
+                                {place.types.slice(0, 4).map((type) => (
                                   <span
-                                    key={i}
+                                    key={type}
                                     className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
                                   >
                                     {type.replace(/_/g, ' ')}
@@ -288,7 +323,7 @@ export default function GeziPage() {
           ) : (
             /* Grid View */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {data.places.map((place) => (
+              {state.data.places.map((place) => (
                 <div
                   key={place.id}
                   className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
@@ -302,6 +337,7 @@ export default function GeziPage() {
                         fill
                         className="object-cover"
                         unoptimized
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -341,9 +377,9 @@ export default function GeziPage() {
                     {/* Types */}
                     {place.types && place.types.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-3">
-                        {place.types.slice(0, 3).map((type, i) => (
+                        {place.types.slice(0, 3).map((type) => (
                           <span
-                            key={i}
+                            key={type}
                             className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
                           >
                             {type.replace(/_/g, ' ')}

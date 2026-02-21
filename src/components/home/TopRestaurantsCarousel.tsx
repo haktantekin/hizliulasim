@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-// icons handled inside PlaceCarouselCard
+import { useQuery } from '@tanstack/react-query';
 import { useAppSelector } from '../../store/hooks';
 import PlaceCarouselCard from './PlaceCarouselCard';
 
@@ -14,51 +13,39 @@ interface RestaurantItem {
   types?: string[];
 }
 
+function getLocalStorageCache(key: string): RestaurantItem[] | undefined {
+  try {
+    const cached = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+    if (cached) {
+      const parsed = JSON.parse(cached) as { ts: number; items: RestaurantItem[] };
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - parsed.ts < sevenDays) return parsed.items || [];
+    }
+  } catch { /* ignore */ }
+  return undefined;
+}
+
 const TopRestaurantsCarousel = () => {
   const city = useAppSelector((s) => s.city.name);
   const district = useAppSelector((s) => s.location.district);
-  const [items, setItems] = useState<RestaurantItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
+  const { data: items = [], isLoading: loading } = useQuery<RestaurantItem[]>({
+    queryKey: ['top-restaurants', city, district],
+    queryFn: async () => {
+      const qs = new URLSearchParams({ city });
+      if (district) qs.set('district', district);
+      const res = await fetch(`/api/places/top-restaurants?${qs.toString()}`, { cache: 'no-store' });
+      const data = await res.json();
+      const list = Array.isArray(data.items) ? data.items : [];
       try {
-        setLoading(true);
-  const key = `top-restaurants:${city}:${district || 'ALL'}`;
-        const cached = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached) as { ts: number; items: RestaurantItem[] };
-            const sevenDays = 7 * 24 * 60 * 60 * 1000;
-            if (Date.now() - parsed.ts < sevenDays) {
-              setItems(parsed.items || []);
-              setLoading(false);
-              return;
-            }
-          } catch {}
-        }
-
-  const qs = new URLSearchParams({ city });
-  if (district) qs.set('district', district);
-        const res = await fetch(`/api/places/top-restaurants?${qs.toString()}`, { cache: 'no-store' });
-        const data = await res.json();
-        if (!mounted) return;
-        const list = Array.isArray(data.items) ? data.items : [];
-        setItems(list);
-        try {
-          localStorage.setItem(key, JSON.stringify({ ts: Date.now(), items: list }));
-        } catch {}
-      } catch {
-        if (!mounted) return;
-        setItems([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    load();
-    return () => { mounted = false; };
-  }, [city, district]);
+        const key = `top-restaurants:${city}:${district || 'ALL'}`;
+        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), items: list }));
+      } catch { /* ignore */ }
+      return list;
+    },
+    initialData: () => getLocalStorageCache(`top-restaurants:${city}:${district || 'ALL'}`),
+    staleTime: 1000 * 60 * 10,
+  });
 
   const openDirections = (name?: string) => {
     if (!name) return;

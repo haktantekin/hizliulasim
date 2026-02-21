@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Home, Search, Map, FileText, Compass } from 'lucide-react';
+import { AccessibilityWidget } from '@haktantekin/noblock';
 
 const BottomBar = () => {
   const pathname = usePathname();
@@ -59,6 +60,7 @@ const BottomBar = () => {
             </Link>
           );
         })}
+       
       </nav>
     </div>
   );

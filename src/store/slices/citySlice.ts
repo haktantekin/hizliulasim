@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export interface CityState {
+interface CityState {
   name: string;
   isLoading: boolean;
 }
@@ -28,6 +28,6 @@ export const citySlice = createSlice({
   },
 });
 
-export const { setCity, setCityLoading, resetCity } = citySlice.actions;
+export const { setCity, setCityLoading } = citySlice.actions;
 
 export default citySlice.reducer;

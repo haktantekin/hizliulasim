@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Sun, Cloud, CloudRain, Snowflake, Zap, Facebook } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setCity, setCityLoading } from '../../store/slices/citySlice';
@@ -11,102 +12,63 @@ const Header = () => {
   const dispatch = useAppDispatch();
   const { name: city, isLoading } = useAppSelector((s) => s.city);
 
-  const [weatherLoading, setWeatherLoading] = useState<boolean>(false);
-  const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const getCityFromCoords = async (lat: number, lon: number) => {
+  const { data: detectedCity } = useQuery<string>({
+    queryKey: ['detected-city'],
+    queryFn: async () => {
       try {
-        // Use our API proxy to avoid CORS issues
-        const res = await fetch(`/api/geocode/reverse?lat=${lat}&lon=${lon}`);
+        if ('geolocation' in navigator) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 5000,
+              maximumAge: 300000,
+            });
+          });
+          const res = await fetch(`/api/geocode/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
+          const data = await res.json();
+          return data.city || 'İstanbul';
+        }
+      } catch {
+        // Browser geolocation failed, fallback to IP
+      }
+      try {
+        const res = await fetch('/api/ip-location', { cache: 'no-store' });
         const data = await res.json();
         return data.city || 'İstanbul';
       } catch {
         return 'İstanbul';
       }
-    };
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: 1,
+  });
 
-    const fetchCity = async () => {
-      try {
-        dispatch(setCityLoading(true));
-
-        // Try browser geolocation first (client-side, real user location)
-        if ('geolocation' in navigator) {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              timeout: 5000,
-              maximumAge: 300000, // Cache for 5 minutes
-            });
-          });
-
-          if (!mounted) return;
-          const city = await getCityFromCoords(position.coords.latitude, position.coords.longitude);
-          dispatch(setCity(city));
-          console.log('Location from browser geolocation:', city);
-          return;
-        }
-      } catch {
-        console.log('Browser geolocation failed or denied, falling back to IP location');
-      }
-
-      // Fallback to IP-based location
-      try {
-        const res = await fetch('/api/ip-location', { cache: 'no-store' });
-        const data = await res.json();
-        if (!mounted) return;
-        dispatch(setCity(data.city || 'İstanbul'));
-        console.log('Location from IP:', data.city);
-      } catch (err) {
-        console.error('Failed to fetch city:', err);
-        if (!mounted) return;
-        dispatch(setCity('İstanbul'));
-      } finally {
-        if (mounted) dispatch(setCityLoading(false));
-      }
-    };
-
-    fetchCity();
-    return () => {
-      mounted = false;
-    };
-  }, [dispatch]);
-
-  // Weather: Open-Meteo (geocode city -> get current weather)
   useEffect(() => {
-    let mounted = true;
-    const fetchWeather = async () => {
-      if (!city || isLoading) return;
-      try {
-        setWeatherLoading(true);
-        // 1) Geocode city to coordinates
-        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=tr&format=json`);
-        const geo = await geoRes.json();
-        const place = geo?.results?.[0];
-        if (!place) {
-          if (mounted) setWeather(null);
-          return;
-        }
-        const { latitude, longitude } = place;
-        // 2) Current weather
-        const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto`);
-        const w = await wRes.json();
-        const cw = w?.current_weather;
-        if (mounted && cw && typeof cw.temperature === 'number') {
-          setWeather({ temp: Math.round(cw.temperature), code: Number(cw.weathercode) });
-        }
-      } catch {
-        if (mounted) setWeather(null);
-      } finally {
-        if (mounted) setWeatherLoading(false);
+    if (detectedCity) {
+      dispatch(setCity(detectedCity));
+      dispatch(setCityLoading(false));
+    }
+  }, [detectedCity, dispatch]);
+
+  const { data: weather, isLoading: weatherLoading } = useQuery<{ temp: number; code: number } | null>({
+    queryKey: ['weather', city],
+    queryFn: async () => {
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=tr&format=json`);
+      const geo = await geoRes.json();
+      const place = geo?.results?.[0];
+      if (!place) return null;
+      const { latitude, longitude } = place;
+      const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto`);
+      const w = await wRes.json();
+      const cw = w?.current_weather;
+      if (cw && typeof cw.temperature === 'number') {
+        return { temp: Math.round(cw.temperature), code: Number(cw.weathercode) };
       }
-    };
-    fetchWeather();
-    return () => {
-      mounted = false;
-    };
-  }, [city, isLoading]);
+      return null;
+    },
+    enabled: !!city && !isLoading,
+    staleTime: 1000 * 60 * 10,
+  });
 
   const getWeatherIcon = (code: number) => {
     // Very rough mapping for demo purposes

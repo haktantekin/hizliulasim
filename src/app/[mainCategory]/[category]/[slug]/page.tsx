@@ -9,8 +9,10 @@ import { getDummyImageForCategory } from "@/lib/getDummyImage";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
-  const post = await fetchPostBySlug(slug);
-  const categories = await fetchCategories();
+  const [post, categories] = await Promise.all([
+    fetchPostBySlug(slug),
+    fetchCategories(),
+  ]);
   const cat = categories.find((c) => c.slug === category) || null;
   const mainCat = categories.find((c) => c.slug === mainCategory) || null;
   
@@ -55,13 +57,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
 
       {post.featuredImage ? (
         <div className="relative w-full h-64 md:h-96 mb-6">
-          <Image src={post.featuredImage.url} alt={post.featuredImage.alt} fill className="object-cover rounded-lg" priority />
+          <Image src={post.featuredImage.url} alt={post.featuredImage.alt} fill className="object-cover rounded-lg" priority sizes="100vw" />
         </div>
       ) : (() => {
         const dummyImage = getDummyImageForCategory(mainCat?.slug, post.title);
         return dummyImage ? (
           <div className="relative w-full h-64 md:h-96 mb-6">
-            <Image src={dummyImage.url} alt={dummyImage.alt} fill className="object-cover rounded-lg" priority />
+            <Image src={dummyImage.url} alt={dummyImage.alt} fill className="object-cover rounded-lg" priority sizes="100vw" />
           </div>
         ) : null;
       })()}
@@ -73,7 +75,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
       <article className="post-detail space-y-6">
         {post.location && post.content.includes('[map]') ? (
           post.content.split('[map]').map((part, idx, arr) => (
-            <Fragment key={idx}>
+            <Fragment key={`content-part-${idx}`}>
               {part && <div dangerouslySetInnerHTML={{ __html: part }} />}
               {idx < arr.length - 1 && post.location && (
                 <PostLocationMap

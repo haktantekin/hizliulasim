@@ -35,9 +35,11 @@ const CategoryPostsGrid = async () => {
     }
 
     // 3 farklı sorgu
-    const group1Posts = await fetchCategoryGroup(group1);
-    const group2Posts = await fetchCategoryGroup(group2);
-    const group3Posts = await fetchCategoryGroup(group3);
+    const [group1Posts, group2Posts, group3Posts] = await Promise.all([
+      fetchCategoryGroup(group1),
+      fetchCategoryGroup(group2),
+      fetchCategoryGroup(group3),
+    ]);
 
     // Get Ulaşım Rehberi category and its sub-categories
     const ulasimRehberiCategory = allCategories.find(cat => cat.slug === 'ulasim-rehberi');

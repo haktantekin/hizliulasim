@@ -1,10 +1,31 @@
-import { fetchPosts } from '@/services/wordpress';
+import { fetchPosts, fetchCategories } from '@/services/wordpress';
 
 export async function GET() {
   const baseUrl = 'https://hizliulasim.com';
   
   try {
-    const posts = await fetchPosts({ per_page: 50, orderby: 'date', order: 'desc' });
+    const [posts, categories] = await Promise.all([
+      fetchPosts({ per_page: 50, orderby: 'date', order: 'desc' }),
+      fetchCategories(),
+    ]);
+
+    // Build a category lookup map: id → { slug, parentId }
+    const catMap = new Map(categories.map(c => [c.id, c]));
+
+    /** Resolve a post's canonical URL using its category hierarchy */
+    function buildPostUrl(post: typeof posts[number]): string {
+      const catId = post.categoryIds?.[0];
+      if (!catId) return `${baseUrl}/${post.slug}`;
+
+      const cat = catMap.get(catId);
+      if (!cat) return `${baseUrl}/${post.slug}`;
+
+      if (cat.parentId) {
+        const parent = catMap.get(cat.parentId);
+        if (parent) return `${baseUrl}/${parent.slug}/${cat.slug}/${post.slug}`;
+      }
+      return `${baseUrl}/${cat.slug}/${post.slug}`;
+    }
 
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" 
@@ -19,7 +40,7 @@ export async function GET() {
     <atom:link href="${baseUrl}/feed.xml" rel="self" type="application/rss+xml"/>
     ${posts.map(post => {
       const pubDate = new Date(post.publishedAt).toUTCString();
-      const link = `${baseUrl}/${post.slug}`;
+      const link = buildPostUrl(post);
       
       return `
     <item>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 type Prediction = { description: string };
 
@@ -15,31 +16,40 @@ export default function AutocompleteInput({
   onChange: (v: string) => void;
   onSelect: (v: string) => void;
 }) {
-  const [suggestions, setSuggestions] = useState<Prediction[]>([]);
   const [open, setOpen] = useState(false);
+  const [debouncedValue, setDebouncedValue] = useState('');
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
     if (!value) {
-      setSuggestions([]);
+      setDebouncedValue('');
       return;
     }
     if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/maps/autocomplete?input=${encodeURIComponent(value)}`);
-        const data = await res.json();
-        setSuggestions(data.predictions || []);
-        setOpen(true);
-      } catch {
-        setSuggestions([]);
-        setOpen(false);
-      }
+    timer.current = window.setTimeout(() => {
+      setDebouncedValue(value);
     }, 200);
     return () => {
       if (timer.current) window.clearTimeout(timer.current);
     };
   }, [value]);
+
+  const { data: suggestions = [] } = useQuery<Prediction[]>({
+    queryKey: ['autocomplete', debouncedValue],
+    queryFn: async () => {
+      const res = await fetch(`/api/maps/autocomplete?input=${encodeURIComponent(debouncedValue)}`);
+      const data = await res.json();
+      return data.predictions || [];
+    },
+    enabled: !!debouncedValue,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useEffect(() => {
+    if (suggestions.length > 0 && debouncedValue) {
+      setOpen(true);
+    }
+  }, [suggestions, debouncedValue]);
 
   return (
     <div className="relative">

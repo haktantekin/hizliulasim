@@ -43,6 +43,14 @@ export const metadata: Metadata = {
     siteName: 'Hızlı Ulaşım',
     locale: 'tr_TR',
     type: 'website',
+    images: [
+      {
+        url: '/android-chrome-512x512.png',
+        width: 512,
+        height: 512,
+        alt: 'Hızlı Ulaşım',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -78,8 +86,6 @@ export default function RootLayout({
     <html lang="tr">
       <head>
         {/* Preconnect to external domains */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
         <meta name="google-adsense-account" content="ca-pub-4699659657596975" />
@@ -125,7 +131,7 @@ export default function RootLayout({
         />
            <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-XJ33LRDG0G"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
       />
       <Script id="ga-setup" strategy="afterInteractive">
         {`

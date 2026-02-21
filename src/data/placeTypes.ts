@@ -1,11 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 
-export type PlaceType = {
-  slug: string; // Google place type slug
-  label: string; // Turkish label
+type PlaceType = {
+  slug: string;
+  label: string;
 };
 
-export type PlaceGroup = {
+type PlaceGroup = {
   title: string;
   icon?: LucideIcon;
   items: PlaceType[];

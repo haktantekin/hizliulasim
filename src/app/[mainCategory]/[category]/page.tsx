@@ -1,139 +1,251 @@
-"use client";
-
-import React, { useCallback, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { notFound, useParams } from 'next/navigation';
-import Link from 'next/link';
-import { useCategory, useInfinitePostsByCategory, useCategories, usePost, useRelatedPosts } from '../../../hooks/useWordPress';
-import { BlogPost } from '../../../types/WordPress';
-import PostListItem from '@/components/blog/PostListItem';
-import CategoryScroller from '@/components/blog/CategoryScroller';
-import { Search as SearchIcon } from 'lucide-react';
-import { fetchPosts } from '@/services/wordpress';
+import {
+  fetchCategoryBySlug,
+  fetchCategories,
+  fetchPosts,
+  fetchPostBySlug,
+} from '@/services/wordpress';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import Script from 'next/script';
+import SubCategoryClient from './SubCategoryClient';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import PostListItem from '@/components/blog/PostListItem';
+import PostLocationMap from '@/components/blog/PostLocationMap';
+import { Fragment } from 'react';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
 
-export default function SubCategoryPage() {
-  const params = useParams<{ mainCategory: string; category: string }>();
-  const mainCategorySlug = Array.isArray(params.mainCategory) ? params.mainCategory[0] : params.mainCategory;
-  const categorySlug = Array.isArray(params.category) ? params.category[0] : params.category;
-  
-  const { data: category, isLoading: categoryLoading, isError: categoryError } = useCategory(categorySlug);
-  const { data: allCategories = [] } = useCategories();
-  const { data: post, isLoading: postLoading, isError: postError } = usePost(categorySlug);
-  
-  const { 
-    data: infiniteData, 
-    isLoading: postsLoading, 
-    isError: postsError,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-  } = useInfinitePostsByCategory(category?.id || 0);
-  const { data: relatedPosts = [] } = useRelatedPosts(post?.id || 0, post?.categoryIds || [], 6);
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
-  const isLoading = categoryLoading || postsLoading || postLoading;
-  const isError = categoryError || postsError || postError;
+type PageProps = {
+  params: Promise<{ mainCategory: string; category: string }>;
+};
 
-  // Get all posts from infinite pages
-  const categoryPosts = infiniteData?.pages.flatMap(page => page) || [];
+/* ─────────────────────── Metadata ─────────────────────── */
 
-  // Local state for category-scoped search
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<BlogPost[]>([]);
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { mainCategory, category: categorySlug } = await params;
 
-  // Intersection observer for infinite scroll
-  const observerTarget = useRef<HTMLDivElement>(null);
+  // try both: the slug may refer to a sub-category OR a post
+  const [cat, post] = await Promise.all([
+    fetchCategoryBySlug(categorySlug),
+    fetchPostBySlug(categorySlug),
+  ]);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage && !searching) {
-          fetchNextPage();
-        }
+  // 1) Sub-category page metadata
+  if (cat) {
+    const description =
+      cat.description || `${cat.name} kategorisindeki tüm blog yazıları ve içerikler.`;
+    return {
+      title: cat.name,
+      description,
+      alternates: { canonical: `${SITE_URL}/${mainCategory}/${cat.slug}` },
+      openGraph: {
+        title: `${cat.name} | Hızlı Ulaşım`,
+        description,
+        url: `${SITE_URL}/${mainCategory}/${cat.slug}`,
+        type: 'website',
+        siteName: 'Hızlı Ulaşım',
+        locale: 'tr_TR',
       },
-      { threshold: 0.1 }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
+      twitter: {
+        card: 'summary',
+        title: `${cat.name} | Hızlı Ulaşım`,
+        description,
+      },
     };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, searching]);
-
-  const onSubmitSearch = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!category?.id) return;
-    const term = searchTerm.trim();
-    if (term.length < 2) return;
-    setSearching(true);
-    setSearchLoading(true);
-    try {
-      const data = await fetchPosts({ categoryId: category.id, search: term, per_page: 20, page: 1 });
-      setSearchResults(data || []);
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [category?.id, searchTerm]);
-
-  const clearSearch = useCallback(() => {
-    setSearching(false);
-    setSearchResults([]);
-    setSearchTerm("");
-  }, []);
-
-  if (isError || (!isLoading && !category && !post)) {
-    notFound();
   }
 
-  if (isLoading) {
+  // 2) Post detail fallback metadata
+  if (post) {
+    const title = post.title;
+    const description = post.excerpt || post.title;
+    const canonical = `${SITE_URL}/${mainCategory}/${post.slug}`;
+    const images = post.featuredImage
+      ? [
+          {
+            url: post.featuredImage.url,
+            width: post.featuredImage.width,
+            height: post.featuredImage.height,
+            alt: post.featuredImage.alt,
+          },
+        ]
+      : undefined;
+
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      robots: { index: true, follow: true },
+      openGraph: {
+        type: 'article',
+        title,
+        description,
+        url: canonical,
+        siteName: 'Hızlı Ulaşım',
+        locale: 'tr_TR',
+        publishedTime: post.publishedAt,
+        modifiedTime: post.modifiedAt || post.publishedAt,
+        authors: post.author?.name ? [post.author.name] : undefined,
+        images,
+      },
+      twitter: {
+        card: post.featuredImage ? 'summary_large_image' : 'summary',
+        title,
+        description,
+        images: post.featuredImage ? [post.featuredImage.url] : undefined,
+      },
+      keywords: post.tags?.length ? post.tags.map(String) : undefined,
+      authors: post.author?.name ? [{ name: post.author.name }] : undefined,
+    };
+  }
+
+  // 3) Neither found
+  return {
+    title: 'Bulunamadı',
+    robots: { index: false, follow: false },
+  };
+}
+
+/* ─────────────────────── Page Component ─────────────────────── */
+
+export default async function SubCategoryPage({ params }: PageProps) {
+  const { mainCategory: mainCategorySlug, category: categorySlug } = await params;
+
+  // Parallel fetch: category, post, allCategories
+  const [category, post, allCategories] = await Promise.all([
+    fetchCategoryBySlug(categorySlug),
+    fetchPostBySlug(categorySlug),
+    fetchCategories(),
+  ]);
+
+  const mainCategory = allCategories.find((c) => c.slug === mainCategorySlug) || null;
+
+  /* ────── CASE 1: Sub-category listing ────── */
+  if (category) {
+    const initialPosts = await fetchPosts({
+      categoryId: category.id,
+      per_page: 20,
+      orderby: 'date',
+      order: 'desc',
+    });
+
+    const parentCategory = category.parentId
+      ? allCategories.find((c) => c.id === category.parentId)
+      : null;
+    const mainCatForSchema = parentCategory || mainCategory;
+
     return (
-      <div className="container mx-auto px-4 py-8">
-        {/* Loading skeleton */}
-        <div className="animate-pulse">
-          <div className="w-32 h-4 bg-gray-200 rounded mb-8"></div>
-          <div className="w-24 h-6 bg-gray-200 rounded mb-4"></div>
-          <div className="w-64 h-8 bg-gray-200 rounded mb-4"></div>
-          <div className="w-96 h-4 bg-gray-200 rounded mb-4"></div>
-          <div className="w-20 h-4 bg-gray-200 rounded mb-12"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className="border border-brand-light-blue rounded-lg overflow-hidden">
-                <div className="h-48 bg-gray-200"></div>
-                <div className="p-6">
-                  <div className="w-full h-6 bg-gray-200 rounded mb-3"></div>
-                  <div className="w-full h-4 bg-gray-200 rounded mb-4"></div>
-                  <div className="flex justify-between">
-                    <div className="w-24 h-4 bg-gray-200 rounded"></div>
-                    <div className="w-32 h-4 bg-gray-200 rounded"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <>
+        {/* JSON-LD: CollectionPage */}
+        <Script
+          id={`schema-collection-${category.slug}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'CollectionPage',
+              name: category.name,
+              description:
+                category.description || `${category.name} kategorisindeki yazılar`,
+              url: `${SITE_URL}/${mainCategorySlug}/${category.slug}`,
+              isPartOf: {
+                '@type': 'WebSite',
+                name: 'Hızlı Ulaşım',
+                url: SITE_URL,
+              },
+              ...(initialPosts.length > 0 && {
+                mainEntity: {
+                  '@type': 'ItemList',
+                  numberOfItems: initialPosts.length,
+                  itemListElement: initialPosts.slice(0, 10).map((p, i) => ({
+                    '@type': 'ListItem',
+                    position: i + 1,
+                    url: `${SITE_URL}/${mainCategorySlug}/${category.slug}/${p.slug}`,
+                    name: p.title,
+                  })),
+                },
+              }),
+            }),
+          }}
+        />
+        {/* JSON-LD: BreadcrumbList */}
+        <Script
+          id={`schema-breadcrumb-${category.slug}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'Ana Sayfa',
+                  item: SITE_URL,
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Kategoriler',
+                  item: `${SITE_URL}/kategoriler`,
+                },
+                ...(mainCatForSchema
+                  ? [
+                      {
+                        '@type': 'ListItem',
+                        position: 3,
+                        name: mainCatForSchema.name,
+                        item: `${SITE_URL}/${mainCatForSchema.slug}`,
+                      },
+                    ]
+                  : []),
+                {
+                  '@type': 'ListItem',
+                  position: mainCatForSchema ? 4 : 3,
+                  name: category.name,
+                  item: `${SITE_URL}/${mainCategorySlug}/${category.slug}`,
+                },
+              ],
+            }),
+          }}
+        />
+        <SubCategoryClient
+          category={category}
+          mainCategory={mainCatForSchema || category}
+          allCategories={allCategories}
+          initialPosts={initialPosts}
+          mainCategorySlug={mainCategorySlug}
+        />
+      </>
     );
   }
 
-  // Eğer ikinci segment bir kategori değil ama bir yazıysa: yazı detayı
-  if (post && !category) {
+  /* ────── CASE 2: Post detail (slug matched a post, not a category) ────── */
+  if (post) {
     const postCategoryId = post.categoryIds?.[0];
     const postCategory = postCategoryId
-      ? allCategories.find(c => c.id === postCategoryId)
+      ? allCategories.find((c) => c.id === postCategoryId)
       : null;
     const postMainCategory = postCategory?.parentId
-      ? allCategories.find(c => c.id === postCategory.parentId)
-      : allCategories.find(c => c.slug === mainCategorySlug) || null;
+      ? allCategories.find((c) => c.id === postCategory.parentId)
+      : mainCategory;
+
+    // Related posts
+    let relatedPosts: Awaited<ReturnType<typeof fetchPosts>> = [];
+    if (post.categoryIds?.length) {
+      try {
+        const fetched = await fetchPosts({
+          categoryId: post.categoryIds[0],
+          per_page: 6,
+          orderby: 'date',
+          order: 'desc',
+        });
+        relatedPosts = fetched.filter((p) => p.id !== post.id);
+      } catch {
+        relatedPosts = [];
+      }
+    }
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -141,9 +253,16 @@ export default function SubCategoryPage() {
           className="mb-4"
           items={[
             { label: 'Kategoriler', href: '/kategoriler' },
-            ...(postMainCategory ? [{ label: postMainCategory.name, href: `/${postMainCategory.slug}` }] : []),
+            ...(postMainCategory
+              ? [{ label: postMainCategory.name, href: `/${postMainCategory.slug}` }]
+              : []),
             ...(postCategory && postMainCategory && postCategory.parentId
-              ? [{ label: postCategory.name, href: `/${postMainCategory.slug}/${postCategory.slug}` }]
+              ? [
+                  {
+                    label: postCategory.name,
+                    href: `/${postMainCategory.slug}/${postCategory.slug}`,
+                  },
+                ]
               : []),
           ]}
         />
@@ -158,6 +277,7 @@ export default function SubCategoryPage() {
               fill
               className="object-cover rounded-lg"
               priority
+              sizes="100vw"
             />
           </div>
         ) : (() => {
@@ -170,6 +290,7 @@ export default function SubCategoryPage() {
                 fill
                 className="object-cover rounded-lg"
                 priority
+                sizes="100vw"
               />
             </div>
           ) : null;
@@ -179,25 +300,108 @@ export default function SubCategoryPage() {
           <span>{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</span>
         </div>
 
-        <article className="post-detail">
-          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        <article className="post-detail space-y-6">
+          {post.location && post.content.includes('[map]') ? (
+            post.content.split('[map]').map((part, idx, arr) => (
+              <Fragment key={`content-part-${idx}`}>
+                {part && <div dangerouslySetInnerHTML={{ __html: part }} />}
+                {idx < arr.length - 1 && post.location && (
+                  <PostLocationMap
+                    latitude={post.location.latitude}
+                    longitude={post.location.longitude}
+                    title={post.title}
+                  />
+                )}
+              </Fragment>
+            ))
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+          )}
         </article>
 
-        {relatedPosts && relatedPosts.length > 0 && (
+        {!post.content.includes('[map]') && post.location && (
+          <PostLocationMap
+            latitude={post.location.latitude}
+            longitude={post.location.longitude}
+            title={post.title}
+          />
+        )}
+
+        {/* JSON-LD: BlogPosting */}
+        <Script
+          id={`schema-post-${post.slug}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BlogPosting',
+              headline: post.title,
+              description: post.excerpt || post.title,
+              datePublished: post.publishedAt,
+              dateModified: post.modifiedAt || post.publishedAt,
+              author: post.author?.name
+                ? { '@type': 'Person', name: post.author.name }
+                : undefined,
+              image: post.featuredImage?.url,
+              mainEntityOfPage: {
+                '@type': 'WebPage',
+                '@id': `${SITE_URL}/${mainCategorySlug}/${post.slug}`,
+              },
+            }),
+          }}
+        />
+        {/* JSON-LD: BreadcrumbList */}
+        <Script
+          id={`schema-breadcrumb-post-${post.slug}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'Ana Sayfa',
+                  item: SITE_URL,
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Kategoriler',
+                  item: `${SITE_URL}/kategoriler`,
+                },
+                ...(postMainCategory
+                  ? [
+                      {
+                        '@type': 'ListItem',
+                        position: 3,
+                        name: postMainCategory.name,
+                        item: `${SITE_URL}/${postMainCategory.slug}`,
+                      },
+                    ]
+                  : []),
+              ],
+            }),
+          }}
+        />
+
+        {relatedPosts.length > 0 && (
           <section className="mt-10">
             <h2 className="text-xl font-semibold mb-4">İlgili İçerikler</h2>
             <div className="divide-y divide-gray-200">
               {relatedPosts.map((rp) => {
                 const rpCategoryId = rp.categoryIds?.[0];
                 const rpCategory = rpCategoryId
-                  ? allCategories.find(c => c.id === rpCategoryId)
+                  ? allCategories.find((c) => c.id === rpCategoryId)
                   : null;
                 const rpMainCategory = rpCategory?.parentId
-                  ? allCategories.find(c => c.id === rpCategory.parentId)
+                  ? allCategories.find((c) => c.id === rpCategory.parentId)
                   : postMainCategory;
-                const href = rpMainCategory && rpCategory
-                  ? `/${rpMainCategory.slug}/${rpCategory.slug}/${rp.slug}`
-                  : `/${mainCategorySlug}/${rp.slug}`;
+                const href =
+                  rpMainCategory && rpCategory
+                    ? `/${rpMainCategory.slug}/${rpCategory.slug}/${rp.slug}`
+                    : `/${mainCategorySlug}/${rp.slug}`;
 
                 return (
                   <PostListItem
@@ -217,141 +421,6 @@ export default function SubCategoryPage() {
     );
   }
 
-  // Ne kategori ne yazı bulunamadı
-  if (!category) {
-    notFound();
-  }
-
-  // Normal kategori liste sayfası
-  return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      {(() => {
-        const parentCategory = category?.parentId 
-          ? allCategories.find(c => c.id === category.parentId)
-          : null;
-        const mainCatForBreadcrumb = parentCategory || allCategories.find(c => c.slug === mainCategorySlug);
-        return (
-          <Breadcrumb
-            className="mb-4"
-            items={[
-              { label: 'Kategoriler', href: '/kategoriler' },
-              ...(mainCatForBreadcrumb ? [{ label: mainCatForBreadcrumb.name, href: `/${mainCatForBreadcrumb.slug}` }] : []),
-            ]}
-          />
-        );
-      })()}
-
-      {/* Category Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1 text-brand-soft-blue">
-          {category.name}
-        </h1>
-        <p className="text-sm text-gray-400 mb-2 font-light">
-          {category.description || `${category.name} kategorisindeki yazılar`}
-        </p>
-
-        {/* Search Bar scoped to this category */}
-        <div className="mt-3">
-          <form onSubmit={onSubmitSearch} className="relative">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={`${category.name} içinde ara`}
-              className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-28 text-gray-700 font-light placeholder-gray-500 transition-colors text-sm"
-            />
-            {searching && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-12 top-1.5 h-9 px-3 rounded-full text-gray-700 text-sm hover:bg-gray-300"
-                title="Aramayı temizle"
-              >
-                Temizle
-              </button>
-            )}
-            <button
-              type="submit"
-              aria-label="Kategori içinde ara"
-              className="absolute right-1.5 top-1 h-9 w-9 rounded-full text-gray-500 flex items-center justify-center hover:opacity-90"
-            >
-              <SearchIcon size={18} />
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Posts Grid */}
-      {searching ? (
-        <div>
-          <h2 className="text-lg font-semibold mb-3">"{searchTerm.trim()}" için sonuçlar</h2>
-          {searchLoading && <div className="text-sm text-gray-500">Yükleniyor…</div>}
-          {!searchLoading && searchResults.length === 0 && (
-            <div className="text-gray-600 text-sm">Sonuç bulunamadı.</div>
-          )}
-          {!searchLoading && searchResults.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {searchResults.map((post: BlogPost) => {
-                const postMainCategorySlug = category?.parentId 
-                  ? allCategories.find(c => c.id === category.parentId)?.slug 
-                  : mainCategorySlug;
-                return (
-                  <PostListItem 
-                    key={post.id} 
-                    post={post} 
-                    href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`}
-                    categorySlug={category?.slug}
-                    categoryName={category?.name}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : !categoryPosts || categoryPosts.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Bu kategoride henüz gönderi bulunmuyor.</p>
-          <Link 
-            href="/kategoriler"
-            className="text-brand-soft-blue hover:text-brand-dark-blue font-medium mt-4 inline-block"
-          >
-            ← Kategoriler&apos;e geri dön
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categoryPosts.map((post: BlogPost) => {
-              const postMainCategorySlug = category?.parentId 
-                ? allCategories.find(c => c.id === category.parentId)?.slug 
-                : mainCategorySlug;
-              return (
-                <PostListItem 
-                  key={post.id} 
-                  post={post} 
-                  href={`/${postMainCategorySlug}/${category.slug}/${post.slug}`}
-                  categorySlug={category?.slug}
-                  categoryName={category?.name}
-                />
-              );
-            })}
-          </div>
-
-          {/* Infinite scroll loading indicator */}
-          <div ref={observerTarget} className="mt-8 flex justify-center">
-            {isFetchingNextPage && (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-soft-blue"></div>
-                <span className="text-sm text-gray-600">Daha fazla yazı yükleniyor…</span>
-              </div>
-            )}
-            {!hasNextPage && categoryPosts.length > 0 && (
-              <p className="text-sm text-gray-500">Tüm yazılar yüklendi</p>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
+  /* ────── Neither category nor post found ────── */
+  notFound();
 }
