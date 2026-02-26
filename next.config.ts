@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  trailingSlash: false,
   images: {
     remotePatterns: [
       {
@@ -74,25 +75,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Force HTTPS in production
+  // Force HTTPS in production and normalize trailing slashes
   async redirects() {
     return [
-      // Redirect old /blog routes to new structure
-      // {
-      //   source: '/blog',
-      //   destination: '/kategoriler',
-      //   permanent: true,
-      // },
-      // {
-      //   source: '/blog/:category',
-      //   destination: '/:category',
-      //   permanent: true,
-      // },
-      // {
-      //   source: '/blog/:category/:slug',
-      //   destination: '/:category/:slug',
-      //   permanent: true,
-      // },
+      // Redirect URLs with trailing slash to non-trailing slash version (SEO)
+      {
+        source: '/:path+/',
+        destination: '/:path+',
+        permanent: true,
+      },
       {
         source: '/:path*',
         has: [
