@@ -9,6 +9,7 @@ import { getDummyImageForCategory } from "@/lib/getDummyImage";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
   const [post, categories] = await Promise.all([
     fetchPostBySlug(slug),
     fetchCategories(),
@@ -131,13 +132,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
                 '@type': 'ListItem',
                 position: 1,
                 name: 'Ana Sayfa',
-                item: '/',
+                item: `${baseUrl}/`,
               },
               {
                 '@type': 'ListItem',
                 position: 2,
                 name: 'Kategoriler',
-                item: '/kategoriler',
+                item: `${baseUrl}/kategoriler`,
               },
               ...(mainCat
                 ? [
@@ -145,7 +146,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
                     '@type': 'ListItem',
                     position: 3,
                     name: mainCat.name,
-                    item: `/${mainCat.slug}`,
+                    item: `${baseUrl}/${mainCat.slug}`,
                   },
                 ]
                 : []),
@@ -155,7 +156,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
                     '@type': 'ListItem',
                     position: 4,
                     name: cat.name,
-                    item: `/${mainCategory}/${cat.slug}`,
+                    item: `${baseUrl}/${mainCategory}/${cat.slug}`,
                   },
                 ]
                 : []),
