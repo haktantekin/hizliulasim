@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getBusRouteDetail, getHat } from '@/services/iett';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import BusRouteDetailClient from '@/components/bus/BusRouteDetailClient';
+import { Bus } from 'lucide-react';
+import Link from 'next/link';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 const DEFAULT_IMAGE = 'https://cms.hizliulasim.com/wp-content/uploads/2026/02/otobus-hatlari.jpeg';
@@ -72,7 +73,34 @@ export default async function BusRouteDetailPage({
   const data = await getBusRouteDetail(upperCode);
 
   if (!data.hat) {
-    notFound();
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <Breadcrumb
+          className="mb-4"
+          items={[
+            { label: 'Otobüs Hatları', href: '/otobus-hatlari' },
+            { label: upperCode },
+          ]}
+        />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Bus className="w-16 h-16 text-gray-300 mb-4" />
+          <h1 className="text-xl font-bold text-gray-700 mb-2">
+            Hat Bilgisi Bulunamadı
+          </h1>
+          <p className="text-sm text-gray-500 mb-6">
+            <span className="font-semibold">{upperCode}</span> kodlu otobüs hattı İETT sisteminde bulunamadı.
+            <br />
+            Hat kodu doğru yazıldığından emin olun veya farklı bir hat arayın.
+          </p>
+          <Link
+            href="/otobus-hatlari"
+            className="px-5 py-2.5 bg-brand-soft-blue text-white rounded-xl text-sm font-medium hover:bg-brand-dark-blue transition-colors"
+          >
+            Tüm Hatları Görüntüle
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   // JSON-LD structured data for SEO
