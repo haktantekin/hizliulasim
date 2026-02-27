@@ -1,13 +1,24 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import type { IETTPlanlananSefer, IETTHatOtoKonum, IETTHat } from '@/types/iett';
-import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import type { IETTPlanlananSefer, IETTHatOtoKonum, IETTHat, IETTDurakDetay } from '@/types/iett';
+import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot } from 'lucide-react';
+
+const RouteMap = dynamic(() => import('./RouteMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[350px] bg-gray-100 rounded-xl animate-pulse flex items-center justify-center">
+      <MapPin className="w-8 h-8 text-gray-300" />
+    </div>
+  ),
+});
 
 interface Props {
   hat: IETTHat;
   seferler: IETTPlanlananSefer[];
   konumlar: IETTHatOtoKonum[]; // initial SSR data
+  duraklar: IETTDurakDetay[];
 }
 
 const DAY_TYPE_LABELS: Record<string, string> = {
@@ -21,8 +32,8 @@ const DIRECTION_LABELS: Record<string, string> = {
   G: 'Dönüş',
 };
 
-export default function BusRouteDetailClient({ hat, seferler, konumlar: initialKonumlar }: Props) {
-  const [activeTab, setActiveTab] = useState<'schedule' | 'vehicles'>('schedule');
+export default function BusRouteDetailClient({ hat, seferler, konumlar: initialKonumlar, duraklar }: Props) {
+  const [activeTab, setActiveTab] = useState<'route' | 'schedule' | 'vehicles'>('schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -162,10 +173,10 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b">
+      <div className="flex border-b overflow-x-auto">
         <button
           onClick={() => setActiveTab('schedule')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'schedule'
               ? 'border-brand-soft-blue text-brand-soft-blue'
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -174,13 +185,29 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
           {hat.SHATKODU} Sefer Saatleri
         </button>
         <button
+          onClick={() => setActiveTab('route')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'route'
+              ? 'border-brand-soft-blue text-brand-soft-blue'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Güzergah
+          {duraklar.length > 0 && (
+            <span className="bg-brand-soft-blue/10 text-brand-soft-blue text-xs px-1.5 py-0.5 rounded-full">
+              {duraklar.length}
+            </span>
+          )}
+        </button>
+        <button
           onClick={() => setActiveTab('vehicles')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'vehicles'
               ? 'border-brand-soft-blue text-brand-soft-blue'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
+
           Canlı Araç Konumları
           {konumlar.length > 0 && (
             <span className="bg-brand-green text-white text-xs px-1.5 py-0.5 rounded-full">
@@ -192,6 +219,10 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'route' && (
+        <RouteStopsTab duraklar={duraklar} />
+      )}
+
       {activeTab === 'schedule' && (
         <div className="space-y-4">
           {/* Day Type Selector */}
@@ -353,6 +384,133 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
       )}
 
 
+    </div>
+  );
+}
+
+// ==========================================
+// Güzergah / Duraklar Tab Component
+// ==========================================
+
+function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
+  const [selectedDirection, setSelectedDirection] = useState<string>('D');
+
+  // Group stops by direction
+  const directions = useMemo(() => {
+    const dirSet = new Set(duraklar.map((d) => d.YON));
+    return Array.from(dirSet);
+  }, [duraklar]);
+
+  // Set initial direction
+  useEffect(() => {
+    if (directions.length > 0 && !directions.includes(selectedDirection)) {
+      setSelectedDirection(directions[0]);
+    }
+  }, [directions, selectedDirection]);
+
+  const filteredStops = useMemo(() => {
+    return duraklar
+      .filter((d) => d.YON === selectedDirection)
+      .sort((a, b) => a.SIRANO - b.SIRANO);
+  }, [duraklar, selectedDirection]);
+
+  if (duraklar.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <MapPin className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+        <p>Bu hat için güzergah bilgisi bulunamadı.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Direction selector */}
+      {directions.length > 1 && (
+        <div className="flex gap-2">
+          {directions.map((dir) => {
+            const stopsInDir = duraklar.filter((d) => d.YON === dir);
+            const yonAdi = stopsInDir[0]?.YON_ADI;
+            return (
+              <button
+                key={dir}
+                onClick={() => setSelectedDirection(dir)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedDirection === dir
+                    ? 'bg-brand-soft-blue text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {DIRECTION_LABELS[dir] || dir}{yonAdi ? ` - ${yonAdi}` : ''} ({stopsInDir.length} durak)
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Route map */}
+      {filteredStops.length > 0 && (
+        <RouteMap duraklar={duraklar} selectedDirection={selectedDirection} />
+      )}
+
+      {/* Stops count */}
+      <div className="text-sm text-gray-500">
+        {filteredStops.length} durak
+      </div>
+
+      {/* Stops list - timeline style */}
+      <div className="relative">
+        {filteredStops.map((stop, idx) => {
+          const isFirst = idx === 0;
+          const isLast = idx === filteredStops.length - 1;
+
+          return (
+            <div key={`${stop.DURAKKODU}-${idx}`} className="flex gap-3 group">
+              {/* Timeline line + dot */}
+              <div className="flex flex-col items-center w-6 flex-shrink-0">
+                <div
+                  className={`w-0.5 flex-1 ${isFirst ? 'bg-transparent' : 'bg-gray-200'}`}
+                />
+                <div
+                  className={`w-3 h-3 rounded-full flex-shrink-0 border-2 ${
+                    isFirst || isLast
+                      ? 'bg-brand-soft-blue border-brand-soft-blue'
+                      : 'bg-white border-gray-300 group-hover:border-brand-soft-blue'
+                  }`}
+                />
+                <div
+                  className={`w-0.5 flex-1 ${isLast ? 'bg-transparent' : 'bg-gray-200'}`}
+                />
+              </div>
+
+              {/* Stop info */}
+              <div className={`flex-1 pb-3 ${isLast ? 'pb-0' : ''}`}>
+                <div className="bg-white border border-gray-100 rounded-lg p-3 group-hover:border-brand-soft-blue/30 group-hover:shadow-sm transition-all">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm text-gray-900">
+                        {stop.DURAKADI}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500 mt-1">
+                        <span className="font-mono">{stop.DURAKKODU}</span>
+                        {stop.ILCEADI && (
+                          <>
+                            <span>•</span>
+                            <span>{stop.ILCEADI}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-mono flex-shrink-0">
+                      {stop.SIRANO}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

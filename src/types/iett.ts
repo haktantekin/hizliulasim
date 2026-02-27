@@ -63,6 +63,21 @@ export interface IETTGaraj {
   XKOORDINATI: number;
 }
 
+export interface IETTDurakDetay {
+  HATKODU: string;
+  YON: string; // D = Gidiş, G = Dönüş
+  YON_ADI: string; // e.g. "YENİDOĞAN PERONLAR"
+  SIRANO: number;
+  DURAKKODU: string;
+  DURAKADI: string;
+  XKOORDINATI: number;
+  YKOORDINATI: number;
+  DURAKTIPI: string;
+  ISLETMEBOLGE: string;
+  ISLETMEALTBOLGE: string;
+  ILCEADI: string;
+}
+
 export interface IETTFiloDurum {
   Operator: string;
   Garaj: string;
@@ -95,4 +110,5 @@ export interface BusRouteDetail {
   seferler: IETTPlanlananSefer[];
   duyurular: IETTDuyuru[];
   konumlar: IETTHatOtoKonum[];
+  duraklar: IETTDurakDetay[];
 }

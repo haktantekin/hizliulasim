@@ -148,6 +148,7 @@ export default async function BusRouteDetailPage({
         hat={data.hat}
         seferler={data.seferler}
         konumlar={data.konumlar}
+        duraklar={data.duraklar}
       />
     </div>
   );

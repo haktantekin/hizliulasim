@@ -5,6 +5,7 @@ import type {
   IETTHatOtoKonum,
   IETTDurak,
   IETTGaraj,
+  IETTDurakDetay,
 } from '@/types/iett';
 
 // IETT SOAP API Endpoints
@@ -13,6 +14,7 @@ const ENDPOINTS = {
   planlananSeferSaati: 'https://api.ibb.gov.tr/iett/UlasimAnaVeri/PlanlananSeferSaati.asmx',
   duyurular: 'https://api.ibb.gov.tr/iett/UlasimDinamikVeri/Duyurular.asmx',
   seferGerceklesme: 'https://api.ibb.gov.tr/iett/FiloDurum/SeferGerceklesme.asmx',
+  ibb: 'https://api.ibb.gov.tr/iett/ibb/ibb.asmx',
 } as const;
 
 const NAMESPACE = 'http://tempuri.org/';
@@ -187,6 +189,82 @@ export async function getHatOtoKonum(hatKodu: string): Promise<IETTHatOtoKonum[]
 }
 
 // ==========================================
+// DURAK DETAY (XML API) METHODS
+// ==========================================
+
+/**
+ * Parse XML <Table> elements from DurakDetay_GYY response into IETTDurakDetay[]
+ */
+function parseDurakDetayXml(xml: string): IETTDurakDetay[] {
+  const results: IETTDurakDetay[] = [];
+  // Match <Table>...</Table> blocks
+  let startIdx = 0;
+  while (true) {
+    const tableStart = xml.indexOf('<Table>', startIdx);
+    if (tableStart === -1) break;
+    const tableEnd = xml.indexOf('</Table>', tableStart);
+    if (tableEnd === -1) break;
+    const block = xml.substring(tableStart + 7, tableEnd);
+    startIdx = tableEnd + 8;
+
+    const getValue = (tag: string): string => {
+      const s = block.indexOf(`<${tag}>`);
+      const e = block.indexOf(`</${tag}>`);
+      if (s === -1 || e === -1) return '';
+      return block.substring(s + tag.length + 2, e);
+    };
+
+    results.push({
+      HATKODU: getValue('HATKODU'),
+      YON: getValue('YON'),
+      YON_ADI: getValue('YON_ADI'),
+      SIRANO: parseInt(getValue('SIRANO')) || 0,
+      DURAKKODU: getValue('DURAKKODU'),
+      DURAKADI: getValue('DURAKADI'),
+      XKOORDINATI: parseFloat(getValue('XKOORDINATI')) || 0,
+      YKOORDINATI: parseFloat(getValue('YKOORDINATI')) || 0,
+      DURAKTIPI: getValue('DURAKTIPI'),
+      ISLETMEBOLGE: getValue('ISLETMEBOLGE'),
+      ISLETMEALTBOLGE: getValue('ISLETMEALTBOLGE'),
+      ILCEADI: getValue('ILCEADI'),
+    });
+  }
+
+  return results;
+}
+
+/**
+ * Get route stops detail for a bus line (from ibb.asmx - XML response)
+ */
+export async function getDurakDetay(hatKodu: string): Promise<IETTDurakDetay[]> {
+  const body = buildSoapEnvelope('DurakDetay_GYY_wYonAdi', { hat_kodu: hatKodu });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(ENDPOINTS.ibb, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset=utf-8',
+        SOAPAction: `${NAMESPACE}DurakDetay_GYY_wYonAdi`,
+      },
+      body,
+      signal: controller.signal,
+      next: { revalidate: 3600 }, // 1 hour cache - stops rarely change
+    });
+
+    if (!response.ok) {
+      throw new Error(`IETT DurakDetay API error: ${response.status}`);
+    }
+
+    const xml = await response.text();
+    return parseDurakDetayXml(xml);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ==========================================
 // COMBINED DATA HELPERS
 // ==========================================
 
@@ -196,11 +274,12 @@ export async function getHatOtoKonum(hatKodu: string): Promise<IETTHatOtoKonum[]
 export async function getBusRouteDetail(hatKodu: string) {
   const upperCode = hatKodu.toUpperCase();
 
-  const [hatResult, seferler, duyurular, konumlar] = await Promise.allSettled([
+  const [hatResult, seferler, duyurular, konumlar, duraklar] = await Promise.allSettled([
     getHat(upperCode),
     getPlanlananSeferSaati(upperCode),
     getDuyurular(upperCode),
     getHatOtoKonum(upperCode),
+    getDurakDetay(upperCode),
   ]);
 
   return {
@@ -208,6 +287,7 @@ export async function getBusRouteDetail(hatKodu: string) {
     seferler: seferler.status === 'fulfilled' ? seferler.value : [],
     duyurular: duyurular.status === 'fulfilled' ? duyurular.value : [],
     konumlar: konumlar.status === 'fulfilled' ? konumlar.value : [],
+    duraklar: duraklar.status === 'fulfilled' ? duraklar.value : [],
   };
 }
 
