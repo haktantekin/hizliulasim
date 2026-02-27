@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { getHat } from '@/services/iett';
 
 const API_BASE = 'https://cms.hizliulasim.com/wp-json/wp/v2';
 
@@ -117,5 +118,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error fetching blog data for sitemap:', error);
   }
 
-  return [...staticRoutes, ...categoryRoutes, ...blogRoutes];
+  // ── Otobüs Hatları ──
+  let busRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const hatlar = await getHat();
+    busRoutes = [
+      {
+        url: `${baseUrl}/otobus-hatlari`,
+        lastModified: new Date(),
+        changeFrequency: 'daily',
+        priority: 0.9,
+      },
+      ...hatlar.map((h) => ({
+        url: `${baseUrl}/otobus-hatlari/${h.SHATKODU}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.7,
+      })),
+    ];
+  } catch (error) {
+    console.error('Error fetching IETT data for sitemap:', error);
+  }
+
+  return [...staticRoutes, ...busRoutes, ...categoryRoutes, ...blogRoutes];
 }

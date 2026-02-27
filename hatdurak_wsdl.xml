@@ -1,0 +1,442 @@
+﻿<wsdl:definitions targetNamespace="http://tempuri.org/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:tns="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+    <wsdl:types>
+        <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+            <s:element name="GetHat_XML">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="HatKodu" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetHat_XMLResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetHat_XMLResult">
+                            <s:complexType>
+                                <s:sequence>
+                                    <s:any/>
+                                </s:sequence>
+                            </s:complexType>
+                        </s:element>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetHat_json">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="HatKodu" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetHat_jsonResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetHat_jsonResult" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetHat_csv">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="HatKodu" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetHat_csvResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetHat_csvResult" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetDurak_XML">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="DurakKodu" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetDurak_XMLResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetDurak_XMLResult">
+                            <s:complexType>
+                                <s:sequence>
+                                    <s:any/>
+                                </s:sequence>
+                            </s:complexType>
+                        </s:element>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetDurak_json">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="DurakKodu" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetDurak_jsonResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetDurak_jsonResult" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetDurak_csv">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="DurakKodu" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetDurak_csvResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetDurak_csvResult" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetGaraj_XML">
+                <s:complexType/>
+            </s:element>
+            <s:element name="GetGaraj_XMLResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetGaraj_XMLResult">
+                            <s:complexType>
+                                <s:sequence>
+                                    <s:any/>
+                                </s:sequence>
+                            </s:complexType>
+                        </s:element>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetGaraj_json">
+                <s:complexType/>
+            </s:element>
+            <s:element name="GetGaraj_jsonResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetGaraj_jsonResult" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="GetGaraj_csv">
+                <s:complexType/>
+            </s:element>
+            <s:element name="GetGaraj_csvResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="GetGaraj_csvResult" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+        </s:schema>
+    </wsdl:types>
+    <wsdl:message name="GetHat_XMLSoapIn">
+        <wsdl:part element="tns:GetHat_XML" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetHat_XMLSoapOut">
+        <wsdl:part element="tns:GetHat_XMLResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetHat_XMLAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetHat_jsonSoapIn">
+        <wsdl:part element="tns:GetHat_json" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetHat_jsonSoapOut">
+        <wsdl:part element="tns:GetHat_jsonResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetHat_jsonAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetHat_csvSoapIn">
+        <wsdl:part element="tns:GetHat_csv" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetHat_csvSoapOut">
+        <wsdl:part element="tns:GetHat_csvResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetHat_csvAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetDurak_XMLSoapIn">
+        <wsdl:part element="tns:GetDurak_XML" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetDurak_XMLSoapOut">
+        <wsdl:part element="tns:GetDurak_XMLResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetDurak_XMLAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetDurak_jsonSoapIn">
+        <wsdl:part element="tns:GetDurak_json" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetDurak_jsonSoapOut">
+        <wsdl:part element="tns:GetDurak_jsonResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetDurak_jsonAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetDurak_csvSoapIn">
+        <wsdl:part element="tns:GetDurak_csv" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetDurak_csvSoapOut">
+        <wsdl:part element="tns:GetDurak_csvResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetDurak_csvAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetGaraj_XMLSoapIn">
+        <wsdl:part element="tns:GetGaraj_XML" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetGaraj_XMLSoapOut">
+        <wsdl:part element="tns:GetGaraj_XMLResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetGaraj_XMLAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetGaraj_jsonSoapIn">
+        <wsdl:part element="tns:GetGaraj_json" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetGaraj_jsonSoapOut">
+        <wsdl:part element="tns:GetGaraj_jsonResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetGaraj_jsonAuthHeader">
+             </wsdl:message>
+    <wsdl:message name="GetGaraj_csvSoapIn">
+        <wsdl:part element="tns:GetGaraj_csv" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetGaraj_csvSoapOut">
+        <wsdl:part element="tns:GetGaraj_csvResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="GetGaraj_csvAuthHeader">
+             </wsdl:message>
+    <wsdl:portType name="WebService1Soap">
+        <wsdl:operation name="GetHat_XML">
+            <wsdl:input message="tns:GetHat_XMLSoapIn"/>
+            <wsdl:output message="tns:GetHat_XMLSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetHat_json">
+            <wsdl:input message="tns:GetHat_jsonSoapIn"/>
+            <wsdl:output message="tns:GetHat_jsonSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetHat_csv">
+            <wsdl:input message="tns:GetHat_csvSoapIn"/>
+            <wsdl:output message="tns:GetHat_csvSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_XML">
+            <wsdl:input message="tns:GetDurak_XMLSoapIn"/>
+            <wsdl:output message="tns:GetDurak_XMLSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_json">
+            <wsdl:input message="tns:GetDurak_jsonSoapIn"/>
+            <wsdl:output message="tns:GetDurak_jsonSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_csv">
+            <wsdl:input message="tns:GetDurak_csvSoapIn"/>
+            <wsdl:output message="tns:GetDurak_csvSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_XML">
+            <wsdl:input message="tns:GetGaraj_XMLSoapIn"/>
+            <wsdl:output message="tns:GetGaraj_XMLSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_json">
+            <wsdl:input message="tns:GetGaraj_jsonSoapIn"/>
+            <wsdl:output message="tns:GetGaraj_jsonSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_csv">
+            <wsdl:input message="tns:GetGaraj_csvSoapIn"/>
+            <wsdl:output message="tns:GetGaraj_csvSoapOut"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="WebService1Soap" type="tns:WebService1Soap">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="GetHat_XML">
+            <soap:operation soapAction="http://tempuri.org/GetHat_XML" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetHat_XMLAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetHat_json">
+            <soap:operation soapAction="http://tempuri.org/GetHat_json" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetHat_jsonAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetHat_csv">
+            <soap:operation soapAction="http://tempuri.org/GetHat_csv" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetHat_csvAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_XML">
+            <soap:operation soapAction="http://tempuri.org/GetDurak_XML" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetDurak_XMLAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_json">
+            <soap:operation soapAction="http://tempuri.org/GetDurak_json" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetDurak_jsonAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_csv">
+            <soap:operation soapAction="http://tempuri.org/GetDurak_csv" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetDurak_csvAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_XML">
+            <soap:operation soapAction="http://tempuri.org/GetGaraj_XML" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetGaraj_XMLAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_json">
+            <soap:operation soapAction="http://tempuri.org/GetGaraj_json" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetGaraj_jsonAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_csv">
+            <soap:operation soapAction="http://tempuri.org/GetGaraj_csv" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+                <soap:header message="tns:GetGaraj_csvAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="WebService1Soap12" type="tns:WebService1Soap">
+        <soap12:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="GetHat_XML">
+            <soap12:operation soapAction="http://tempuri.org/GetHat_XML" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetHat_XMLAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetHat_json">
+            <soap12:operation soapAction="http://tempuri.org/GetHat_json" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetHat_jsonAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetHat_csv">
+            <soap12:operation soapAction="http://tempuri.org/GetHat_csv" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetHat_csvAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_XML">
+            <soap12:operation soapAction="http://tempuri.org/GetDurak_XML" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetDurak_XMLAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_json">
+            <soap12:operation soapAction="http://tempuri.org/GetDurak_json" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetDurak_jsonAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetDurak_csv">
+            <soap12:operation soapAction="http://tempuri.org/GetDurak_csv" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetDurak_csvAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_XML">
+            <soap12:operation soapAction="http://tempuri.org/GetGaraj_XML" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetGaraj_XMLAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_json">
+            <soap12:operation soapAction="http://tempuri.org/GetGaraj_json" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetGaraj_jsonAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetGaraj_csv">
+            <soap12:operation soapAction="http://tempuri.org/GetGaraj_csv" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header message="tns:GetGaraj_csvAuthHeader" part="AuthHeader" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="WebService1">
+        <wsdl:port binding="tns:WebService1Soap" name="WebService1Soap">
+            <soap:address location="https://api.ibb.gov.tr/iett/UlasimAnaVeri/HatDurakGuzergah.asmx"/>
+        </wsdl:port>
+        <wsdl:port binding="tns:WebService1Soap12" name="WebService1Soap12">
+            <soap12:address location="https://api.ibb.gov.tr/iett/UlasimAnaVeri/HatDurakGuzergah.asmx"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

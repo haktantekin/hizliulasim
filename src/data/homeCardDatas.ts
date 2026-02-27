@@ -13,7 +13,7 @@ import {
 export const homeCardDatas = [
   { id: 1, label: 'Nasıl<br/>Giderim', href: '/nasil-giderim', bgColor: 'bg-blue-100', textColor: 'text-blue-700', icon: MapPin },
   { id: 2, label: 'Saat<br/>Bilgileri', href: '/saat-bilgileri', bgColor: 'bg-gray-100', textColor: 'text-gray-700', icon: Clock },
-  // { id: 3, label: 'Otobüs<br/>Güzergahlari', href: '/otobus-guzergahlari', bgColor: 'bg-red-100', textColor: 'text-red-700', icon: Bus },
+  // { id: 3, label: 'Otobüs<br/>Güzergahlari', href: '/otobus-hatlari', bgColor: 'bg-red-100', textColor: 'text-red-700', icon: Bus },
   // { id: 4, label: 'Otopark<br/>Ücretleri', href: '/otopark-ucretleri', bgColor: 'bg-emerald-100', textColor: 'text-emerald-700', icon: ParkingCircle },
   // { id: 5, label: 'Metro/Tramvay<br/>Hatları', href: '/metro-tramvay-hatlari', bgColor: 'bg-indigo-100', textColor: 'text-indigo-700', icon: Train },
   // { id: 6, label: 'Deniz<br/>Ulaşımı', href: '/deniz-ulasimi', bgColor: 'bg-orange-100', textColor: 'text-orange-700', icon: Ship },
