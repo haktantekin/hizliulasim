@@ -34,7 +34,7 @@ const DIRECTION_LABELS: Record<string, string> = {
 };
 
 export default function BusRouteDetailClient({ hat, seferler, konumlar: initialKonumlar, duraklar, wpContent }: Props) {
-  const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule' | 'vehicles'>(wpContent ? 'info' : 'schedule');
+  const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule' | 'vehicles'>('schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -175,18 +175,6 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
 
       {/* Tabs */}
       <div className="flex border-b overflow-x-auto">
-        {wpContent && (
-          <button
-            onClick={() => setActiveTab('info')}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'info'
-                ? 'border-brand-soft-blue text-brand-soft-blue'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {hat.SHATKODU} Hat Bilgileri
-          </button>
-        )}
         <button
           onClick={() => setActiveTab('schedule')}
           className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
@@ -228,6 +216,18 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
             </span>
           )}
         </button>
+        {wpContent && (
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'info'
+                ? 'border-brand-soft-blue text-brand-soft-blue'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {hat.SHATKODU} Hat Bilgileri
+          </button>
+        )}
 
       </div>
 
