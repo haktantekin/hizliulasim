@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getBusRouteDetail, getHat } from '@/services/iett';
+import { fetchPostBySlug } from '@/services/wordpress';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import BusRouteDetailClient from '@/components/bus/BusRouteDetailClient';
 import { Bus } from 'lucide-react';
@@ -70,7 +71,10 @@ export default async function BusRouteDetailPage({
   const { hatKodu } = await params;
   const upperCode = hatKodu.toUpperCase();
 
-  const data = await getBusRouteDetail(upperCode);
+  const [data, wpPost] = await Promise.all([
+    getBusRouteDetail(upperCode),
+    fetchPostBySlug(upperCode.toLowerCase()).catch(() => null),
+  ]);
 
   if (!data.hat) {
     return (
@@ -149,6 +153,7 @@ export default async function BusRouteDetailPage({
         seferler={data.seferler}
         konumlar={data.konumlar}
         duraklar={data.duraklar}
+        wpContent={wpPost?.content || null}
       />
     </div>
   );

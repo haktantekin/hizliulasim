@@ -19,6 +19,7 @@ interface Props {
   seferler: IETTPlanlananSefer[];
   konumlar: IETTHatOtoKonum[]; // initial SSR data
   duraklar: IETTDurakDetay[];
+  wpContent?: string | null;
 }
 
 const DAY_TYPE_LABELS: Record<string, string> = {
@@ -32,8 +33,8 @@ const DIRECTION_LABELS: Record<string, string> = {
   G: 'Dönüş',
 };
 
-export default function BusRouteDetailClient({ hat, seferler, konumlar: initialKonumlar, duraklar }: Props) {
-  const [activeTab, setActiveTab] = useState<'route' | 'schedule' | 'vehicles'>('schedule');
+export default function BusRouteDetailClient({ hat, seferler, konumlar: initialKonumlar, duraklar, wpContent }: Props) {
+  const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule' | 'vehicles'>(wpContent ? 'info' : 'schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -174,6 +175,18 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
 
       {/* Tabs */}
       <div className="flex border-b overflow-x-auto">
+        {wpContent && (
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'info'
+                ? 'border-brand-soft-blue text-brand-soft-blue'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {hat.SHATKODU} Hat Bilgileri
+          </button>
+        )}
         <button
           onClick={() => setActiveTab('schedule')}
           className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
@@ -219,6 +232,10 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'info' && wpContent && (
+        <article className="post-detail prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: wpContent }} />
+      )}
+
       {activeTab === 'route' && (
         <RouteStopsTab duraklar={duraklar} />
       )}

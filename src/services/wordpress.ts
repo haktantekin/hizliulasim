@@ -46,8 +46,10 @@ export const fetchPageSeoBySlug = async (slug: string): Promise<PageSEO | null> 
     const title = y?.title || (p.title?.rendered ? stripHtml(p.title.rendered) : undefined);
     const description = y?.description || (p.excerpt?.rendered ? stripHtml(p.excerpt.rendered) : undefined);
     const canonical = y?.canonical || p.link;
+    // Strip legacy /blog/ prefix from canonical URL
+    const cleanCanonical = canonical?.replace(/\/blog\//i, '/');
     const ogImages = y?.og_image;
-    return { title, description, canonical, ogImages };
+    return { title, description, canonical: cleanCanonical, ogImages };
   } catch (err) {
     console.error('Error fetching page SEO:', err);
     return null;
@@ -86,6 +88,16 @@ const decodeHtml = (input: string): string => {
     .replace(/&apos;/g, "'")
     .replace(/&nbsp;/g, ' ');
   return s;
+};
+
+/**
+ * Remove legacy /blog/ prefix from internal links in WordPress content.
+ * Handles both absolute (https://www.hizliulasim.com/blog/...) and relative (/blog/...) URLs.
+ */
+const stripBlogPrefix = (html: string): string => {
+  return html
+    .replace(/(href=["'])https?:\/\/(www\.)?hizliulasim\.com\/blog\//gi, '$1/')
+    .replace(/(href=["'])\/blog\//gi, '$1/');
 };
 
 // Fetch categories from WordPress
@@ -188,7 +200,7 @@ export const fetchPosts = async (params?: {
         slug: post.slug,
         excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
   // Decode in case content is entity-escaped (e.g., &lt;p&gt;...)
-  content: decodeHtml(post.content.rendered),
+  content: stripBlogPrefix(decodeHtml(post.content.rendered)),
         categoryIds: post.categories,
         author: {
           id: post.author,
@@ -263,7 +275,7 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
       slug: post.slug,
       excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
   // Decode in case content is entity-escaped
-  content: decodeHtml(post.content.rendered),
+  content: stripBlogPrefix(decodeHtml(post.content.rendered)),
       categoryIds: post.categories,
       author: {
         id: post.author,
