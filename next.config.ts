@@ -78,6 +78,17 @@ const nextConfig: NextConfig = {
   // Force HTTPS in production and normalize trailing slashes
   async redirects() {
     return [
+      // Redirect /blog to /ulasim-rehberi
+      {
+        source: '/blog',
+        destination: '/ulasim-rehberi',
+        permanent: true,
+      },
+      {
+        source: '/blog/:path*',
+        destination: '/ulasim-rehberi/:path*',
+        permanent: true,
+      },
       // Redirect URLs with trailing slash to non-trailing slash version (SEO)
       {
         source: '/:path+/',
