@@ -52,6 +52,8 @@ export interface WPPost {
   meta: {
     _hizliulasim_latitude?: string | string[];
     _hizliulasim_longitude?: string | string[];
+    _hizliulasim_faq?: Array<{ question: string; answer: string }> | string;
+    _hizliulasim_schema?: Record<string, unknown> | string;
     [key: string]: unknown;
   };
   categories: number[];
@@ -177,4 +179,6 @@ export interface BlogPost {
     latitude: number;
     longitude: number;
   };
+  faq?: Array<{ question: string; answer: string }>;
+  schema?: Record<string, unknown>;
 }

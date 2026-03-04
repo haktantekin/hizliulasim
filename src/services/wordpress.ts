@@ -91,6 +91,46 @@ const decodeHtml = (input: string): string => {
 };
 
 /**
+ * Parse FAQ meta field from WordPress post.
+ * Accepts an array of {question,answer} objects or a JSON string.
+ */
+const parseFaq = (raw: unknown): Array<{ question: string; answer: string }> | undefined => {
+  if (!raw) return undefined;
+  let items: unknown[] = [];
+  if (typeof raw === 'string') {
+    try { items = JSON.parse(raw); } catch { return undefined; }
+  } else if (Array.isArray(raw)) {
+    items = raw;
+  } else {
+    return undefined;
+  }
+  const result = items
+    .filter((item): item is { question: string; answer: string } =>
+      typeof item === 'object' && item !== null && 'question' in item && 'answer' in item
+    )
+    .map(({ question, answer }) => ({ question: String(question), answer: String(answer) }));
+  return result.length > 0 ? result : undefined;
+};
+
+/**
+ * Parse schema meta field from WordPress post.
+ * Accepts a JSON object or a JSON string.
+ */
+const parseSchema = (raw: unknown): Record<string, unknown> | undefined => {
+  if (!raw) return undefined;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return typeof parsed === 'object' && parsed !== null ? parsed : undefined;
+    } catch { return undefined; }
+  }
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return undefined;
+};
+
+/**
  * Remove legacy /blog/ prefix from internal links in WordPress content.
  * Handles both absolute (https://www.hizliulasim.com/blog/...) and relative (/blog/...) URLs.
  */
@@ -217,6 +257,8 @@ export const fetchPosts = async (params?: {
         } : undefined,
         tags: post.tags,
         location,
+        faq: parseFaq(post.meta?._hizliulasim_faq),
+        schema: parseSchema(post.meta?._hizliulasim_schema),
       };
     });
   } catch (error) {
@@ -292,6 +334,8 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
       } : undefined,
       tags: post.tags,
       location,
+      faq: parseFaq(post.meta?._hizliulasim_faq),
+      schema: parseSchema(post.meta?._hizliulasim_schema),
     };
   } catch (error) {
     console.error('Error fetching post by slug:', error);

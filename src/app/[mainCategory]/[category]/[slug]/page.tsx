@@ -5,6 +5,7 @@ import PostListItem from "@/components/blog/PostListItem";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { Fragment } from "react";
 import PostLocationMap from "@/components/blog/PostLocationMap";
+import FaqAccordion from "@/components/ui/FaqAccordion";
 import { getDummyImageForCategory } from "@/lib/getDummyImage";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
@@ -101,6 +102,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
         />
       )}
 
+      {/* FAQ Accordion */}
+      {post.faq && post.faq.length > 0 && (
+        <FaqAccordion items={post.faq} />
+      )}
+
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -164,6 +170,38 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
           }),
         }}
       />
+      {/* FAQ Schema */}
+      {post.faq && post.faq.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: post.faq.map((item) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: item.answer,
+                },
+              })),
+            }),
+          }}
+        />
+      )}
+      {/* Custom Schema (e.g. ShoppingCenter, Restaurant, etc.) */}
+      {post.schema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              ...post.schema,
+            }),
+          }}
+        />
+      )}
       {relatedPosts.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold mb-4">İlgili İçerikler</h2>
