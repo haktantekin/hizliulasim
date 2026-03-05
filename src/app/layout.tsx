@@ -88,16 +88,9 @@ export default function RootLayout({
         {/* Preconnect to external domains */}
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
-        <meta name="google-adsense-account" content="ca-pub-4699659657596975" />
         {/* AdSense Script - Secondary Account */}
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8627901921754492"
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-        />
-        {/* AdSense Script */}
-        <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4699659657596975"
           strategy="afterInteractive"
           crossOrigin="anonymous"
         />
@@ -147,6 +140,7 @@ export default function RootLayout({
           gtag('config', 'G-XJ33LRDG0G');
         `}
       </Script>
+      <meta name="google-adsense-account" content="ca-pub-8627901921754492"></meta>
       </head>
   <body className={outfit.className}>
         <ReduxProvider>
