@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Search, FileText, Bus, Map } from 'lucide-react';
+import { Home, Search, MapPin, Bus, Map } from 'lucide-react';
 import { AccessibilityWidget } from '@haktantekin/noblock';
 
 const BottomBar = () => {
@@ -30,9 +30,9 @@ const BottomBar = () => {
       label: 'Otobüs Hatları'
     },
     {
-      href: '/kategoriler',
-      icon: FileText,
-      label: 'Blog'
+      href: '/otobus-duraklari',
+      icon: MapPin,
+      label: 'Duraklar'
     }
   ];
 

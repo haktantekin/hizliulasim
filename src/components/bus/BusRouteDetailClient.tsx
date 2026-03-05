@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import type { IETTPlanlananSefer, IETTHatOtoKonum, IETTHat, IETTDurakDetay } from '@/types/iett';
 import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot } from 'lucide-react';
+import Link from 'next/link';
+import { buildDurakSlug } from '@/lib/slugify';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
   ssr: false,
@@ -502,10 +504,13 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
 
               {/* Stop info */}
               <div className={`flex-1 pb-3 ${isLast ? 'pb-0' : ''}`}>
-                <div className="bg-white border border-gray-100 rounded-lg p-3 group-hover:border-brand-soft-blue/30 group-hover:shadow-sm transition-all">
+                <Link
+                  href={`/otobus-duraklari/${buildDurakSlug(stop.DURAKADI, stop.DURAKKODU)}`}
+                  className="block bg-white border border-gray-100 rounded-lg p-3 group-hover:border-brand-soft-blue/30 group-hover:shadow-sm transition-all"
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="font-medium text-sm text-gray-900">
+                      <div className="font-medium text-sm text-gray-900 group-hover:text-brand-soft-blue transition-colors">
                         {stop.DURAKADI}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500 mt-1">
@@ -522,7 +527,7 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
                       {stop.SIRANO}
                     </div>
                   </div>
-                </div>
+                </Link>
               </div>
             </div>
           );

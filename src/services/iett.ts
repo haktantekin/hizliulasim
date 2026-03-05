@@ -303,3 +303,133 @@ export async function searchHatlar(query: string): Promise<IETTHat[]> {
       h.SHATADI.toUpperCase().includes(q)
   );
 }
+
+/**
+ * Find all bus lines passing through a given stop code.
+ * Uses a single API call to get ALL stop-line mappings, then filters.
+ * Much more efficient than the brute-force per-line approach.
+ */
+export async function getHatlarByDurakKodu(durakKodu: string): Promise<{ hat: IETTHat; durakDetay: IETTDurakDetay }[]> {
+  const matches = await getHatlarByDurakDirekt(durakKodu);
+  if (matches.length === 0) return [];
+
+  // Fetch hat info for each matching line
+  const hatKodlari = [...new Set(matches.map((m) => m.HATKODU))];
+  const hatResults = await Promise.allSettled(
+    hatKodlari.map((kod) => getHat(kod))
+  );
+
+  const hatMap = new Map<string, IETTHat>();
+  for (const r of hatResults) {
+    if (r.status === 'fulfilled' && r.value.length > 0) {
+      hatMap.set(r.value[0].SHATKODU, r.value[0]);
+    }
+  }
+
+  return matches
+    .filter((m) => hatMap.has(m.HATKODU))
+    .map((m) => ({ hat: hatMap.get(m.HATKODU)!, durakDetay: m }));
+}
+
+/**
+ * Find which bus lines pass through a given stop code.
+ * Single API call approach — fetches all stop-line mappings and filters by durak code.
+ */
+export async function getHatlarByDurak(durakKodu: string): Promise<{ hatKodu: string; hatAdi: string; yon: string; sirano: number }[]> {
+  const matches = await getHatlarByDurakDirekt(durakKodu);
+  if (matches.length === 0) return [];
+
+  // Fetch hat info for matched lines
+  const hatKodlari = [...new Set(matches.map((m) => m.HATKODU))];
+  const hatResults = await Promise.allSettled(
+    hatKodlari.map((kod) => getHat(kod))
+  );
+
+  const hatMap = new Map<string, string>();
+  for (const r of hatResults) {
+    if (r.status === 'fulfilled' && r.value.length > 0) {
+      hatMap.set(r.value[0].SHATKODU, r.value[0].SHATADI);
+    }
+  }
+
+  return matches
+    .filter((m) => hatMap.has(m.HATKODU))
+    .map((m) => ({
+      hatKodu: m.HATKODU,
+      hatAdi: hatMap.get(m.HATKODU) || '',
+      yon: m.YON,
+      sirano: m.SIRANO,
+    }));
+}
+
+/**
+ * Fetch ALL stop-line mappings from IETT API (single call) and filter for a specific durak code.
+ * Only parses XML blocks that contain the target durak code for efficiency.
+ */
+async function getHatlarByDurakDirekt(durakKodu: string): Promise<IETTDurakDetay[]> {
+  const body = buildSoapEnvelope('DurakDetay_GYY_wYonAdi', { hat_kodu: '' });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000); // 60s timeout for large response
+
+  try {
+    const response = await fetch(ENDPOINTS.ibb, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset=utf-8',
+        SOAPAction: `${NAMESPACE}DurakDetay_GYY_wYonAdi`,
+      },
+      body,
+      signal: controller.signal,
+      next: { revalidate: 3600 }, // Cache full response for 1 hour
+    });
+
+    if (!response.ok) {
+      throw new Error(`IETT DurakDetay ALL API error: ${response.status}`);
+    }
+
+    const xml = await response.text();
+
+    // Only parse <Table> blocks that contain the target durak code
+    const searchStr = `<DURAKKODU>${durakKodu}</DURAKKODU>`;
+    const results: IETTDurakDetay[] = [];
+    let startIdx = 0;
+
+    while (true) {
+      const tableStart = xml.indexOf('<Table>', startIdx);
+      if (tableStart === -1) break;
+      const tableEnd = xml.indexOf('</Table>', tableStart);
+      if (tableEnd === -1) break;
+      const block = xml.substring(tableStart + 7, tableEnd);
+      startIdx = tableEnd + 8;
+
+      // Skip blocks that don't contain our durak code
+      if (!block.includes(searchStr)) continue;
+
+      const getValue = (tag: string): string => {
+        const s = block.indexOf(`<${tag}>`);
+        const e = block.indexOf(`</${tag}>`);
+        if (s === -1 || e === -1) return '';
+        return block.substring(s + tag.length + 2, e);
+      };
+
+      results.push({
+        HATKODU: getValue('HATKODU'),
+        YON: getValue('YON'),
+        YON_ADI: getValue('YON_ADI'),
+        SIRANO: parseInt(getValue('SIRANO')) || 0,
+        DURAKKODU: getValue('DURAKKODU'),
+        DURAKADI: getValue('DURAKADI'),
+        XKOORDINATI: parseFloat(getValue('XKOORDINATI')) || 0,
+        YKOORDINATI: parseFloat(getValue('YKOORDINATI')) || 0,
+        DURAKTIPI: getValue('DURAKTIPI'),
+        ISLETMEBOLGE: getValue('ISLETMEBOLGE'),
+        ISLETMEALTBOLGE: getValue('ISLETMEALTBOLGE'),
+        ILCEADI: getValue('ILCEADI'),
+      });
+    }
+
+    return results;
+  } finally {
+    clearTimeout(timer);
+  }
+}
