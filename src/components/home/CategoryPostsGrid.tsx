@@ -98,12 +98,6 @@ const CategoryPostsGrid = async () => {
                 {category.description}
               </p>
             </div>
-            <Link
-              href={categoryHref}
-              className="px-4 py-2 bg-brand-soft-blue text-white rounded-lg hover:bg-brand-dark-blue transition-colors text-sm font-medium whitespace-nowrap"
-            >
-              Tümünü Gör
-            </Link>
           </div>
 
           {/* Posts Grid */}
@@ -137,6 +131,16 @@ const CategoryPostsGrid = async () => {
                 />
               );
             })}
+          </div>
+
+          {/* Tümünü Gör */}
+          <div className="mt-4 text-right">
+            <Link
+              href={categoryHref}
+              className="text-sm text-brand-orange hover:opacity-80 transition-colors font-medium"
+            >
+              Tümünü Gör →
+            </Link>
           </div>
         </div>
       );

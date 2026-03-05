@@ -45,7 +45,7 @@ export default function PostListItem({ post, href, className = "", categorySlug,
         )}
       </div>
       <div className="flex flex-col mr-auto">
-        <div className="text-xs text-gray-400 font-light">{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</div>
+        <div className="text-xs text-gray-400 font-light">{new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
         <h3 className="font-medium line-clamp-2 my-1 text-base leading-[20px]">{post.title}</h3>
         {post.excerpt && (
           <p className="text-xs font-light text-gray-400 line-clamp-3">{post.excerpt}</p>

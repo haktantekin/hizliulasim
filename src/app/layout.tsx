@@ -88,7 +88,60 @@ export default function RootLayout({
         {/* Preconnect to external domains */}
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
-        {/* AdSense Script - Secondary Account */}
+
+        {/* Google Consent Mode v2 — must load BEFORE any Google tags */}
+        <Script
+          id="consent-mode-defaults"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+
+              gtag('consent', 'default', {
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'analytics_storage': 'denied',
+                'functionality_storage': 'denied',
+                'personalization_storage': 'denied',
+                'security_storage': 'granted',
+                'wait_for_update': 500,
+                'regions': ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR',
+                            'DE','GR','HU','IE','IT','LV','LT','LU','MT','NL',
+                            'PL','PT','RO','SK','SI','ES','SE','IS','LI','NO',
+                            'GB','CH']
+              });
+
+              gtag('consent', 'default', {
+                'ad_storage': 'granted',
+                'ad_user_data': 'granted',
+                'ad_personalization': 'granted',
+                'analytics_storage': 'granted',
+                'functionality_storage': 'granted',
+                'personalization_storage': 'granted',
+                'security_storage': 'granted'
+              });
+            `,
+          }}
+        />
+
+        {/* Google Funding Choices CMP — Google-certified consent dialog for EEA/UK/CH */}
+        <Script
+          src="https://fundingchoicesmessages.google.com/i/pub-8627901921754492?ers=1"
+          strategy="beforeInteractive"
+          nonce=""
+        />
+        <Script
+          id="fc-setup"
+          strategy="beforeInteractive"
+          nonce=""
+          dangerouslySetInnerHTML={{
+            __html: `(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; iframe.id = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();`,
+          }}
+        />
+
+        {/* AdSense Script */}
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8627901921754492"
           strategy="afterInteractive"

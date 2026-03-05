@@ -13,8 +13,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 import QuickLinks from "../components/home/QuickLinks";
-import SearchBar from "../components/home/SearchBar";
 import CategoryPostsGrid from "../components/home/CategoryPostsGrid";
+import HomeSearchBar from "../components/home/HomeSearchBar";
 
 export default function Home() {
   return (
@@ -22,9 +22,7 @@ export default function Home() {
       <div className='text-gray-400 text-lg'>
         <span className='text-brand-soft-blue font-bold text-xl'>Hızlı Ulaşım</span>&apos;a hoş geldiniz!
       </div>
-      <div className="w-full mt-3">
-        <SearchBar />
-      </div>
+      <HomeSearchBar />
       <QuickLinks />
       <div className="mt-12">
         <CategoryPostsGrid />

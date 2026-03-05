@@ -177,7 +177,7 @@ export default function BlogPageClient({ categories, initialPosts = EMPTY_POSTS,
 
       {/* Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {state.posts.map((post) => {
+        {state.posts.map((post, index) => {
           // Find the post's category
           const postCategoryId = post.categoryIds?.[0];
           const postCategory = postCategoryId ? categories.find(c => c.id === postCategoryId) : null;
@@ -195,7 +195,7 @@ export default function BlogPageClient({ categories, initialPosts = EMPTY_POSTS,
             : `/#/${post.slug}`;
           
           return (
-            <PostListItem key={post.id} post={post} href={href} />
+            <PostListItem key={`${post.id}-${index}`} post={post} href={href} />
           );
         })}
       </div>

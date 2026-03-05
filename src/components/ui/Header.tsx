@@ -16,21 +16,6 @@ const Header = () => {
     queryKey: ['detected-city'],
     queryFn: async () => {
       try {
-        if ('geolocation' in navigator) {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              timeout: 5000,
-              maximumAge: 300000,
-            });
-          });
-          const res = await fetch(`/api/geocode/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
-          const data = await res.json();
-          return data.city || 'İstanbul';
-        }
-      } catch {
-        // Browser geolocation failed, fallback to IP
-      }
-      try {
         const res = await fetch('/api/ip-location', { cache: 'no-store' });
         const data = await res.json();
         return data.city || 'İstanbul';

@@ -70,7 +70,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
         ) : null;
       })()}
       <div className="text-xs text-gray-500 mb-4">
-        <span>{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</span>
+        <span>{new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
       </div>
 
       {/* İçerikte [map] shortcode'u varsa, haritayı oraya göm */}
