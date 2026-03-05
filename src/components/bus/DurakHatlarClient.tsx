@@ -41,8 +41,7 @@ export default function DurakHatlarClient({ durakKodu, durakAdi }: { durakKodu: 
 
   return (
     <div className="mb-6">
-      <h2 className="text-xl font-bold text-brand-soft-blue mb-4 flex items-center gap-2">
-        <Bus className="w-5 h-5" />
+      <h2 className="text-basetext-brand-soft-blue mb-4 flex flex-col items-center gap-2">
         {durakAdi} Durağından Geçen Otobüs Hatları
         {!loading && <span className="text-sm font-normal text-gray-400">({hatlar.length} hat)</span>}
       </h2>

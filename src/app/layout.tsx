@@ -4,7 +4,6 @@ import '../styles/globals.css';
 import QueryProvider from '../components/prodivers/QueryProvider';
 import ReduxProvider from '../components/providers/ReduxProvider';
 import BottomBar from '../components/ui/BottomBar';
-import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
 import Script from "next/script";
 
@@ -198,8 +197,7 @@ export default function RootLayout({
   <body className={outfit.className}>
         <ReduxProvider>
           <QueryProvider>
-            <Header />
-            <div className="min-h-screen pt-12">
+            <div className="min-h-screen">
               {children}
             </div>
             <Footer />

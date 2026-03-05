@@ -14,10 +14,22 @@ export default function PostLocationMap({ latitude, longitude, title }: PostLoca
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container || mapRef.current) return;
+
+    // Guard: clean up stale Leaflet state from Strict Mode re-mount
+    if ((container as any)._leaflet_id) {
+      (container as any)._leaflet_id = null;
+      container.innerHTML = '';
+    }
+
+    let cancelled = false;
 
     // Dynamically import Leaflet only on client side
     import('leaflet').then((L) => {
+      if (cancelled || mapRef.current) return;
+      if ((container as any)._leaflet_id) return;
+
       // Dynamically load CSS
       if (typeof window !== 'undefined' && !document.getElementById('leaflet-css')) {
         const link = document.createElement('link');
@@ -36,7 +48,7 @@ export default function PostLocationMap({ latitude, longitude, title }: PostLoca
       });
 
       // Initialize map
-      const map = L.map(mapContainerRef.current!, {
+      const map = L.map(container, {
         scrollWheelZoom: false,
         center: [latitude, longitude],
         zoom: 21, // Higher zoom for building details
@@ -61,10 +73,12 @@ export default function PostLocationMap({ latitude, longitude, title }: PostLoca
 
     // Cleanup on unmount
     return () => {
+      cancelled = true;
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
+      setIsLoaded(false);
     };
   }, [latitude, longitude, title]);
 

@@ -23,15 +23,24 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
 
     // Prevent re-initialization (Strict Mode double-invoke)
     if (mapRef.current) return;
 
+    // Guard: if Leaflet already attached a map to this DOM node, clean it up
+    if ((container as any)._leaflet_id) {
+      (container as any)._leaflet_id = null;
+      container.innerHTML = '';
+    }
+
     let cancelled = false;
 
     import('leaflet').then((L) => {
-      if (cancelled || mapRef.current) return;
+      if (cancelled) return;
+      if (mapRef.current) return;
+      if ((container as any)._leaflet_id) return;
 
       // Load CSS
       if (typeof window !== 'undefined' && !document.getElementById('leaflet-css')) {
@@ -44,7 +53,7 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
 
       leafletRef.current = L;
 
-      const map = L.map(mapContainerRef.current!, {
+      const map = L.map(container, {
         scrollWheelZoom: false,
         zoomControl: true,
       });
@@ -64,6 +73,7 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
         mapRef.current.remove();
         mapRef.current = null;
       }
+      setIsLoaded(false);
     };
   }, []);
 

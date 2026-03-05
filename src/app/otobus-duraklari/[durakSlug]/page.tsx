@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getDurak } from '@/services/iett';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import DurakHatlarClient from '@/components/bus/DurakHatlarClient';
+import DurakMap from '@/components/bus/DurakMap';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import { parseDurakSlug } from '@/lib/slugify';
@@ -82,16 +83,11 @@ export default async function DurakDetayPage({
         ]}
       />
 
-      {/* Durak Header */}
-      <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6 shadow-sm">
+      <div className="py-6 border-b border-gray-200 mb-6">
         <div className="flex items-start gap-4">
-          <div className="bg-brand-soft-blue/10 rounded-full p-3 flex-shrink-0">
-            <MapPin className="w-8 h-8 text-brand-soft-blue" />
-          </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">{durak.SDURAKADI}</h1>
+            <h1 className="text-lg font-bold text-gray-900 mb-1">{durak.SDURAKADI} - {durak.ILCEADI && <span>{durak.ILCEADI}</span>}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-              {durak.ILCEADI && <span>{durak.ILCEADI}</span>}
               {durak.DURAKTIPI && <span>Tip: {durak.DURAKTIPI}</span>}
               {durak.ENGELLIKULLANIMI === 'E' && (
                 <span className="text-green-600">♿ Engelli erişimi var</span>
@@ -100,6 +96,17 @@ export default async function DurakDetayPage({
           </div>
         </div>
       </div>
+
+      {/* Durak Haritası */}
+      {durak.YKOORDINATI && durak.XKOORDINATI && (
+        <div className="mb-6">
+          <DurakMap
+            lat={durak.YKOORDINATI}
+            lng={durak.XKOORDINATI}
+            durakAdi={durak.SDURAKADI}
+          />
+        </div>
+      )}
 
       {/* Geçen Hatlar - loaded client-side to avoid SSR timeout */}
       <DurakHatlarClient durakKodu={durakKodu} durakAdi={durak.SDURAKADI} />
