@@ -39,6 +39,65 @@ body {
   border-top: 1px solid #d1d5db;
   margin: 1rem 0;
 }
+
+/* Table styling for post content */
+figure.wp-block-table{
+  overflow-x: auto !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  margin-left: 0;
+  margin-right: 0;
+}
+figure.wp-block-table figcaption{
+  @apply text-xs text-gray-500 mt-2 text-center;
+}
+table.has-fixed-layout{
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 0.875rem !important;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,.05);
+  border: 1px solid #e5e7eb;
+  table-layout: fixed;
+  margin-bottom: 20px;
+}
+table.has-fixed-layout thead{
+  background-color: var(--soft-blue) !important;
+  color: #fff !important;
+}
+table.has-fixed-layout thead th{
+  padding: 0.625rem 1rem !important;
+  text-align: left !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: none !important;
+}
+table.has-fixed-layout tbody tr{
+  border-bottom: 1px solid #f3f4f6 !important;
+  transition: background-color 0.15s;
+}
+table.has-fixed-layout tbody tr:nth-child(even){
+  background-color: #f9fafb !important;
+}
+table.has-fixed-layout tbody tr:hover{
+  background-color: #eff6ff !important;
+}
+table.has-fixed-layout td{
+  padding: 0.625rem 1rem !important;
+  color: #374151 !important;
+  border-bottom: none !important;
+}
+table.has-fixed-layout td a{
+  color: var(--soft-blue) !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+table.has-fixed-layout td a:hover{
+  text-decoration: underline !important;
+}
 .noblock-widget-container{
   bottom:90px;
 }
