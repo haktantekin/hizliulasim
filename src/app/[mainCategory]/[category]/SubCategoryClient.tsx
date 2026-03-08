@@ -129,35 +129,34 @@ export default function SubCategoryClient({
         ]}
       />
 
-        {/* Search Bar */}
-        <div className="mt-3">
-          <form onSubmit={onSubmitSearch} className="relative">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={`${category.name} içinde ara`}
-              className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-28 text-gray-700 font-light placeholder-gray-500 transition-colors text-sm"
-            />
-            {searching && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-12 top-1.5 h-9 px-3 rounded-full text-gray-700 text-sm hover:bg-gray-300"
-                title="Aramayı temizle"
-              >
-                Temizle
-              </button>
-            )}
+      {/* Search Bar */}
+      <div className="mt-3">
+        <form onSubmit={onSubmitSearch} className="relative">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={`${category.name} içinde ara`}
+            className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-28 text-gray-700 font-light placeholder-gray-500 transition-colors text-sm"
+          />
+          {searching && (
             <button
-              type="submit"
-              aria-label="Kategori içinde ara"
-              className="absolute right-1.5 top-1 h-9 w-9 rounded-full text-gray-500 flex items-center justify-center hover:opacity-90"
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-12 top-1.5 h-9 px-3 rounded-full text-gray-700 text-sm hover:bg-gray-300"
+              title="Aramayı temizle"
             >
-              <SearchIcon size={18} />
+              Temizle
             </button>
-          </form>
-        </div>
+          )}
+          <button
+            type="submit"
+            aria-label="Kategori içinde ara"
+            className="absolute right-1.5 top-1 h-9 w-9 rounded-full text-gray-500 flex items-center justify-center hover:opacity-90"
+          >
+            <SearchIcon size={18} />
+          </button>
+        </form>
       </div>
 
       {/* Posts Grid */}
