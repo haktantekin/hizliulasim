@@ -49,10 +49,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
       <Breadcrumb
         className="mb-6"
         items={[
-          { label: "Kategoriler", href: "/kategoriler" },
           ...(mainCat ? [{ label: mainCat.name, href: `/${mainCat.slug}` }] : []),
           ...(cat ? [{ label: cat.name, href: `/${mainCategory}/${cat.slug}` }] : []),
-          // current page omitted per request
         ]}
       />
 
