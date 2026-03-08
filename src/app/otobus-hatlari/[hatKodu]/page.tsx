@@ -126,14 +126,6 @@ export default async function BusRouteDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <Breadcrumb
-        className="mb-4"
-        items={[
-          { label: 'Otobüs Hatları', href: '/otobus-hatlari' },
-          { label: data.hat.SHATKODU },
-        ]}
-      />
-
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
           <span className="bg-brand-soft-blue text-white text-lg font-bold px-3 py-1 rounded-lg">
@@ -147,6 +139,14 @@ export default async function BusRouteDetailPage({
           İETT otobüs hattı güzergah bilgileri, sefer saatleri ve canlı araç konumları
         </p>
       </div>
+
+      <Breadcrumb
+        className="mb-4"
+        items={[
+          { label: 'Otobüs Hatları', href: '/otobus-hatlari' },
+          { label: data.hat.SHATKODU },
+        ]}
+      />
 
       <BusRouteDetailClient
         hat={data.hat}

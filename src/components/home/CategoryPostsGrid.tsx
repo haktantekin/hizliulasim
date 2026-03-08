@@ -91,7 +91,7 @@ const CategoryPostsGrid = async () => {
           {/* Category Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-brand-soft-blue mb-1">
+              <h2 className="text-xl font-bold text-brand-soft-blue mb-1">
                 {category.name}
               </h2>
               <p className="text-sm text-gray-400">
@@ -101,7 +101,7 @@ const CategoryPostsGrid = async () => {
           </div>
 
           {/* Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
             {posts.map((post) => {
               // Find the first category that belongs to this main category
               const postCategoryId = post.categoryIds?.[0];

@@ -75,14 +75,6 @@ export default async function DurakDetayPage({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Breadcrumb
-        className="mb-4"
-        items={[
-          { label: 'Otobüs Durakları', href: '/otobus-duraklari' },
-          { label: durak.SDURAKADI },
-        ]}
-      />
-
       <div className="py-6 border-b border-gray-200 mb-6">
         <div className="flex items-start gap-4">
           <div>
@@ -96,6 +88,14 @@ export default async function DurakDetayPage({
           </div>
         </div>
       </div>
+
+      <Breadcrumb
+        className="mb-4"
+        items={[
+          { label: 'Otobüs Durakları', href: '/otobus-duraklari' },
+          { label: durak.SDURAKADI },
+        ]}
+      />
 
       {/* Durak Haritası */}
       {durak.YKOORDINATI && durak.XKOORDINATI && (

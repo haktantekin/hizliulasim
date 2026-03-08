@@ -18,13 +18,13 @@ import HomeSearchBar from "../components/home/HomeSearchBar";
 
 export default function Home() {
   return (
-    <div className="container mx-auto pb-4 px-4 pt-10 h-auto relative">
+    <div className="container mx-auto pb-4 px-4 pt-8 h-auto relative">
       <div className='text-gray-400 text-lg'>
-        <span className='text-brand-soft-blue font-bold text-xl'>Hızlı Ulaşım</span>&apos;a hoş geldiniz!
+        <span className='text-brand-orange font-bold text-xl'>Hızlı Ulaşım</span>&apos;a hoş geldiniz!
       </div>
       <HomeSearchBar />
       <QuickLinks />
-      <div className="mt-12">
+      <div className="mt-6">
         <CategoryPostsGrid />
       </div>
     </div>

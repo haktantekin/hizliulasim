@@ -4,7 +4,7 @@ import Link from 'next/link';
 const HomeCards = () => {
   return (
     <>
-      <h2 className="mt-5 font-bold text-2xl">Bloglara Göz Atın</h2>
+      <h2 className="mt-5 font-bold text-xl">Bloglara Göz Atın</h2>
       <div className="flex overflow-x-scroll w-full gap-3 mt-5">
         {homeCardDatas.map((item) => {
           const IconComponent = item.icon;

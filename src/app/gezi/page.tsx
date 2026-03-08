@@ -166,7 +166,7 @@ export default function GeziPage() {
       {state.data && (
         <div>
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-900">
               {state.data.district} - Gezilecek Yerler
             </h2>
             <p className="text-gray-600 mt-1">
@@ -322,7 +322,7 @@ export default function GeziPage() {
             </div>
           ) : (
             /* Grid View */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
               {state.data.places.map((place) => (
                 <div
                   key={place.id}

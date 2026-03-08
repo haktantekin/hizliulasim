@@ -110,6 +110,16 @@ export default function SubCategoryClient({
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Category Header */}
+      <div className="mb-2">
+        <h1 className="text-2xl font-bold mb-1 text-brand-soft-blue">
+          {category.name}
+        </h1>
+        <p className="text-sm text-gray-400 mb-2 font-light">
+          {category.description || `${category.name} kategorisindeki yazılar`}
+        </p>
+      </div>
+
       {/* Breadcrumb */}
       <Breadcrumb
         className="mb-4"
@@ -118,15 +128,6 @@ export default function SubCategoryClient({
           { label: mainCategory.name, href: `/${mainCategory.slug}` },
         ]}
       />
-
-      {/* Category Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1 text-brand-soft-blue">
-          {category.name}
-        </h1>
-        <p className="text-sm text-gray-400 mb-2 font-light">
-          {category.description || `${category.name} kategorisindeki yazılar`}
-        </p>
 
         {/* Search Bar */}
         <div className="mt-3">
@@ -168,7 +169,7 @@ export default function SubCategoryClient({
             <div className="text-gray-600 text-sm">Sonuç bulunamadı.</div>
           )}
           {!searchLoading && searchResults.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
               {searchResults.map((post: BlogPost) => (
                 <PostListItem
                   key={post.id}
@@ -193,7 +194,7 @@ export default function SubCategoryClient({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
             {categoryPosts.map((post: BlogPost) => (
               <PostListItem
                 key={post.id}

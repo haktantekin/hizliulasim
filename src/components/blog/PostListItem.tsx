@@ -11,9 +11,10 @@ interface Props {
   className?: string;
   categorySlug?: string;
   categoryName?: string;
+  hideImage?: boolean;
 }
 
-export default function PostListItem({ post, href, className = "", categorySlug, categoryName }: Props) {
+export default function PostListItem({ post, href, className = "", categorySlug, categoryName, hideImage }: Props) {
   // Resim yoksa kategori bazlı dummy resim kontrolü
   const dummyImage = !post.featuredImage && categorySlug
     ? getDummyImageForCategory(categorySlug, post.title)
@@ -23,6 +24,7 @@ export default function PostListItem({ post, href, className = "", categorySlug,
       href={href}
       className={`flex items-start gap-3 relative justify-between border-b border-brand-light-blue pb-5 last:border-0 ${className}`}
     >
+      {!hideImage && (
        <div className="relative bg-gray-100 rounded-md overflow-hidden flex-none w-28 h-28 md:w-32 md:h-32">
         {post.featuredImage ? (
           <Image
@@ -44,12 +46,16 @@ export default function PostListItem({ post, href, className = "", categorySlug,
           <div className="h-full w-full flex items-center justify-center text-gray-400 text-sm">Görsel yok</div>
         )}
       </div>
+      )}
       <div className="flex flex-col mr-auto">
-        <div className="text-xs text-gray-400 font-light">{new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+        {categoryName && <div className="text-xs text-brand-orange font-medium">{categoryName}</div>}
         <h3 className="font-medium line-clamp-2 my-1 text-base leading-[20px]">{post.title}</h3>
         {post.excerpt && (
           <p className="text-xs font-light text-gray-400 line-clamp-3">{post.excerpt}</p>
         )}
+        <div className="text-xs text-gray-400 font-light mt-1">
+          {new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        </div>
       </div>
      
     </Link>

@@ -1,89 +1,130 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Sun, Cloud, CloudRain, Snowflake, Zap, Facebook } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setCity, setCityLoading } from '../../store/slices/citySlice';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { usePathname } from 'next/navigation';
+import { Facebook, Menu, X, Home, Map, Bus, BusFront, ParkingCircle } from 'lucide-react';
+import { useDrawer } from '../providers/DrawerProvider';
 import LogoIcon from '../icons/LogoIcon';
 import Link from 'next/link';
 
+const drawerLinks = [
+  { href: '/', icon: Home, label: 'Ana Sayfa' },
+  { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
+  { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
+  { href: '/otobus-duraklari', icon: BusFront, label: 'Otobüs Durakları' },
+  { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
+];
+
 const Header = () => {
-  const dispatch = useAppDispatch();
-  const { name: city, isLoading } = useAppSelector((s) => s.city);
+  const { isOpen, toggle, close } = useDrawer();
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
-  const { data: detectedCity } = useQuery<string>({
-    queryKey: ['detected-city'],
-    queryFn: async () => {
-      try {
-        const res = await fetch('/api/ip-location', { cache: 'no-store' });
-        const data = await res.json();
-        return data.city || 'İstanbul';
-      } catch {
-        return 'İstanbul';
-      }
-    },
-    staleTime: Infinity,
-    gcTime: Infinity,
-    retry: 1,
-  });
+  useEffect(() => setMounted(true), []);
 
+  // Close drawer on route change
   useEffect(() => {
-    if (detectedCity) {
-      dispatch(setCity(detectedCity));
-      dispatch(setCityLoading(false));
+    close();
+  }, [pathname, close]);
+
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
-  }, [detectedCity, dispatch]);
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
 
-  const { data: weather, isLoading: weatherLoading } = useQuery<{ temp: number; code: number } | null>({
-    queryKey: ['weather', city],
-    queryFn: async () => {
-      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=tr&format=json`);
-      const geo = await geoRes.json();
-      const place = geo?.results?.[0];
-      if (!place) return null;
-      const { latitude, longitude } = place;
-      const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto`);
-      const w = await wRes.json();
-      const cw = w?.current_weather;
-      if (cw && typeof cw.temperature === 'number') {
-        return { temp: Math.round(cw.temperature), code: Number(cw.weathercode) };
-      }
-      return null;
-    },
-    enabled: !!city && !isLoading,
-    staleTime: 1000 * 60 * 10,
-  });
+  const drawerContent = isOpen ? (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
+      {/* Overlay */}
+      <div
+        style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}
+        onClick={close}
+        aria-hidden="true"
+      />
+      {/* Drawer panel */}
+      <nav
+        style={{ position: 'fixed', top: 0, left: 0, height: '100%', width: '288px', backgroundColor: '#fff', zIndex: 10000, boxShadow: '4px 0 25px rgba(0,0,0,0.15)' }}
+        className="flex flex-col"
+        aria-label="Ana menü"
+      >
+        {/* Drawer header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <Link href="/" onClick={close} className="flex items-center gap-2">
+            <LogoIcon className="h-6 w-6" ariaHidden color="#F26101" />
+            <span className="font-medium text-brand-orange tracking-wide">HIZLI ULAŞIM</span>
+          </Link>
+          <button
+            onClick={close}
+            aria-label="Menüyü kapat"
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-  const getWeatherIcon = (code: number) => {
-    // Very rough mapping for demo purposes
-    if ([71, 73, 75, 77, 85, 86].includes(code)) return <Snowflake size={16} className="text-blue-400" />; // snow
-    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return <CloudRain size={16} className="text-blue-500" />; // rain
-    if ([95, 96, 99].includes(code)) return <Zap size={16} className="text-yellow-500" />; // thunder
-    if ([0, 1].includes(code)) return <Sun size={16} className="text-yellow-400" />; // clear
-    return <Cloud size={16} className="text-gray-500" />; // default cloudy
-  };
+        {/* Links */}
+        <div className="flex-1 overflow-y-auto py-2 flex flex-col">
+          {drawerLinks.map(item => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={close}
+                className={`flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${
+                  isActive
+                    ? 'text-brand-orange bg-orange-50 font-semibold border-r-2 border-brand-orange'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-brand-soft-blue'
+                }`}
+              >
+                <Icon size={20} strokeWidth={1.5} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
 
-  return (
-    <div className="fixed top-0 left-0 w-full z-50 border-b border-brand-light-blue bg-white">
-      <div className="container mx-auto p-4 flex items-center justify-between">
-        <Link href={'/'} className="font-medium text-brand-dark-blue tracking-wide flex items-center gap-2">
-          <LogoIcon className="h-6 w-6" ariaHidden color='#F26101' />
-          <span className='text-brand-orange'>HIZLI ULAŞIM</span>
-        </Link>
-        <div className="flex items-center gap-2 text-sm text-gray-700">
-          <a 
-            href="https://www.facebook.com/hizliulasim/" 
-            target="_blank" 
+        {/* Footer — Facebook */}
+        <div className="border-t border-gray-100 p-4">
+          <a
+            href="https://www.facebook.com/hizliulasim/"
+            target="_blank"
             rel="nofollow noopener noreferrer"
-            className="flex items-center gap-1 hover:text-brand-orange transition-colors"
-            aria-label="Facebook"
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
           >
             <Facebook size={20} />
+            <span>Facebook&apos;ta takip et</span>
           </a>
         </div>
-      </div>
+      </nav>
     </div>
+  ) : null;
+
+  return (
+    <>
+      <div className=" top-0 left-0 w-full z-50">
+        <div className="container mx-auto px-4 pt-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggle}
+              aria-label="Menüyü aç"
+              className="p-1 text-gray-600 hover:text-brand-orange transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Portal drawer to document.body so it's above everything */}
+      {mounted && drawerContent && createPortal(drawerContent, document.body)}
+    </>
   );
 };
 

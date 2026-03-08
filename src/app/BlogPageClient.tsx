@@ -176,7 +176,7 @@ export default function BlogPageClient({ categories, initialPosts = EMPTY_POSTS,
       {!state.loading && state.posts.length === 0 && <div className="text-center text-gray-500">Yazı bulunamadı.</div>}
 
       {/* Posts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
         {state.posts.map((post, index) => {
           // Find the post's category
           const postCategoryId = post.categoryIds?.[0];

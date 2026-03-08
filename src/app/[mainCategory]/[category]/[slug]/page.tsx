@@ -44,6 +44,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
 
   return (
     <div className="container mx-auto px-4 py-6">
+      <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
+
       <Breadcrumb
         className="mb-6"
         items={[
@@ -53,8 +55,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
           // current page omitted per request
         ]}
       />
-
-      <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
 
 
       {post.featuredImage ? (

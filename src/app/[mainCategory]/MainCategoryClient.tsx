@@ -113,61 +113,61 @@ export default function MainCategoryClient({ category, allCategories, subCategor
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Category Header */}
+      <div className="mb-2">
+        <h1 className="text-xl font-bold mb-1 text-brand-soft-blue">
+          {category.name}
+        </h1>
+        <p className="text-sm text-gray-400 mb-2 font-light">
+          {category.description || `${category.name} kategorisindeki yazılar`}
+        </p>
+      </div>
+
       {/* Breadcrumb */}
       <Breadcrumb
         className="mb-4"
         items={[{ label: 'Kategoriler', href: '/kategoriler' }]}
       />
 
-      {/* Category Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1 text-brand-soft-blue">
-          {category.name}
-        </h1>
-        <p className="text-sm text-gray-400 mb-2 font-light">
-          {category.description || `${category.name} kategorisindeki yazılar`}
-        </p>
-
-        {/* Search Bar scoped to this category */}
-        <div className="mt-3">
-          <form onSubmit={onSubmitSearch} className="relative">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={`${category.name} içinde ara`}
-              className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-28 text-gray-700 font-light placeholder-gray-500 transition-colors text-sm"
-            />
-            {searching && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-12 top-1.5 h-9 px-3 rounded-full text-gray-700 text-sm hover:bg-gray-300"
-                title="Aramayı temizle"
-              >
-                Temizle
-              </button>
-            )}
-            <button
-              type="submit"
-              aria-label="Kategori içinde ara"
-              className="absolute right-1.5 top-1 h-9 w-9 rounded-full text-gray-500 flex items-center justify-center hover:opacity-90"
-            >
-              <SearchIcon size={18} />
-            </button>
-          </form>
-        </div>
-
-        {/* Sub-categories scroller */}
-        {subCategories.length > 0 && (
-          <CategoryScroller
-            categories={subCategories}
-            allCategories={allCategories}
-            showCounts
-            className="mt-3"
+      {/* Search Bar scoped to this category */}
+      <div className="mt-3 mb-6">
+        <form onSubmit={onSubmitSearch} className="relative">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={`${category.name} içinde ara`}
+            className="w-full border border-brand-light-blue rounded-full px-4 py-3 pr-28 text-gray-700 font-light placeholder-gray-500 transition-colors text-sm"
           />
-        )}
+          {searching && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-12 top-1.5 h-9 px-3 rounded-full text-gray-700 text-sm hover:bg-gray-300"
+              title="Aramayı temizle"
+            >
+              Temizle
+            </button>
+          )}
+          <button
+            type="submit"
+            aria-label="Kategori içinde ara"
+            className="absolute right-1.5 top-1 h-9 w-9 rounded-full text-gray-500 flex items-center justify-center hover:opacity-90"
+          >
+            <SearchIcon size={18} />
+          </button>
+        </form>
       </div>
+
+      {/* Sub-categories scroller */}
+      {subCategories.length > 0 && (
+        <CategoryScroller
+          categories={subCategories}
+          allCategories={allCategories}
+          showCounts
+          className="mt-3"
+        />
+      )}
 
       {/* Posts Grid */}
       {searching ? (
@@ -178,7 +178,7 @@ export default function MainCategoryClient({ category, allCategories, subCategor
             <div className="text-gray-600 text-sm">Sonuç bulunamadı.</div>
           )}
           {!searchLoading && searchResults.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
               {searchResults.map((post: BlogPost) => (
                 <PostListItem
                   key={post.id}
@@ -186,6 +186,7 @@ export default function MainCategoryClient({ category, allCategories, subCategor
                   href={buildPostHref(post)}
                   categorySlug={allCategories.find(c => c.id === post.categoryIds?.[0])?.slug}
                   categoryName={allCategories.find(c => c.id === post.categoryIds?.[0])?.name}
+                  hideImage={category.slug === 'otobus-duraklari'}
                 />
               ))}
             </div>
@@ -203,7 +204,7 @@ export default function MainCategoryClient({ category, allCategories, subCategor
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
             {categoryPosts.map((post: BlogPost) => (
               <PostListItem
                 key={post.id}
@@ -211,6 +212,7 @@ export default function MainCategoryClient({ category, allCategories, subCategor
                 href={buildPostHref(post)}
                 categorySlug={allCategories.find(c => c.id === post.categoryIds?.[0])?.slug}
                 categoryName={allCategories.find(c => c.id === post.categoryIds?.[0])?.name}
+                hideImage={category.slug === 'otobus-duraklari'}
               />
             ))}
           </div>

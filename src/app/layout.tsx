@@ -3,6 +3,7 @@ import { Outfit } from "next/font/google";
 import '../styles/globals.css';
 import QueryProvider from '../components/prodivers/QueryProvider';
 import ReduxProvider from '../components/providers/ReduxProvider';
+import { DrawerProvider } from '../components/providers/DrawerProvider';
 import BottomBar from '../components/ui/BottomBar';
 import Footer from '../components/ui/Footer';
 import Script from "next/script";
@@ -197,6 +198,7 @@ export default function RootLayout({
   <body className={outfit.className}>
         <ReduxProvider>
           <QueryProvider>
+            <DrawerProvider>
             <div className="min-h-screen">
               {children}
             </div>
@@ -204,6 +206,7 @@ export default function RootLayout({
             {/* Spacer to avoid BottomBar overlaying the footer */}
             <div aria-hidden className="h-16" />
             <BottomBar />
+            </DrawerProvider>
           </QueryProvider>
         </ReduxProvider>
       </body>
