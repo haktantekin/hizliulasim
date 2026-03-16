@@ -1,87 +1,13 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import type { ISPARKPark, ISPARKParkDetay } from '@/types/ispark';
-import { Search, X, Loader2, Car, MapPin, Clock, ParkingCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import type { ISPARKPark } from '@/types/ispark';
+import { Search, X, Loader2, Car, MapPin, Clock, ParkingCircle, Heart } from 'lucide-react';
+import { useAppSelector } from '@/store/hooks';
+import { useUpdateFavorite } from '@/hooks/useAuth';
+import AuthModal from '@/components/ui/AuthModal';
 
 type ParkTypeFilter = 'ALL' | 'AÇIK OTOPARK' | 'KAPALI OTOPARK' | 'YOL ÜSTÜ';
-
-function OtoparkDetayPanel({ parkId, onClose }: { parkId: number; onClose: () => void }) {
-  const [detay, setDetay] = useState<ISPARKParkDetay | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchDetay() {
-      try {
-        setLoading(true);
-        const res = await fetch(`/api/ispark/detay?id=${parkId}`);
-        if (!res.ok) throw new Error('API error');
-        const data: ISPARKParkDetay = await res.json();
-        if (!cancelled) setDetay(data);
-      } catch {
-        if (!cancelled) setDetay(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    fetchDetay();
-    return () => { cancelled = true; };
-  }, [parkId]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 p-4 text-gray-400 text-sm">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        <span>Detaylar yükleniyor...</span>
-      </div>
-    );
-  }
-
-  if (!detay) {
-    return (
-      <div className="p-4 text-sm text-gray-500">Detay bilgisi alınamadı.</div>
-    );
-  }
-
-  return (
-    <div className="bg-gray-50 border-t border-gray-100 p-4 space-y-3 text-sm">
-      {detay.address && (
-        <div className="flex items-start gap-2">
-          <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <span className="text-gray-700">{detay.address}</span>
-        </div>
-      )}
-      <div className="grid grid-cols-2 gap-3">
-        {detay.tariff && (
-          <div className="bg-white rounded-lg p-3 border border-gray-100">
-            <div className="text-xs text-gray-500 mb-1">Tarife</div>
-            <div className="font-semibold text-gray-900">{detay.tariff}</div>
-          </div>
-        )}
-        {detay.monthlyFee > 0 && (
-          <div className="bg-white rounded-lg p-3 border border-gray-100">
-            <div className="text-xs text-gray-500 mb-1">Aylık Abonelik</div>
-            <div className="font-semibold text-brand-soft-blue">
-              {detay.monthlyFee.toLocaleString('tr-TR')} ₺
-            </div>
-          </div>
-        )}
-      </div>
-      {detay.updateDate && (
-        <div className="text-xs text-gray-400">
-          Son güncelleme: {detay.updateDate}
-        </div>
-      )}
-      <button
-        onClick={onClose}
-        className="text-xs text-brand-soft-blue hover:underline"
-      >
-        Detayları gizle
-      </button>
-    </div>
-  );
-}
 
 export default function OtoparkListClient() {
   const [parks, setParks] = useState<ISPARKPark[]>([]);
@@ -91,7 +17,10 @@ export default function OtoparkListClient() {
   const [districtFilter, setDistrictFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState<ParkTypeFilter>('ALL');
   const [showCount, setShowCount] = useState(30);
-  const [expandedParkId, setExpandedParkId] = useState<number | null>(null);
+
+  const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
+  const updateFavorite = useUpdateFavorite();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,10 +95,6 @@ export default function OtoparkListClient() {
     setShowCount(30);
   }, []);
 
-  const toggleExpand = useCallback((parkId: number) => {
-    setExpandedParkId(prev => (prev === parkId ? null : parkId));
-  }, []);
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -189,6 +114,7 @@ export default function OtoparkListClient() {
   }
 
   return (
+    <>
     <div className="space-y-5">
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -290,17 +216,13 @@ export default function OtoparkListClient() {
               const occupancyRate = park.capacity > 0
                 ? ((park.capacity - park.emptyCapacity) / park.capacity) * 100
                 : 0;
-              const isExpanded = expandedParkId === park.parkID;
 
               return (
                 <div
                   key={park.parkID}
                   className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-brand-soft-blue/30 hover:shadow-sm transition-all"
                 >
-                  <div
-                    className="p-4 cursor-pointer"
-                    onClick={() => toggleExpand(park.parkID)}
-                  >
+                  <div className="p-4">
                     <div className="flex items-start gap-3">
                       {/* Icon */}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
@@ -315,11 +237,33 @@ export default function OtoparkListClient() {
                           <h3 className="text-sm font-semibold text-gray-900 leading-tight">
                             {park.parkName}
                           </h3>
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                          )}
+                          {(() => {
+                            const isFav = isAuthenticated && favorites.places.some((p) => p.id === String(park.parkID));
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isAuthenticated) { setAuthModalOpen(true); return; }
+                                  updateFavorite.mutate({
+                                    type: 'places',
+                                    action: isFav ? 'remove' : 'add',
+                                    item: { id: String(park.parkID), name: park.parkName },
+                                  });
+                                }}
+                                className="flex-shrink-0 p-1 rounded-full hover:bg-orange-50 transition-colors"
+                                aria-label={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+                              >
+                                <Heart
+                                  className={`w-4 h-4 transition-colors ${
+                                    isFav
+                                      ? 'text-brand-orange fill-brand-orange'
+                                      : 'text-gray-300 hover:text-gray-400'
+                                  }`}
+                                />
+                              </button>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mt-1.5">
@@ -377,14 +321,6 @@ export default function OtoparkListClient() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Expandable detail panel */}
-                  {isExpanded && (
-                    <OtoparkDetayPanel
-                      parkId={park.parkID}
-                      onClose={() => setExpandedParkId(null)}
-                    />
-                  )}
                 </div>
               );
             })}
@@ -404,5 +340,7 @@ export default function OtoparkListClient() {
         </>
       )}
     </div>
+    <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </>
   );
 }

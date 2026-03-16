@@ -65,6 +65,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protected routes — require auth cookie
+  const protectedPaths = ['/profil', '/u/', '/favoriler'];
+  const isProtected = protectedPaths.some(p => pathname.startsWith(p));
+  if (isProtected) {
+    const authToken = request.cookies.get('auth_token')?.value;
+    if (!authToken) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
 

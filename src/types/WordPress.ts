@@ -182,3 +182,13 @@ export interface BlogPost {
   faq?: Array<{ question: string; answer: string }>;
   schema?: Record<string, unknown>;
 }
+
+export interface BlogComment {
+  id: number;
+  author: string;
+  content: string;
+  date: string;
+  user_id: number;
+  parent: number;
+  avatar_url: string;
+}

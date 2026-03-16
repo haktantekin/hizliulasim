@@ -3,7 +3,10 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import type { IETTHat } from '@/types/iett';
-import { Search, Bus, ArrowRight, X, Loader2 } from 'lucide-react';
+import { Search, Bus, ArrowRight, X, Loader2, Heart } from 'lucide-react';
+import { useAppSelector } from '@/store/hooks';
+import { useUpdateFavorite } from '@/hooks/useAuth';
+import AuthModal from '@/components/ui/AuthModal';
 
 export default function BusRoutesListClient() {
   const [hatlar, setHatlar] = useState<IETTHat[]>([]);
@@ -11,6 +14,10 @@ export default function BusRoutesListClient() {
   const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
   const [showCount, setShowCount] = useState(50);
+
+  const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
+  const updateFavorite = useUpdateFavorite();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,12 +86,19 @@ export default function BusRoutesListClient() {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-700 font-medium">Hat bilgileri yüklenirken bir hata oluştu.</p>
-        <p className="text-sm text-red-500 mt-1">Lütfen daha sonra tekrar deneyin.</p>
+        <p className="text-sm text-red-500 mt-1">İETT servisi geçici olarak yanıt vermiyor olabilir.</p>
+        <button
+          onClick={() => { setError(false); setLoading(true); window.location.reload(); }}
+          className="mt-3 px-4 py-2 bg-brand-soft-blue text-white text-sm rounded-lg hover:bg-brand-dark-blue transition-colors"
+        >
+          Tekrar Dene
+        </button>
       </div>
     );
   }
 
   return (
+    <>
     <div className="space-y-4">
       {/* Search Box */}
       <div className="relative">
@@ -154,6 +168,30 @@ export default function BusRoutesListClient() {
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-brand-soft-blue transition-colors flex-shrink-0" />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isAuthenticated) { setAuthModalOpen(true); return; }
+                    const isFav = favorites.routes.some((r) => r.id === h.SHATKODU);
+                    updateFavorite.mutate({
+                      type: 'routes',
+                      action: isFav ? 'remove' : 'add',
+                      item: { id: h.SHATKODU, name: h.SHATADI },
+                    });
+                  }}
+                  className="flex-shrink-0 p-1.5 rounded-full hover:bg-orange-50 transition-colors"
+                  aria-label={favorites.routes.some((r) => r.id === h.SHATKODU) ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+                >
+                  <Heart
+                    className={`w-4 h-4 transition-colors ${
+                      isAuthenticated && favorites.routes.some((r) => r.id === h.SHATKODU)
+                        ? 'text-brand-orange fill-brand-orange'
+                        : 'text-gray-300 group-hover:text-gray-400'
+                    }`}
+                  />
+                </button>
               </Link>
             ))}
           </div>
@@ -172,5 +210,7 @@ export default function BusRoutesListClient() {
         </>
       )}
     </div>
+    <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </>
   );
 }

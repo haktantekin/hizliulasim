@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { Facebook, Menu, X, Home, Map, Bus, BusFront, ParkingCircle } from 'lucide-react';
+import { Facebook, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
+import { useAppSelector } from '../../store/hooks';
+import { useLogout } from '../../hooks/useAuth';
 import LogoIcon from '../icons/LogoIcon';
 import Link from 'next/link';
+import AuthModal from './AuthModal';
 
 const drawerLinks = [
   { href: '/', icon: Home, label: 'Ana Sayfa' },
   { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
   { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
-  { href: '/otobus-duraklari', icon: BusFront, label: 'Otobüs Durakları' },
   { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
 ];
 
@@ -20,8 +22,36 @@ const Header = () => {
   const { isOpen, toggle, close } = useDrawer();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
+  const logoutMutation = useLogout();
 
   useEffect(() => setMounted(true), []);
+
+  // Close drawer on route change
+  useEffect(() => {
+    close();
+    setUserMenuOpen(false);
+  }, [pathname, close]);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined);
+    setUserMenuOpen(false);
+  };
 
   // Close drawer on route change
   useEffect(() => {
@@ -119,11 +149,69 @@ const Header = () => {
               <Menu size={24} />
             </button>
           </div>
+
+          {/* Auth UI */}
+          <div className="flex items-center">
+            {isAuthenticated && user ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-1.5 p-0.5 rounded-full hover:ring-2 hover:ring-brand-orange/30 transition-all"
+                >
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center text-xs font-semibold">
+                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-[100]">
+                    <Link
+                      href={user.username ? `/u/${user.username}` : '/profil'}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <User size={16} />
+                      <span>Profil</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut size={16} />
+                      <span>Çıkış Yap</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-brand-orange hover:bg-orange-50 transition-colors"
+              >
+                <LogIn size={18} />
+                <span className="hidden sm:inline">Üye Girişi</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Portal drawer to document.body so it's above everything */}
       {mounted && drawerContent && createPortal(drawerContent, document.body)}
+
+      {/* Auth Modal */}
+      {mounted && createPortal(
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />,
+        document.body
+      )}
     </>
   );
 };

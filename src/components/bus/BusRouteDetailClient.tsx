@@ -3,7 +3,10 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import type { IETTPlanlananSefer, IETTHatOtoKonum, IETTHat, IETTDurakDetay } from '@/types/iett';
-import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot } from 'lucide-react';
+import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot, Heart } from 'lucide-react';
+import { useAppSelector } from '@/store/hooks';
+import { useUpdateFavorite } from '@/hooks/useAuth';
+import AuthModal from '@/components/ui/AuthModal';
 import Link from 'next/link';
 import { buildDurakSlug } from '@/lib/slugify';
 
@@ -46,6 +49,12 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
   const [konumError, setKonumError] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [durakAdlari, setDurakAdlari] = useState<Record<string, string>>({});
+
+  // Favorites
+  const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
+  const updateFavorite = useUpdateFavorite();
+  const isFavorite = isAuthenticated && favorites.routes.some((r) => r.id === hat.SHATKODU);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Fetch stop names for vehicle locations
   const fetchDurakAdlari = useCallback(async (vehicles: IETTHatOtoKonum[]) => {
@@ -151,6 +160,30 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
 
   return (
     <div className="space-y-6">
+      {/* Favorite Button */}
+      <div className="flex justify-start">
+        <button
+          onClick={() => {
+            if (!isAuthenticated) { setAuthModalOpen(true); return; }
+            updateFavorite.mutate({
+              type: 'routes',
+              action: isFavorite ? 'remove' : 'add',
+              item: { id: hat.SHATKODU, name: hat.SHATADI },
+            });
+          }}
+          disabled={updateFavorite.isPending}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            isFavorite
+              ? 'bg-orange-50 text-brand-orange hover:bg-orange-100'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-brand-orange' : ''}`} />
+          {isFavorite ? 'Favorilerimde' : 'Favorilere Ekle'}
+        </button>
+      </div>
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
       {/* Hat Info Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-brand-light-blue/30 rounded-xl p-4 text-center">

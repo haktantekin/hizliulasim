@@ -5,6 +5,7 @@ import { store } from '../../store';
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setDistrict } from '../../store/slices/locationSlice';
+import { setUser, setUserLoading } from '../../store/slices/userSlice';
 
 function Persistor() {
   const dispatch = useAppDispatch();
@@ -29,10 +30,36 @@ function Persistor() {
   return null;
 }
 
+function AuthRestorer() {
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          dispatch(setUser({
+            user: data.user,
+            favorites: data.favorites,
+            preferences: data.preferences,
+          }));
+        } else {
+          dispatch(setUserLoading(false));
+        }
+      } catch {
+        dispatch(setUserLoading(false));
+      }
+    };
+    restoreSession();
+  }, [dispatch]);
+  return null;
+}
+
 export default function ReduxProvider({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <Persistor />
+      <AuthRestorer />
       {children}
     </Provider>
   );

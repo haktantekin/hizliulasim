@@ -7,6 +7,7 @@ import { Fragment } from "react";
 import PostLocationMap from "@/components/blog/PostLocationMap";
 import FaqAccordion from "@/components/ui/FaqAccordion";
 import { getDummyImageForCategory } from "@/lib/getDummyImage";
+import PostComments from "@/components/blog/PostComments";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -200,6 +201,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
           }}
         />
       )}
+      {/* Yorumlar */}
+      <PostComments postId={post.id} />
+
       {relatedPosts.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold mb-4">İlgili İçerikler</h2>

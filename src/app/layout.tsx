@@ -6,6 +6,7 @@ import ReduxProvider from '../components/providers/ReduxProvider';
 import { DrawerProvider } from '../components/providers/DrawerProvider';
 import BottomBar from '../components/ui/BottomBar';
 import Footer from '../components/ui/Footer';
+import Header from '../components/ui/Header';
 import Script from "next/script";
 
 const outfit = Outfit({ subsets: ["latin"], display: "swap" });
@@ -199,6 +200,7 @@ export default function RootLayout({
         <ReduxProvider>
           <QueryProvider>
             <DrawerProvider>
+            <Header />
             <div className="min-h-screen">
               {children}
             </div>

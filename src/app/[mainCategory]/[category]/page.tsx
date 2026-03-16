@@ -14,6 +14,7 @@ import PostListItem from '@/components/blog/PostListItem';
 import PostLocationMap from '@/components/blog/PostLocationMap';
 import { Fragment } from 'react';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
+import PostComments from '@/components/blog/PostComments';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -385,6 +386,9 @@ export default async function SubCategoryPage({ params }: PageProps) {
             }),
           }}
         />
+
+        {/* Yorumlar */}
+        <PostComments postId={post.id} />
 
         {relatedPosts.length > 0 && (
           <section className="mt-10">

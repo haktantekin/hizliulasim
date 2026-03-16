@@ -4,15 +4,17 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Bus, Map, ParkingCircle, BusFront, Menu, X, Facebook } from 'lucide-react';
+import { Home, Bus, Map, ParkingCircle, Menu, X, Facebook, UserPlus, User, LogIn, LogOut } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
+import { useAppSelector } from '../../store/hooks';
+import { useLogout } from '../../hooks/useAuth';
 import LogoIcon from '../icons/LogoIcon';
+import AuthModal from './AuthModal';
 
 const drawerLinks = [
   { href: '/', icon: Home, label: 'Ana Sayfa' },
   { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
   { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
-  { href: '/otobus-duraklari', icon: BusFront, label: 'Otobüs Durakları' },
   { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
 ];
 
@@ -20,6 +22,11 @@ const BottomBar = () => {
   const pathname = usePathname();
   const { isOpen: drawerOpen, toggle, close } = useDrawer();
   const [mounted, setMounted] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+
+  const { user, isAuthenticated } = useAppSelector((state) => state.user);
+  const logoutMutation = useLogout();
 
   useEffect(() => setMounted(true), []);
 
@@ -32,14 +39,10 @@ const BottomBar = () => {
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
 
-  const leftItems = [
+  const navItems = [
     { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
     { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otoparklar' },
-  ];
-
-  const rightItems = [
     { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
-    { href: '/otobus-duraklari', icon: BusFront, label: 'Duraklar' },
   ];
 
   const renderItem = (item: { href: string; icon: typeof Map; label: string }) => {
@@ -105,17 +108,49 @@ const BottomBar = () => {
               </Link>
             );
           })}
-        </div>
-        <div className="border-t border-gray-100 p-4">
+          <div className="border-t border-gray-100 mx-5 my-2" />
           <a
             href="https://www.facebook.com/hizliulasim/"
             target="_blank"
             rel="nofollow noopener noreferrer"
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+            className="flex items-center gap-3 px-5 py-3.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
           >
             <Facebook size={20} />
             <span>Facebook&apos;ta takip et</span>
           </a>
+          {!isAuthenticated && (
+            <div className="flex gap-2 px-5 pt-4">
+              <button
+                onClick={() => { close(); setAuthTab('register'); setAuthModalOpen(true); }}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brand-orange text-white text-sm font-medium hover:bg-orange-600 transition-colors"
+              >
+                <UserPlus size={16} />
+                Üye Ol
+              </button>
+              <button
+                onClick={() => { close(); setAuthTab('login'); setAuthModalOpen(true); }}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand-soft-blue text-brand-soft-blue text-sm font-medium hover:bg-brand-light-blue transition-colors"
+              >
+                <LogIn size={16} />
+                Giriş Yap
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="border-t border-gray-100 p-4 space-y-3">
+          {isAuthenticated && user && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-700">Merhaba, <span className="font-semibold">{user.name}</span></span>
+              <button
+                onClick={() => { logoutMutation.mutate(undefined); close(); }}
+                disabled={logoutMutation.isPending}
+                className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 transition-colors"
+              >
+                <LogOut size={16} />
+                Çıkış Yap
+              </button>
+            </div>
+          )}
         </div>
       </nav>
     </div>
@@ -125,7 +160,26 @@ const BottomBar = () => {
     <>
       <div className={`fixed bottom-3 left-0 w-full transition-opacity duration-300 ${drawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <nav className="flex justify-around items-center max-w-md w-[90%] mx-auto py-2 shadow-md border-[0.4px] border-gray bg-white rounded-full">
-          {leftItems.map(renderItem)}
+          {navItems.map(renderItem)}
+          {isAuthenticated ? (
+            <Link
+              href={user?.username ? `/u/${user.username}` : '/profil'}
+              aria-label="Profilim"
+              className={`flex items-center justify-center transition-colors p-1 rounded-full ${
+                pathname.startsWith('/u/') || pathname === '/profil' ? 'font-bold text-brand-orange' : 'text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue'
+              }`}
+            >
+              <User strokeWidth={1} size={25} aria-hidden="true" />
+            </Link>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              aria-label="Üye Ol"
+              className="flex items-center justify-center transition-colors p-1 rounded-full text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue"
+            >
+              <UserPlus strokeWidth={1} size={25} aria-hidden="true" />
+            </button>
+          )}
           <button
             onClick={toggle}
             aria-label="Menü"
@@ -133,10 +187,13 @@ const BottomBar = () => {
           >
             <Menu strokeWidth={1} size={25} aria-hidden="true" />
           </button>
-          {rightItems.map(renderItem)}
         </nav>
       </div>
       {mounted && drawerContent && createPortal(drawerContent, document.body)}
+      {mounted && createPortal(
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultTab={authTab} />,
+        document.body
+      )}
     </>
   );
 };

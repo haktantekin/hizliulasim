@@ -3,6 +3,7 @@ import { getBusRouteDetail, getHat } from '@/services/iett';
 import { fetchPostBySlug } from '@/services/wordpress';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import BusRouteDetailClient from '@/components/bus/BusRouteDetailClient';
+import PostComments from '@/components/blog/PostComments';
 import { Bus } from 'lucide-react';
 import Link from 'next/link';
 
@@ -155,6 +156,8 @@ export default async function BusRouteDetailPage({
         duraklar={data.duraklar}
         wpContent={wpPost?.content || null}
       />
+
+      {wpPost && <PostComments postId={wpPost.id} />}
 
       <p className="text-xs text-gray-500 text-center mt-6 mb-4">
         Bu sayfadaki bilgiler anlık olarak{' '}

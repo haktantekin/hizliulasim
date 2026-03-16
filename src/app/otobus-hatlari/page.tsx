@@ -1,7 +1,7 @@
 import { fetchCategoryBySlug, fetchCategories, fetchPosts } from '@/services/wordpress';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import MainCategoryClient from '../[mainCategory]/MainCategoryClient';
+import BusPostsClient from './BusPostsClient';
 import Script from 'next/script';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
@@ -48,7 +48,7 @@ export default async function OtobusHatlariPage() {
 
   const [allCategories, initialPosts] = await Promise.all([
     fetchCategories(),
-    fetchPosts({ categoryId: category.id, per_page: 20, orderby: 'date', order: 'desc' }),
+    fetchPosts({ categoryId: category.id, per_page: 20, orderby: 'title', order: 'asc' }),
   ]);
 
   const subCategories = allCategories.filter(c => c.parentId === category.id);
@@ -103,7 +103,7 @@ export default async function OtobusHatlariPage() {
           }),
         }}
       />
-      <MainCategoryClient
+      <BusPostsClient
         category={category}
         allCategories={allCategories}
         subCategories={subCategories}
