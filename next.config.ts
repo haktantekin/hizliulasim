@@ -89,12 +89,9 @@ const nextConfig: NextConfig = {
         destination: '/ulasim-rehberi/:path*',
         permanent: true,
       },
-      // Redirect URLs with trailing slash to non-trailing slash version (SEO)
-      {
-        source: '/:path+/',
-        destination: '/:path+',
-        permanent: true,
-      },
+      // Redirect URLs with trailing slash to non-trailing slash
+      // NOTE: Trailing slash removal is handled in middleware to avoid redirect chains
+      // (e.g., www + trailing slash resolved in a single redirect)
       {
         source: '/:path*',
         has: [

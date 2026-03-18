@@ -38,22 +38,17 @@ export async function middleware(request: NextRequest) {
   const host = requestHeaders.get('host') || '';
   const pathname = request.nextUrl.pathname;
   
-  // Redirect www to non-www (canonical URL)
-  if (host.startsWith('www.')) {
+  // Normalize URL: remove www, enforce HTTPS, remove trailing slash — all in one redirect
+  const isWww = host.startsWith('www.');
+  const isHttp = protocol === 'http' && !host.includes('localhost') && !host.includes('127.0.0.1');
+  const hasTrailingSlash = pathname !== '/' && pathname.endsWith('/');
+
+  if (isWww || isHttp || hasTrailingSlash) {
     const url = request.nextUrl.clone();
-    url.host = host.replace('www.', '');
-    return NextResponse.redirect(url, 301); // Permanent redirect
-  }
-  
-  // Redirect HTTP to HTTPS (only in production, not on localhost)
-  if (
-    protocol === 'http' && 
-    !host.includes('localhost') && 
-    !host.includes('127.0.0.1')
-  ) {
-    const url = request.nextUrl.clone();
-    url.protocol = 'https:';
-    return NextResponse.redirect(url, 301); // Permanent redirect
+    if (isWww) url.host = host.replace('www.', '');
+    if (isHttp) url.protocol = 'https:';
+    if (hasTrailingSlash) url.pathname = pathname.replace(/\/+$/, '');
+    return NextResponse.redirect(url, 301);
   }
 
   // Check for custom redirects from API
