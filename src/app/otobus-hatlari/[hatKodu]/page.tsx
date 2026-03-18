@@ -157,8 +157,6 @@ export default async function BusRouteDetailPage({
         wpContent={wpPost?.content || null}
       />
 
-      {wpPost && <PostComments postId={wpPost.id} />}
-
       <p className="text-xs text-gray-500 text-center mt-6 mb-4">
         Bu sayfadaki bilgiler anlık olarak{' '}
         <a href="https://iett.istanbul/" target="_blank" rel="noopener">
@@ -166,6 +164,8 @@ export default async function BusRouteDetailPage({
         </a>{' '}
         tarafından sağlanmaktadır.
       </p>
+
+      {wpPost && <PostComments postId={wpPost.id} />}
     </div>
   );
 }

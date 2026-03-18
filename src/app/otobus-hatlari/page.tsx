@@ -109,13 +109,6 @@ export default async function OtobusHatlariPage() {
         subCategories={subCategories}
         initialPosts={initialPosts}
       />
-      <p className="text-xs text-gray-500 text-center mt-6 mb-4">
-        Bu sayfadaki bilgiler anlık olarak{' '}
-        <a href="https://iett.istanbul/" target="_blank" rel="noopener">
-          İETT resmi kurumu
-        </a>{' '}
-        tarafından sağlanmaktadır.
-      </p>
     </>
   );
 }

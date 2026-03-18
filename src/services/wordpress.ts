@@ -187,19 +187,29 @@ export const fetchPosts = async (params?: {
     if (params?.categoryId) queryParams.append('categories', params.categoryId.toString());
     if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params?.page) queryParams.append('page', params.page.toString());
-  if (params?.search) queryParams.append('search', params.search);
-  if (params?.orderby) queryParams.append('orderby', params.orderby);
-  if (params?.order) queryParams.append('order', params.order);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.orderby) queryParams.append('orderby', params.orderby);
+    if (params?.order) queryParams.append('order', params.order);
     
     // Always embed author and featured media
     queryParams.append('_embed', 'author,wp:featuredmedia');
-    
-    const response = await fetch(`${API_BASE_URL}/posts?${queryParams.toString()}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 300 }, // Revalidate every 5 minutes
-    });
+
+    const isClient = typeof window !== 'undefined';
+    let response: Response;
+
+    if (isClient) {
+      // Client-side: use local proxy to avoid CORS issues
+      queryParams.append('endpoint', 'posts');
+      response = await fetch(`/api/wp/proxy?${queryParams.toString()}`);
+    } else {
+      // Server-side: call WordPress API directly
+      response = await fetch(`${API_BASE_URL}/posts?${queryParams.toString()}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        next: { revalidate: 300 },
+      });
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
