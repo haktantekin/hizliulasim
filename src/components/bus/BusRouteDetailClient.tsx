@@ -20,10 +20,7 @@ const RouteMap = dynamic(() => import('./RouteMap'), {
 });
 
 interface Props {
-  hat: IETTHat;
-  seferler: IETTPlanlananSefer[];
-  konumlar: IETTHatOtoKonum[]; // initial SSR data
-  duraklar: IETTDurakDetay[];
+  hatKodu: string;
   wpContent?: string | null;
 }
 
@@ -38,13 +35,20 @@ const DIRECTION_LABELS: Record<string, string> = {
   G: 'Dönüş',
 };
 
-export default function BusRouteDetailClient({ hat, seferler, konumlar: initialKonumlar, duraklar, wpContent }: Props) {
+export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
+  // Data fetched client-side after page loads
+  const [hat, setHat] = useState<IETTHat | null>(null);
+  const [seferler, setSeferler] = useState<IETTPlanlananSefer[]>([]);
+  const [duraklar, setDuraklar] = useState<IETTDurakDetay[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule' | 'vehicles'>('schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Live vehicle locations - fetched client-side for real-time data
-  const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>(initialKonumlar);
+  const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>([]);
   const [konumLoading, setKonumLoading] = useState(false);
   const [konumError, setKonumError] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
@@ -53,8 +57,43 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
   // Favorites
   const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
   const updateFavorite = useUpdateFavorite();
-  const isFavorite = isAuthenticated && favorites.routes.some((r) => r.id === hat.SHATKODU);
+  const isFavorite = isAuthenticated && hat !== null && favorites.routes.some((r) => r.id === hat.SHATKODU);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Fetch all IETT data client-side after page loads
+  useEffect(() => {
+    async function fetchData() {
+      setDataLoading(true);
+      setDataError(false);
+      try {
+        const [hatRes, seferRes, durakRes] = await Promise.allSettled([
+          fetch(`/api/iett/hatlar?kod=${hatKodu}`),
+          fetch(`/api/iett/sefer-saatleri?hatKodu=${hatKodu}`),
+          fetch(`/api/iett/durak-detay?hatKodu=${hatKodu}`),
+        ]);
+
+        if (hatRes.status === 'fulfilled' && hatRes.value.ok) {
+          const hatData = await hatRes.value.json();
+          if (Array.isArray(hatData) && hatData.length > 0) {
+            setHat(hatData[0]);
+          }
+        }
+
+        if (seferRes.status === 'fulfilled' && seferRes.value.ok) {
+          setSeferler(await seferRes.value.json());
+        }
+
+        if (durakRes.status === 'fulfilled' && durakRes.value.ok) {
+          setDuraklar(await durakRes.value.json());
+        }
+      } catch {
+        setDataError(true);
+      } finally {
+        setDataLoading(false);
+      }
+    }
+    fetchData();
+  }, [hatKodu]);
 
   // Fetch stop names for vehicle locations
   const fetchDurakAdlari = useCallback(async (vehicles: IETTHatOtoKonum[]) => {
@@ -83,7 +122,7 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
     setKonumLoading(true);
     setKonumError(false);
     try {
-      const res = await fetch(`/api/iett/konum?hatKodu=${hat.SHATKODU}`);
+      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}`);
       if (!res.ok) throw new Error('fetch failed');
       const data: IETTHatOtoKonum[] = await res.json();
       setKonumlar(data);
@@ -94,7 +133,7 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
     } finally {
       setKonumLoading(false);
     }
-  }, [hat.SHATKODU]);
+  }, [hatKodu]);
 
   // Fetch live locations when vehicles tab is active
   useEffect(() => {
@@ -157,6 +196,56 @@ export default function BusRouteDetailClient({ hat, seferler, konumlar: initialK
     if (h > 0) return `${h} saat ${m} dk`;
     return `${m} dk`;
   };
+
+  if (dataLoading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-gray-100 rounded-xl p-4 h-20" />
+          ))}
+        </div>
+        <div className="flex gap-2 border-b pb-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-gray-100 rounded h-9 w-32" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-gray-100 rounded-xl h-24" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (dataError || !hat) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Bus className="w-16 h-16 text-gray-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-700 mb-2">
+          Hat Bilgisi {dataError ? 'Alınamadı' : 'Bulunamadı'}
+        </h2>
+        <p className="text-sm text-gray-500 mb-6">
+          {dataError
+            ? 'İETT API\'sine bağlanılamadı. Lütfen daha sonra tekrar deneyin.'
+            : (
+              <>
+                <span className="font-semibold">{hatKodu}</span> kodlu otobüs hattı İETT sisteminde bulunamadı.
+                <br />
+                Hat kodu doğru yazıldığından emin olun veya farklı bir hat arayın.
+              </>
+            )}
+        </p>
+        <Link
+          href="/otobus-hatlari"
+          className="px-5 py-2.5 bg-brand-soft-blue text-white rounded-xl text-sm font-medium hover:bg-brand-dark-blue transition-colors"
+        >
+          Tüm Hatları Görüntüle
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
