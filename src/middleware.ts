@@ -52,8 +52,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Redirect broken durak/hat detail pages to their list pages
-  const durakMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)$/);
+  // Redirect broken durak/hat detail pages to /otobus-hatlari
+  const durakMatch = pathname.match(/^\/otobus-duraklari\/([^/]+)$/);
   if (durakMatch && BROKEN_DURAK_SLUGS.has(durakMatch[1])) {
     return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
   }
@@ -67,7 +67,8 @@ export async function middleware(request: NextRequest) {
   if (redirects) {
     const redirect = redirects.find(r => r.source === pathname);
     if (redirect) {
-      return NextResponse.redirect(redirect.destination, 301);
+      const dest = redirect.destination.startsWith('http') ? redirect.destination : new URL(redirect.destination, request.url).toString();
+      return NextResponse.redirect(dest, 301);
     }
   }
 
