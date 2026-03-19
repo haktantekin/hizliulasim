@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from './broken-redirects';
 
 // Cache for redirects
 let redirectsCache: Array<{ source: string; destination: string }> | null = null;
@@ -49,6 +50,16 @@ export async function middleware(request: NextRequest) {
     if (isHttp) url.protocol = 'https:';
     if (hasTrailingSlash) url.pathname = pathname.replace(/\/+$/, '');
     return NextResponse.redirect(url, 301);
+  }
+
+  // Redirect broken durak/hat detail pages to their list pages
+  const durakMatch = pathname.match(/^\/otobus-duraklari\/([^/]+)$/);
+  if (durakMatch && BROKEN_DURAK_SLUGS.has(durakMatch[1])) {
+    return NextResponse.redirect(new URL('/otobus-duraklari', request.url), 301);
+  }
+  const hatMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)$/);
+  if (hatMatch && BROKEN_HAT_SLUGS.has(hatMatch[1])) {
+    return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
   }
 
   // Check for custom redirects from API
