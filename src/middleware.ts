@@ -53,9 +53,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect broken durak/hat detail pages to their list pages
-  const durakMatch = pathname.match(/^\/otobus-duraklari\/([^/]+)$/);
+  const durakMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)$/);
   if (durakMatch && BROKEN_DURAK_SLUGS.has(durakMatch[1])) {
-    return NextResponse.redirect(new URL('/otobus-duraklari', request.url), 301);
+    return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
   }
   const hatMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)$/);
   if (hatMatch && BROKEN_HAT_SLUGS.has(hatMatch[1])) {
