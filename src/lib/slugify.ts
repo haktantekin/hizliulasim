@@ -38,3 +38,15 @@ export function parseDurakSlug(slug: string): string {
   const match = slug.match(/(\d+)$/);
   return match ? match[1] : slug;
 }
+
+/**
+ * Extract a human-readable durak name from slug.
+ * e.g. "haydarpasa-numune-hastanesi-225571" → "Haydarpasa Numune Hastanesi"
+ */
+export function parseDurakName(slug: string): string {
+  const name = slug.replace(/-\d+$/, '').replace(/-/g, ' ');
+  return name
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
