@@ -30,13 +30,6 @@ interface VehicleCandidate {
   dataAge: number;
 }
 
-interface BusSearchHistoryItem {
-  hat_kodu: string;
-  hat_adi?: string;
-  count: number;
-  last_searched_at: number;
-}
-
 const DIRECTION_LABELS: Record<string, string> = {
   D: 'Gidiş',
   G: 'Dönüş',
@@ -82,8 +75,6 @@ export default function HomeBusFinder() {
   const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>([]);
   const [konumLoading, setKonumLoading] = useState(false);
   const [showAllStops, setShowAllStops] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<BusSearchHistoryItem[]>([]);
-  const [searchHistoryLoading, setSearchHistoryLoading] = useState(false);
 
   // Request location on mount
   const requestLocation = useCallback(() => {
@@ -103,26 +94,6 @@ export default function HomeBusFinder() {
     requestLocation();
   }, [requestLocation]);
 
-  const fetchSearchHistory = useCallback(async () => {
-    setSearchHistoryLoading(true);
-    try {
-      const res = await fetch('/api/bus-searches?limit=20', { cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setSearchHistory(data);
-      }
-    } catch {
-      // silent
-    } finally {
-      setSearchHistoryLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSearchHistory();
-  }, [fetchSearchHistory]);
-
   const saveSearch = useCallback(async (code: string, name?: string) => {
     try {
       const res = await fetch('/api/bus-searches', {
@@ -137,11 +108,6 @@ export default function HomeBusFinder() {
 
       const saved = await res.json();
       if (!saved || typeof saved.hat_kodu !== 'string') return;
-
-      setSearchHistory((prev) => {
-        const filtered = prev.filter((item) => item.hat_kodu !== saved.hat_kodu);
-        return [saved, ...filtered].slice(0, 20);
-      });
     } catch {
       // silent
     }
@@ -403,32 +369,6 @@ export default function HomeBusFinder() {
           </button>
         </form>
         {hatError && <p className="text-xs text-red-500 mt-2">{hatError}</p>}
-
-        <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-medium text-gray-700">Aranan Otobus Hatlari</p>
-            {searchHistoryLoading && <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />}
-          </div>
-          {searchHistory.length === 0 ? (
-            <p className="text-xs text-gray-500">Henuz arama yok.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {searchHistory.map((item) => (
-                <button
-                  key={item.hat_kodu}
-                  type="button"
-                  onClick={() => { void searchHat(item.hat_kodu); }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white border border-gray-200 text-xs text-gray-700 hover:bg-brand-light-blue/30 transition-colors"
-                >
-                  <span className="font-semibold text-brand-soft-blue">{item.hat_kodu}</span>
-                  {item.count > 1 && (
-                    <span className="text-[10px] text-gray-500">x{item.count}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Hat info */}
         {hat && (

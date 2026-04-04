@@ -8,6 +8,7 @@ import PostLocationMap from "@/components/blog/PostLocationMap";
 import FaqAccordion from "@/components/ui/FaqAccordion";
 import { getDummyImageForCategory } from "@/lib/getDummyImage";
 import PostComments from "@/components/blog/PostComments";
+import InjectBusWidgetAfterTable from "@/components/blog/InjectBusWidgetAfterTable";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -91,6 +92,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
           <div dangerouslySetInnerHTML={{ __html: post.content }} />
         )}
       </article>
+
+      <InjectBusWidgetAfterTable />
 
       {/* Shortcode kullanılmadıysa fallback olarak haritayı göster */}
       {!post.content.includes('[map]') && post.location && (

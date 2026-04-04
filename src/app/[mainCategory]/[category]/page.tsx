@@ -15,6 +15,7 @@ import PostLocationMap from '@/components/blog/PostLocationMap';
 import { Fragment } from 'react';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
 import PostComments from '@/components/blog/PostComments';
+import InjectBusWidgetAfterTable from '@/components/blog/InjectBusWidgetAfterTable';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -319,6 +320,8 @@ export default async function SubCategoryPage({ params }: PageProps) {
             <div dangerouslySetInnerHTML={{ __html: post.content }} />
           )}
         </article>
+
+        <InjectBusWidgetAfterTable />
 
         {!post.content.includes('[map]') && post.location && (
           <PostLocationMap
