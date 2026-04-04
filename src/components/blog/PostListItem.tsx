@@ -25,14 +25,14 @@ export default function PostListItem({ post, href, className = "", categorySlug,
       className={`flex flex-col gap-3 relative border-b border-brand-light-blue pb-5 last:border-0 ${className}`}
     >
       {!hideImage && (
-       <div className="relative bg-gray-100 rounded-md overflow-hidden w-full h-48">
+       <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%' }} className="bg-gray-100 rounded-md overflow-hidden">
         {post.featuredImage ? (
           <Image
             src={post.featuredImage.url}
             alt={post.featuredImage.alt}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 112px, 128px"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : dummyImage ? (
           <Image
@@ -40,7 +40,7 @@ export default function PostListItem({ post, href, className = "", categorySlug,
             alt={dummyImage.alt}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 112px, 128px"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-gray-400 text-sm">Görsel yok</div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { Facebook, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut } from 'lucide-react';
+import { Facebook, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut, Mail } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -16,6 +16,13 @@ const drawerLinks = [
   { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
   { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
   { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
+  { href: '/iletisim', icon: Mail, label: 'İletişim' },
+];
+
+const legalLinks = [
+  { href: '/kunye', label: 'Künye' },
+  { href: '/gizlilik-politikasi', label: 'Gizlilik Politikası' },
+  { href: '/cerez-politikasi', label: 'Çerez Politikası' },
 ];
 
 const Header = () => {
@@ -120,8 +127,8 @@ const Header = () => {
           })}
         </div>
 
-        {/* Footer — Facebook */}
-        <div className="border-t border-gray-100 p-4">
+        {/* Footer */}
+        <div className="border-t border-gray-100 p-4 space-y-3">
           <a
             href="https://www.facebook.com/hizliulasim/"
             target="_blank"
@@ -131,6 +138,18 @@ const Header = () => {
             <Facebook size={20} />
             <span>Facebook&apos;ta takip et</span>
           </a>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
+            {legalLinks.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={close}
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </nav>
     </div>

@@ -7,6 +7,7 @@ import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, Cir
 import { useAppSelector } from '@/store/hooks';
 import { useUpdateFavorite } from '@/hooks/useAuth';
 import AuthModal from '@/components/ui/AuthModal';
+import NearestStopAssistant from './NearestStopAssistant';
 import Link from 'next/link';
 import { buildDurakSlug } from '@/lib/slugify';
 
@@ -296,6 +297,11 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
           <div className="font-bold text-brand-soft-blue text-sm">{hat.TARIFE}</div>
         </div>
       </div>
+
+      {/* Nearest Stop Assistant */}
+      {duraklar.length > 0 && (
+        <NearestStopAssistant hatKodu={hatKodu} hat={hat} duraklar={duraklar} />
+      )}
 
       {/* Tabs */}
       <div className="flex border-b overflow-x-auto">

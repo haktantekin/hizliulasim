@@ -13,5 +13,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function HaritaLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <>{children}</>;
 }

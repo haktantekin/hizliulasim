@@ -142,12 +142,6 @@ export default function RootLayout({
           }}
         />
 
-        {/* AdSense Script */}
-        <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8627901921754492"
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-        />
         {/* RSS Feed */}
         <link rel="alternate" type="application/rss+xml" title="Hızlı Ulaşım Blog RSS" href="/feed.xml" />
         
@@ -182,19 +176,24 @@ export default function RootLayout({
             }),
           }}
         />
-           <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-XJ33LRDG0G"
-        strategy="afterInteractive"
-      />
-      <Script id="ga-setup" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){window.dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-XJ33LRDG0G');
-        `}
-      </Script>
-      <meta name="google-adsense-account" content="ca-pub-8627901921754492"></meta>
+        {/* Google Analytics — Only in production */}
+        {process.env.NODE_ENV === 'production' && (
+          <>
+            <Script
+              src="https://www.googletagmanager.com/gtag/js?id=G-XJ33LRDG0G"
+              strategy="afterInteractive"
+            />
+            <Script id="ga-setup" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){window.dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-XJ33LRDG0G');
+              `}
+            </Script>
+          </>
+        )}
+
       </head>
   <body className={outfit.className}>
         <ReduxProvider>

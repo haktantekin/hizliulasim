@@ -13,10 +13,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 import QuickLinks from "../components/home/QuickLinks";
-import CategoryPostsGrid from "../components/home/CategoryPostsGrid";
+import LatestPostsRow from "../components/home/LatestPostsRow";
 import HomeSearchBar from "../components/home/HomeSearchBar";
+import TrafficIndex from "../components/home/TrafficIndex";
 import Link from "next/link";
-import { ParkingCircle } from "lucide-react";
+import { ParkingCircle, TrainFront } from "lucide-react";
 
 export default function Home() {
   return (
@@ -39,8 +40,27 @@ export default function Home() {
         </div>
       </Link>
 
+      <div className="grid grid-cols-2 gap-3 mt-3">
+        <Link
+          href="/rayli-sistemler"
+          className="block rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 p-4 text-white hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-2">
+            <TrainFront className="w-7 h-7 flex-none" />
+            <div>
+              <div className="font-bold text-sm">Raylı Sistemler</div>
+              <div className="text-[11px] text-white/80">Metro, tramvay, füniküler</div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      <div className="mt-4">
+        <TrafficIndex />
+      </div>
+
       <div className="mt-6">
-        <CategoryPostsGrid />
+        <LatestPostsRow />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Bus, Map, ParkingCircle, Menu, X, Facebook, UserPlus, User, LogIn, LogOut } from 'lucide-react';
+import { Home, Bus, Map, ParkingCircle, Menu, X, Facebook, UserPlus, User, LogIn, LogOut, Mail, TrainFront } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -15,7 +15,15 @@ const drawerLinks = [
   { href: '/', icon: Home, label: 'Ana Sayfa' },
   { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
   { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
+  { href: '/rayli-sistemler', icon: TrainFront, label: 'Raylı Sistemler' },
   { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
+  { href: '/iletisim', icon: Mail, label: 'İletişim' },
+];
+
+const legalLinks = [
+  { href: '/kunye', label: 'Künye' },
+  { href: '/gizlilik-politikasi', label: 'Gizlilik Politikası' },
+  { href: '/cerez-politikasi', label: 'Çerez Politikası' },
 ];
 
 const BottomBar = () => {
@@ -118,6 +126,19 @@ const BottomBar = () => {
             <Facebook size={20} />
             <span>Facebook&apos;ta takip et</span>
           </a>
+          <div className="border-t border-gray-100 mx-5 my-2" />
+          <div className="px-5 flex flex-wrap gap-x-4 gap-y-1">
+            {legalLinks.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={close}
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
           {!isAuthenticated && (
             <div className="flex gap-2 px-5 pt-4">
               <button
