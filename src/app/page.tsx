@@ -1,4 +1,5 @@
 import HomeCards from "@/components/home/homeCards";
+import HomeBusFinder from "@/components/home/HomeBusFinder";
 import type { Metadata } from 'next';
 import { fetchPageSeoBySlug } from '@/services/wordpress';
 
@@ -53,6 +54,10 @@ export default function Home() {
             </div>
           </div>
         </Link>
+      </div>
+
+      <div className="mt-4">
+        <HomeBusFinder />
       </div>
 
       <div className="mt-4">

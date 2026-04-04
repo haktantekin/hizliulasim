@@ -23,9 +23,6 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  experimental: {
-    optimizePackageImports: ['lucide-react'],
-  },
   // Security and performance headers
   async headers() {
     return [
@@ -57,15 +54,6 @@ const nextConfig: NextConfig = {
       // Cache static assets
       {
         source: '/fonts/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
