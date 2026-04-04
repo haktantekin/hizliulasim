@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import type { IETTPlanlananSefer, IETTHatOtoKonum, IETTHat, IETTDurakDetay } from '@/types/iett';
-import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot, Heart } from 'lucide-react';
+import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot, Heart, Navigation, Loader2 } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useUpdateFavorite } from '@/hooks/useAuth';
 import AuthModal from '@/components/ui/AuthModal';
@@ -36,6 +36,13 @@ const DIRECTION_LABELS: Record<string, string> = {
   G: 'Dönüş',
 };
 
+export type UserLocation =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'denied' }
+  | { status: 'error' }
+  | { status: 'active'; lat: number; lng: number };
+
 export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   // Data fetched client-side after page loads
   const [hat, setHat] = useState<IETTHat | null>(null);
@@ -47,6 +54,27 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule' | 'vehicles'>('schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Shared geolocation - requested once on mount
+  const [userLocation, setUserLocation] = useState<UserLocation>({ status: 'idle' });
+
+  const requestLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setUserLocation({ status: 'error' });
+      return;
+    }
+    setUserLocation({ status: 'loading' });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation({ status: 'active', lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => setUserLocation({ status: err.code === err.PERMISSION_DENIED ? 'denied' : 'error' }),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }, []);
+
+  // Auto-request location on mount
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
 
   // Live vehicle locations - fetched client-side for real-time data
   const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>([]);
@@ -136,9 +164,9 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
     }
   }, [hatKodu]);
 
-  // Fetch live locations when vehicles tab is active
+  // Fetch live locations when vehicles or route tab is active
   useEffect(() => {
-    if (activeTab !== 'vehicles') return;
+    if (activeTab !== 'vehicles' && activeTab !== 'route') return;
     fetchKonumlar();
     const interval = setInterval(fetchKonumlar, 30000); // auto-refresh every 30s
     return () => clearInterval(interval);
@@ -298,9 +326,25 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
         </div>
       </div>
 
+      {/* Location status banner */}
+      {userLocation.status === 'loading' && (
+        <div className="flex items-center gap-2 bg-brand-light-blue/20 border border-brand-soft-blue/20 rounded-xl px-4 py-2.5">
+          <Loader2 className="w-4 h-4 text-brand-soft-blue animate-spin" />
+          <span className="text-sm text-gray-600">Konumunuz alınıyor...</span>
+        </div>
+      )}
+      {(userLocation.status === 'denied' || userLocation.status === 'error') && (
+        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
+          <span className="text-sm text-gray-500">
+            {userLocation.status === 'denied' ? 'Konum izni reddedildi.' : 'Konum alınamadı.'}
+          </span>
+          <button onClick={requestLocation} className="text-xs text-brand-soft-blue hover:underline">Tekrar Dene</button>
+        </div>
+      )}
+
       {/* Nearest Stop Assistant */}
       {duraklar.length > 0 && (
-        <NearestStopAssistant hatKodu={hatKodu} hat={hat} duraklar={duraklar} />
+        <NearestStopAssistant hatKodu={hatKodu} hat={hat} duraklar={duraklar} userLocation={userLocation} />
       )}
 
       {/* Tabs */}
@@ -367,7 +411,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       )}
 
       {activeTab === 'route' && (
-        <RouteStopsTab duraklar={duraklar} />
+        <RouteStopsTab duraklar={duraklar} konumlar={konumlar} hatKodu={hatKodu} userLocation={userLocation} />
       )}
 
       {activeTab === 'schedule' && (
@@ -539,8 +583,11 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 // Güzergah / Duraklar Tab Component
 // ==========================================
 
-function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
+function RouteStopsTab({ duraklar, konumlar, hatKodu, userLocation }: { duraklar: IETTDurakDetay[]; konumlar: IETTHatOtoKonum[]; hatKodu: string; userLocation: UserLocation }) {
   const [selectedDirection, setSelectedDirection] = useState<string>('D');
+  const [userStopCode, setUserStopCode] = useState<string | null>(null);
+  const [showPastStops, setShowPastStops] = useState(false);
+  const [autoSelected, setAutoSelected] = useState(false);
 
   // Group stops by direction
   const directions = useMemo(() => {
@@ -555,11 +602,83 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
     }
   }, [directions, selectedDirection]);
 
-  const filteredStops = useMemo(() => {
+  // Reset user stop when direction changes
+  useEffect(() => {
+    setUserStopCode(null);
+    setShowPastStops(false);
+    setAutoSelected(false);
+  }, [selectedDirection]);
+
+  // All stops in selected direction sorted
+  const allDirectionStops = useMemo(() => {
     return duraklar
       .filter((d) => d.YON === selectedDirection)
       .sort((a, b) => a.SIRANO - b.SIRANO);
   }, [duraklar, selectedDirection]);
+
+  // Auto-select nearest stop when location is active
+  useEffect(() => {
+    if (userLocation.status !== 'active' || autoSelected || allDirectionStops.length === 0) return;
+
+    let minDist = Infinity;
+    let closestCode: string | null = null;
+    for (const stop of allDirectionStops) {
+      if (!stop.YKOORDINATI || !stop.XKOORDINATI || !isFinite(stop.YKOORDINATI) || !isFinite(stop.XKOORDINATI)) continue;
+      const R = 6371000;
+      const toRad = (d: number) => (d * Math.PI) / 180;
+      const dLat = toRad(stop.YKOORDINATI - userLocation.lat);
+      const dLon = toRad(stop.XKOORDINATI - userLocation.lng);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(userLocation.lat)) * Math.cos(toRad(stop.YKOORDINATI)) * Math.sin(dLon / 2) ** 2;
+      const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (dist < minDist) {
+        minDist = dist;
+        closestCode = stop.DURAKKODU;
+      }
+    }
+    if (closestCode) {
+      setUserStopCode(closestCode);
+      setAutoSelected(true);
+    }
+  }, [userLocation, allDirectionStops, autoSelected]);
+
+  // Get vehicle stop codes in this direction for highlighting
+  const vehicleAtStopCodes = useMemo(() => {
+    const codes = new Set<string>();
+    for (const v of konumlar) {
+      if (v.yon === selectedDirection && v.yakinDurakKodu) {
+        codes.add(v.yakinDurakKodu);
+      }
+    }
+    return codes;
+  }, [konumlar, selectedDirection]);
+
+  // Map vehicle stop code -> vehicle info for tooltip
+  const vehicleByStopCode = useMemo(() => {
+    const map = new Map<string, IETTHatOtoKonum[]>();
+    for (const v of konumlar) {
+      if (v.yon === selectedDirection && v.yakinDurakKodu) {
+        const arr = map.get(v.yakinDurakKodu) || [];
+        arr.push(v);
+        map.set(v.yakinDurakKodu, arr);
+      }
+    }
+    return map;
+  }, [konumlar, selectedDirection]);
+
+  // User stop index
+  const userStopIndex = useMemo(() => {
+    if (!userStopCode) return -1;
+    return allDirectionStops.findIndex((d) => d.DURAKKODU === userStopCode);
+  }, [allDirectionStops, userStopCode]);
+
+  // Visible stops: if user selected a stop, filter past ones
+  const filteredStops = useMemo(() => {
+    if (!userStopCode || userStopIndex === -1 || showPastStops) return allDirectionStops;
+    return allDirectionStops.filter((_, idx) => idx >= userStopIndex);
+  }, [allDirectionStops, userStopCode, userStopIndex, showPastStops]);
+
+  // Count of hidden past stops
+  const pastStopCount = userStopCode && userStopIndex > 0 ? userStopIndex : 0;
 
   if (duraklar.length === 0) {
     return (
@@ -574,7 +693,7 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
     <div className="space-y-4">
       {/* Direction selector */}
       {directions.length > 1 && (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {directions.map((dir) => {
             const stopsInDir = duraklar.filter((d) => d.YON === dir);
             const yonAdi = stopsInDir[0]?.YON_ADI;
@@ -595,14 +714,53 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
         </div>
       )}
 
+      {/* User stop selector */}
+      <div className="bg-brand-light-blue/20 border border-brand-soft-blue/20 rounded-xl p-3">
+        <label className="text-xs font-medium text-gray-700 block mb-1.5">
+          <CircleDot className="w-3.5 h-3.5 inline mr-1 text-brand-soft-blue" />
+          Bulunduğunuz veya bineceğiniz durak
+        </label>
+        <select
+          value={userStopCode || ''}
+          onChange={(e) => {
+            setUserStopCode(e.target.value || null);
+            setShowPastStops(false);
+          }}
+          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-soft-blue/30 focus:border-brand-soft-blue"
+        >
+          <option value="">Durak seçin (tüm durakları göster)</option>
+          {allDirectionStops.map((s) => (
+            <option key={s.DURAKKODU} value={s.DURAKKODU}>
+              {s.SIRANO}. {s.DURAKADI} ({s.DURAKKODU})
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Route map */}
-      {filteredStops.length > 0 && (
+      {allDirectionStops.length > 0 && (
         <RouteMap duraklar={duraklar} selectedDirection={selectedDirection} />
       )}
 
-      {/* Stops count */}
-      <div className="text-sm text-gray-500">
-        {filteredStops.length} durak
+      {/* Stops count + past stops toggle */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-500">
+          {filteredStops.length} durak{pastStopCount > 0 && !showPastStops && (
+            <span className="text-xs text-gray-400 ml-1">({pastStopCount} geçmiş durak gizlendi)</span>
+          )}
+        </div>
+        {pastStopCount > 0 && (
+          <button
+            onClick={() => setShowPastStops((p) => !p)}
+            className="text-xs text-brand-soft-blue hover:underline flex items-center gap-1"
+          >
+            {showPastStops ? (
+              <><ChevronUp className="w-3.5 h-3.5" /> Geçmiş durakları gizle</>
+            ) : (
+              <><ChevronDown className="w-3.5 h-3.5" /> Geçmiş durakları göster</>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Stops list - timeline style */}
@@ -610,23 +768,37 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
         {filteredStops.map((stop, idx) => {
           const isFirst = idx === 0;
           const isLast = idx === filteredStops.length - 1;
+          const isUserStop = stop.DURAKKODU === userStopCode;
+          const hasBus = vehicleAtStopCodes.has(stop.DURAKKODU);
+          const busesHere = vehicleByStopCode.get(stop.DURAKKODU);
+          // Check if this stop is a past stop (shown in showPastStops mode)
+          const globalIdx = allDirectionStops.findIndex((d) => d.DURAKKODU === stop.DURAKKODU);
+          const isPast = userStopCode && userStopIndex > 0 && globalIdx < userStopIndex;
 
           return (
-            <div key={`${stop.DURAKKODU}-${idx}`} className="flex gap-3 group">
+            <div key={`${stop.DURAKKODU}-${idx}`} className={`flex gap-3 group ${isPast ? 'opacity-40' : ''}`}>
               {/* Timeline line + dot */}
               <div className="flex flex-col items-center w-6 flex-shrink-0">
                 <div
-                  className={`w-0.5 flex-1 ${isFirst ? 'bg-transparent' : 'bg-gray-200'}`}
+                  className={`w-0.5 flex-1 ${isFirst ? 'bg-transparent' : isPast ? 'bg-gray-100' : 'bg-gray-200'}`}
                 />
                 <div
-                  className={`w-3 h-3 rounded-full flex-shrink-0 border-2 ${
-                    isFirst || isLast
-                      ? 'bg-brand-soft-blue border-brand-soft-blue'
-                      : 'bg-white border-gray-300 group-hover:border-brand-soft-blue'
+                  className={`rounded-full flex-shrink-0 border-2 flex items-center justify-center ${
+                    hasBus
+                      ? 'w-5 h-5 bg-green-500 border-green-500'
+                      : isUserStop
+                        ? 'w-4 h-4 bg-brand-orange border-brand-orange'
+                        : isFirst || isLast
+                          ? 'w-3 h-3 bg-brand-soft-blue border-brand-soft-blue'
+                          : 'w-3 h-3 bg-white border-gray-300 group-hover:border-brand-soft-blue'
                   }`}
-                />
+                >
+                  {hasBus && (
+                    <Bus className="w-3 h-3 text-white" />
+                  )}
+                </div>
                 <div
-                  className={`w-0.5 flex-1 ${isLast ? 'bg-transparent' : 'bg-gray-200'}`}
+                  className={`w-0.5 flex-1 ${isLast ? 'bg-transparent' : isPast ? 'bg-gray-100' : 'bg-gray-200'}`}
                 />
               </div>
 
@@ -634,11 +806,23 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
               <div className={`flex-1 pb-3 ${isLast ? 'pb-0' : ''}`}>
                 <Link
                   href={`/otobus-duraklari/${buildDurakSlug(stop.DURAKADI, stop.DURAKKODU)}`}
-                  className="block bg-white border border-gray-100 rounded-lg p-3 group-hover:border-brand-soft-blue/30 group-hover:shadow-sm transition-all"
+                  className={`block border rounded-lg p-3 transition-all ${
+                    hasBus
+                      ? 'bg-green-50 border-green-200 shadow-sm'
+                      : isUserStop
+                        ? 'bg-orange-50 border-brand-orange/30 shadow-sm'
+                        : 'bg-white border-gray-100 group-hover:border-brand-soft-blue/30 group-hover:shadow-sm'
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="font-medium text-sm text-gray-900 group-hover:text-brand-soft-blue transition-colors">
+                      <div className={`font-medium text-sm transition-colors ${
+                        hasBus
+                          ? 'text-green-700'
+                          : isUserStop
+                            ? 'text-brand-orange'
+                            : 'text-gray-900 group-hover:text-brand-soft-blue'
+                      }`}>
                         {stop.DURAKADI}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500 mt-1">
@@ -650,6 +834,19 @@ function RouteStopsTab({ duraklar }: { duraklar: IETTDurakDetay[] }) {
                           </>
                         )}
                       </div>
+                      {hasBus && busesHere && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {busesHere.map((b) => (
+                            <span key={b.kapino} className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full font-medium">
+                              <Bus className="w-3 h-3" />
+                              {b.kapino}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {isUserStop && (
+                        <span className="inline-block mt-1.5 text-xs text-brand-orange font-medium">📍 Bulunduğunuz durak</span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-400 font-mono flex-shrink-0">
                       {stop.SIRANO}
