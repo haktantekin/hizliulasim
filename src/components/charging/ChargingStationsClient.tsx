@@ -244,7 +244,7 @@ export default function ChargingStationsClient() {
       </div>
 
       {/* Station List */}
-      <div className="grid gap-3">
+      <div className="flex w-full flex-col gap-3">
         {visible.map((station) => {
           const maxPower = getMaxPower(station.Connections);
           const totalPoints = getTotalPoints(station);
@@ -259,8 +259,8 @@ export default function ChargingStationsClient() {
                 !isOperational ? 'opacity-60 bg-gray-50' : 'bg-white'
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3 overflow-hidden">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <div className="flex items-center gap-2 mb-1">
                     <BatteryCharging className={`w-4 h-4 flex-none ${isOperational ? 'text-green-600' : 'text-gray-400'}`} />
                     <h3 className="font-semibold text-sm text-gray-900 truncate">
@@ -274,8 +274,8 @@ export default function ChargingStationsClient() {
                     </p>
                   )}
 
-                  <p className="text-xs text-gray-500 mb-2">
-                    <MapPin className="w-3 h-3 inline mr-1" />
+                  <p className="text-xs text-gray-500 mb-2 break-words">
+                    <MapPin className="w-3 h-3 inline mr-1 flex-none" />
                     {[station.AddressInfo?.AddressLine1, station.AddressInfo?.Town]
                       .filter(Boolean)
                       .join(', ')}
