@@ -236,10 +236,11 @@ function parseDurakDetayXml(xml: string): IETTDurakDetay[] {
 /**
  * Get route stops detail for a bus line (from ibb.asmx - XML response)
  */
-export async function getDurakDetay(hatKodu: string): Promise<IETTDurakDetay[]> {
+export async function getDurakDetay(hatKodu: string, timeoutMs?: number): Promise<IETTDurakDetay[]> {
   const body = buildSoapEnvelope('DurakDetay_GYY_wYonAdi', { hat_kodu: hatKodu });
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const effectiveTimeout = timeoutMs ?? (hatKodu ? 15000 : 90000);
+  const timer = setTimeout(() => controller.abort(), effectiveTimeout);
 
   try {
     const response = await fetch(ENDPOINTS.ibb, {

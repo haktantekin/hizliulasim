@@ -9,6 +9,24 @@ import AuthModal from '@/components/ui/AuthModal';
 
 type ParkTypeFilter = 'ALL' | 'AÇIK OTOPARK' | 'KAPALI OTOPARK' | 'YOL ÜSTÜ';
 
+interface NearestStopDistrict {
+  ilceAdi: string;
+}
+
+interface ReverseDistrictResponse {
+  city?: string;
+  district?: string;
+}
+
+function normalizeDistrictName(value: string): string {
+  return value
+    .toLocaleLowerCase('tr-TR')
+    .replace(/\./g, '')
+    .replace(/\s+il[çc]esi$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function OtoparkListClient() {
   const [parks, setParks] = useState<ISPARKPark[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +35,9 @@ export default function OtoparkListClient() {
   const [districtFilter, setDistrictFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState<ParkTypeFilter>('ALL');
   const [showCount, setShowCount] = useState(30);
+  const [nearDistrict, setNearDistrict] = useState('');
+  const [autoSelectedDistrict, setAutoSelectedDistrict] = useState('');
+  const [districtAutoApplied, setDistrictAutoApplied] = useState(false);
 
   const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
   const updateFavorite = useUpdateFavorite();
@@ -44,10 +65,79 @@ export default function OtoparkListClient() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      return;
+    }
+
+    let cancelled = false;
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          let ilce = '';
+
+          const districtRes = await fetch(`/api/iett/yakin-durak?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`, {
+            cache: 'no-store',
+          });
+
+          if (districtRes.ok) {
+            const districtData: NearestStopDistrict = await districtRes.json();
+            ilce = (districtData.ilceAdi || '').trim();
+          }
+
+          if (!ilce) {
+            const reverseRes = await fetch(`/api/geocode/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`, {
+              cache: 'no-store',
+            });
+            if (reverseRes.ok) {
+              const reverseData: ReverseDistrictResponse = await reverseRes.json();
+              ilce = (reverseData.district || '').trim();
+            }
+          }
+
+          if (!cancelled && ilce) {
+            setNearDistrict(ilce);
+          }
+        } catch {
+          // Silent fallback: page still works with normal ordering
+        }
+      },
+      () => {
+        // Permission denied or location error; keep default list behavior
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const districts = useMemo(() => {
     const set = new Set(parks.map(p => p.district).filter(Boolean));
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'tr'));
   }, [parks]);
+
+  useEffect(() => {
+    if (districtAutoApplied) return;
+    if (districtFilter !== 'ALL') return;
+    if (!nearDistrict) return;
+    if (districts.length === 0) return;
+
+    const target = normalizeDistrictName(nearDistrict);
+    const matched = districts.find((d) => {
+      const norm = normalizeDistrictName(d);
+      return norm === target || norm.includes(target) || target.includes(norm);
+    });
+
+    if (matched) {
+      setDistrictFilter(matched);
+      setAutoSelectedDistrict(matched);
+      setDistrictAutoApplied(true);
+      setShowCount(30);
+    }
+  }, [districtAutoApplied, districtFilter, nearDistrict, districts]);
 
   const parkTypes = useMemo(() => {
     const set = new Set(parks.map(p => p.parkType).filter(Boolean));
@@ -70,8 +160,23 @@ export default function OtoparkListClient() {
           p.district.toUpperCase().includes(q)
       );
     }
+
+    // If user has not selected a district manually, prioritize nearby district first.
+    if (districtFilter === 'ALL' && nearDistrict) {
+      const target = normalizeDistrictName(nearDistrict);
+      result = [...result].sort((a, b) => {
+        const aDistrict = normalizeDistrictName(a.district || '');
+        const bDistrict = normalizeDistrictName(b.district || '');
+        const aNear = aDistrict === target || aDistrict.includes(target) || target.includes(aDistrict);
+        const bNear = bDistrict === target || bDistrict.includes(target) || target.includes(bDistrict);
+
+        if (aNear !== bNear) return aNear ? -1 : 1;
+        return a.parkName.localeCompare(b.parkName, 'tr');
+      });
+    }
+
     return result;
-  }, [parks, search, districtFilter, typeFilter]);
+  }, [parks, search, districtFilter, typeFilter, nearDistrict]);
 
   const visibleParks = useMemo(
     () => filteredParks.slice(0, showCount),
@@ -201,6 +306,18 @@ export default function OtoparkListClient() {
           <span>Toplam <strong>{parks.length}</strong> İSPARK otoparkı</span>
         )}
       </div>
+
+      {districtFilter === 'ALL' && nearDistrict && (
+        <div className="text-xs text-brand-soft-blue bg-brand-light-blue/20 border border-brand-light-blue/40 rounded-lg px-3 py-2">
+          Konumuna gore <strong>{nearDistrict}</strong> ilcesindeki otoparklar once listeleniyor.
+        </div>
+      )}
+
+      {districtFilter !== 'ALL' && autoSelectedDistrict && districtFilter === autoSelectedDistrict && (
+        <div className="text-xs text-brand-soft-blue bg-brand-light-blue/20 border border-brand-light-blue/40 rounded-lg px-3 py-2">
+          Konumuna gore ilce filtresi otomatik olarak <strong>{autoSelectedDistrict}</strong> secildi.
+        </div>
+      )}
 
       {/* Park List */}
       {filteredParks.length === 0 ? (

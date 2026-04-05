@@ -1,5 +1,7 @@
 import HomeCards from "@/components/home/homeCards";
 import HomeBusFinder from "@/components/home/HomeBusFinder";
+import NearbyStopBusesWidget from "@/components/home/NearbyStopBusesWidget";
+import DistrictIsparkWidget from "@/components/home/DistrictIsparkWidget";
 import type { Metadata } from 'next';
 import { fetchPageSeoBySlug } from '@/services/wordpress';
 
@@ -28,20 +30,7 @@ export default function Home() {
       </div>
       <HomeSearchBar />
 
-      <Link
-        href="/otopark-ucretleri"
-        className="block mt-4 rounded-xl bg-gradient-to-r from-brand-soft-blue to-brand-dark-blue p-4 text-white hover:opacity-90 transition-opacity"
-      >
-        <div className="flex items-center gap-3">
-          <ParkingCircle className="w-8 h-8 flex-none" />
-          <div>
-            <div className="font-bold text-sm">İSPARK OTOPARK</div>
-            <div className="text-xs text-white/80">Anlık doluluk bilgileri ve güncel ücret tarifeleri</div>
-          </div>
-        </div>
-      </Link>
-
-      <div className="grid grid-cols-2 gap-3 mt-3">
+      <div className="grid grid-cols-2 gap-3 mt-4">
         <Link
           href="/rayli-sistemler"
           className="block rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 p-4 text-white hover:opacity-90 transition-opacity"
@@ -54,10 +43,31 @@ export default function Home() {
             </div>
           </div>
         </Link>
+
+        <Link
+          href="/otopark-ucretleri"
+          className="block rounded-xl bg-gradient-to-r from-brand-soft-blue to-brand-dark-blue p-4 text-white hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <ParkingCircle className="w-8 h-8 flex-none" />
+            <div>
+              <div className="font-bold text-sm">İSPARK OTOPARK</div>
+              <div className="text-xs text-white/80">Anlık doluluk bilgileri</div>
+            </div>
+          </div>
+        </Link>
       </div>
 
       <div className="mt-4">
         <HomeBusFinder />
+      </div>
+
+      <div className="mt-4">
+        <NearbyStopBusesWidget />
+      </div>
+
+      <div className="mt-4">
+        <DistrictIsparkWidget />
       </div>
 
       <div className="mt-4">

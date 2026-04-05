@@ -27,11 +27,22 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json();
-    const city = data.address?.province || data.address?.city || data.address?.town || 'İstanbul';
-    
-    return NextResponse.json({ city });
+    const addr = data.address || {};
+    const district =
+      addr.city_district ||
+      addr.suburb ||
+      addr.town ||
+      addr.municipality ||
+      addr.county ||
+      addr.district ||
+      addr.city ||
+      '';
+
+    const city = addr.province || addr.city || addr.town || 'İstanbul';
+
+    return NextResponse.json({ city, district });
   } catch (error) {
     console.error('Reverse geocode error:', error);
-    return NextResponse.json({ city: 'İstanbul' }, { status: 200 });
+    return NextResponse.json({ city: 'İstanbul', district: '' }, { status: 200 });
   }
 }
