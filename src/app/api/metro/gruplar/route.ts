@@ -7,11 +7,16 @@ const METRO_API = 'https://api.ibb.gov.tr/MetroIstanbul/api/MetroMobile/V2/GetRa
 export async function GET() {
   try {
     const response = await fetch(METRO_API, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'HizliUlasim/1.0',
+      },
       next: { revalidate: 3600 },
     });
 
     if (!response.ok) {
-      throw new Error(`Metro Groups API error: ${response.status}`);
+      console.warn(`Metro Groups API degraded response: ${response.status}`);
+      return NextResponse.json([]);
     }
 
     const data = await response.json();
@@ -20,9 +25,6 @@ export async function GET() {
     return NextResponse.json(groups);
   } catch (error) {
     console.error('Metro Groups API error:', error);
-    return NextResponse.json(
-      { error: 'Raylı sistem grup bilgileri alınamadı' },
-      { status: 500 }
-    );
+    return NextResponse.json([]);
   }
 }

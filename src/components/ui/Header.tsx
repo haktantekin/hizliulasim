@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { Facebook, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut, Mail } from 'lucide-react';
+import { Facebook, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut, Mail, Zap } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -15,6 +15,7 @@ const drawerLinks = [
   { href: '/', icon: Home, label: 'Ana Sayfa' },
   { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
   { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
+  { href: '/sarj-istasyonlari', icon: Zap, label: 'Şarj İstasyonları' },
   { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
   { href: '/iletisim', icon: Mail, label: 'İletişim' },
 ];

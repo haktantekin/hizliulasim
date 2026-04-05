@@ -20,7 +20,7 @@ import LatestPostsRow from "../components/home/LatestPostsRow";
 import HomeSearchBar from "../components/home/HomeSearchBar";
 import TrafficIndex from "../components/home/TrafficIndex";
 import Link from "next/link";
-import { ParkingCircle, TrainFront } from "lucide-react";
+import { ParkingCircle, TrainFront, Zap } from "lucide-react";
 
 export default function Home() {
   return (
@@ -53,6 +53,19 @@ export default function Home() {
             <div>
               <div className="font-bold text-sm">İSPARK OTOPARK</div>
               <div className="text-xs text-white/80">Anlık doluluk bilgileri</div>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          href="/sarj-istasyonlari"
+          className="col-span-2 block rounded-xl bg-gradient-to-r from-green-600 to-emerald-700 p-4 text-white hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <Zap className="w-7 h-7 flex-none" />
+            <div>
+              <div className="font-bold text-sm">Şarj İstasyonları</div>
+              <div className="text-xs text-white/80">Yakınımdaki elektrikli araç şarj noktaları</div>
             </div>
           </div>
         </Link>
