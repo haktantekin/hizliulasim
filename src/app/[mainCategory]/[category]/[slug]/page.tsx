@@ -9,6 +9,7 @@ import FaqAccordion from "@/components/ui/FaqAccordion";
 import { getDummyImageForCategory } from "@/lib/getDummyImage";
 import PostComments from "@/components/blog/PostComments";
 import InjectBusWidgetAfterTable from "@/components/blog/InjectBusWidgetAfterTable";
+import PostTransitWidget from "@/components/blog/PostTransitWidget";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -56,7 +57,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
         ]}
       />
 
-
       {post.featuredImage ? (
         <div className="relative w-full h-64 md:h-96 mb-6">
           <Image src={post.featuredImage.url} alt={post.featuredImage.alt} fill className="object-cover rounded-lg" priority sizes="100vw" />
@@ -72,6 +72,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
       <div className="text-xs text-gray-500 mb-4">
         <span>{new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
       </div>
+
+      <PostTransitWidget postTitle={post.title} />
 
       {/* İçerikte [map] shortcode'u varsa, haritayı oraya göm */}
       <article className="post-detail space-y-6">

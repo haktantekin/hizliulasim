@@ -2,6 +2,7 @@ import HomeCards from "@/components/home/homeCards";
 import HomeBusFinder from "@/components/home/HomeBusFinder";
 import NearbyStopBusesWidget from "@/components/home/NearbyStopBusesWidget";
 import DistrictIsparkWidget from "@/components/home/DistrictIsparkWidget";
+import TransitDirectionsWidget from "@/components/home/TransitDirectionsWidget";
 import type { Metadata } from 'next';
 import { fetchPageSeoBySlug } from '@/services/wordpress';
 
@@ -20,7 +21,7 @@ import LatestPostsRow from "../components/home/LatestPostsRow";
 import HomeSearchBar from "../components/home/HomeSearchBar";
 import TrafficIndex from "../components/home/TrafficIndex";
 import Link from "next/link";
-import { ParkingCircle, TrainFront, Zap } from "lucide-react";
+import { ParkingCircle, TrainFront, Zap, Navigation } from "lucide-react";
 
 export default function Home() {
   return (
@@ -69,6 +70,23 @@ export default function Home() {
             </div>
           </div>
         </Link>
+
+        <Link
+          href="/yol-tarifi"
+          className="col-span-2 block rounded-xl bg-gradient-to-r from-brand-orange to-orange-600 p-4 text-white hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <Navigation className="w-7 h-7 flex-none" />
+            <div>
+              <div className="font-bold text-sm">Yol Tarifi</div>
+              <div className="text-xs text-white/80">Toplu taşıma ile nereye, nasıl giderim?</div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      <div className="mt-4">
+        <TransitDirectionsWidget />
       </div>
 
       <div className="mt-4">

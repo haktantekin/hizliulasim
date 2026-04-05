@@ -16,6 +16,7 @@ import { Fragment } from 'react';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
 import PostComments from '@/components/blog/PostComments';
 import InjectBusWidgetAfterTable from '@/components/blog/InjectBusWidgetAfterTable';
+import PostTransitWidget from '@/components/blog/PostTransitWidget';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -271,6 +272,8 @@ export default async function SubCategoryPage({ params }: PageProps) {
 
         <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
 
+        <PostTransitWidget postTitle={post.title} />
+
         {post.featuredImage ? (
           <div className="relative w-full h-64 md:h-96 mb-6">
             <Image
@@ -301,6 +304,8 @@ export default async function SubCategoryPage({ params }: PageProps) {
         <div className="text-xs text-gray-500 mb-4">
           <span>{new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
         </div>
+
+        <PostTransitWidget postTitle={post.title} />
 
         <article className="post-detail space-y-6">
           {post.location && post.content.includes('[map]') ? (

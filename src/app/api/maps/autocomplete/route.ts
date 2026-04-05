@@ -7,10 +7,13 @@ export async function GET(request: Request) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_KEY;
     if (!apiKey) return NextResponse.json({ predictions: [], error: 'Missing Google API key' }, { status: 500 });
 
+    const types = searchParams.get('types') || 'establishment|geocode';
+
     const url = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json');
     url.searchParams.set('input', input);
     url.searchParams.set('language', 'tr');
-    url.searchParams.set('types', 'geocode');
+    url.searchParams.set('types', types);
+    url.searchParams.set('components', 'country:tr');
     url.searchParams.set('key', apiKey);
 
     const res = await fetch(url.toString(), { next: { revalidate: 60 } });
