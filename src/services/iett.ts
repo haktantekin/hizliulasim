@@ -184,7 +184,9 @@ export async function getHatOtoKonum(hatKodu: string): Promise<IETTHatOtoKonum[]
   return callSoapMethod<IETTHatOtoKonum>(
     ENDPOINTS.seferGerceklesme,
     'GetHatOtoKonum_json',
-    { HatKodu: hatKodu }
+    { HatKodu: hatKodu },
+    15000,
+    0
   );
 }
 
@@ -298,10 +300,32 @@ export async function getBusRouteDetail(hatKodu: string) {
 export async function searchHatlar(query: string): Promise<IETTHat[]> {
   const allHatlar = await getHat();
   const q = query.toUpperCase().trim();
+  const normalize = (value: string) =>
+    value
+      .toLocaleUpperCase('tr-TR')
+      .replace(/[^0-9A-ZÇĞİÖŞÜ]/g, '');
+
+  const normalizedQ = normalize(query);
+
+  if (!normalizedQ) {
+    return allHatlar;
+  }
+
   return allHatlar.filter(
-    (h) =>
-      h.SHATKODU.toUpperCase().includes(q) ||
-      h.SHATADI.toUpperCase().includes(q)
+    (h) => {
+      const hatKodu = h.SHATKODU.toUpperCase();
+      const hatAdi = h.SHATADI.toUpperCase();
+
+      if (hatKodu.includes(q) || hatAdi.includes(q)) {
+        return true;
+      }
+
+      // Supports combined input such as "MecidiyekoyMahmutbey".
+      return (
+        normalize(h.SHATKODU).includes(normalizedQ) ||
+        normalize(h.SHATADI).includes(normalizedQ)
+      );
+    }
   );
 }
 

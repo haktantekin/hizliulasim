@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
     "categories",
     "per_page",
     "page",
+    "hide_empty",
     "search",
     "orderby",
     "order",

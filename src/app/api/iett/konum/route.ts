@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getHatOtoKonum } from '@/services/iett';
 
-export const revalidate = 30; // 30 second cache for real-time data
+export const revalidate = 0; // no cache for real-time vehicle tracking
 
 export async function GET(request: Request) {
   try {

@@ -60,7 +60,8 @@ function walkingTime(meters: number): string {
 export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocation }: Props) {
   const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>([]);
   const [konumLoading, setKonumLoading] = useState(false);
-  const [selectedDirection, setSelectedDirection] = useState<string | null>(null);
+  const [selectedDirection, setSelectedDirection] = useState<string | null>('D');
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const directions = useMemo(() => {
     const dirMap = new Map<string, string>();
@@ -73,8 +74,11 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
   const fetchVehicles = useCallback(async () => {
     setKonumLoading(true);
     try {
-      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}`);
-      if (res.ok) setKonumlar(await res.json());
+      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}&_t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        setKonumlar(await res.json());
+        setLastRefresh(new Date());
+      }
     } catch { /* silent */ }
     setKonumLoading(false);
   }, [hatKodu]);
@@ -83,7 +87,7 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
   useEffect(() => {
     if (userLocation.status !== 'active') return;
     fetchVehicles();
-    const interval = setInterval(fetchVehicles, 30000);
+    const interval = setInterval(fetchVehicles, 15000);
     return () => clearInterval(interval);
   }, [userLocation.status, fetchVehicles]);
 
@@ -125,7 +129,9 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
       const lng = parseFloat(v.boylam);
       if (!isFinite(lat) || !isFinite(lng)) continue;
 
-      const sameDirection = v.yon === stop.YON;
+      const vDirParts = v.guzergahkodu?.split('_');
+      const vDirCode = vDirParts && vDirParts.length >= 2 ? vDirParts[1] : '';
+      const sameDirection = vDirCode === stop.YON;
 
       let vehicleStopIndex = -1;
       if (v.yakinDurakKodu) {
@@ -145,8 +151,12 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
       let dataAge = 300;
       if (v.son_konum_zamani) {
         const parts = v.son_konum_zamani.match(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2}):(\d{2})/);
+        const parts2 = v.son_konum_zamani.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
         if (parts) {
           const ts = new Date(+parts[3], +parts[2] - 1, +parts[1], +parts[4], +parts[5], +parts[6]);
+          dataAge = Math.max(0, (now - ts.getTime()) / 1000);
+        } else if (parts2) {
+          const ts = new Date(+parts2[1], +parts2[2] - 1, +parts2[3], +parts2[4], +parts2[5], +parts2[6]);
           dataAge = Math.max(0, (now - ts.getTime()) / 1000);
         }
       }
@@ -186,7 +196,13 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
     }
 
     const others = konumlar.filter((v) => v.kapino !== best.vehicle.kapino);
-    return { best, etaText, others };
+
+    // Find vehicle's nearby stop name
+    const vehicleStopName = best.vehicle.yakinDurakKodu
+      ? directionStops.find((d) => d.DURAKKODU === best.vehicle.yakinDurakKodu)?.DURAKADI || best.vehicle.yakinDurakKodu
+      : null;
+
+    return { best, etaText, others, vehicleStopName };
   }, [nearestStop, konumlar, duraklar, hat]);
 
   // Don't render if location not active
@@ -201,6 +217,9 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
             Yakınımdaki Durak ve Yaklaşan Otobüs
           </h3>
           {konumLoading && <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />}
+          {lastRefresh && !konumLoading && (
+            <span className="text-xs text-gray-400">{lastRefresh.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+          )}
         </div>
 
         {directions.length > 0 && (
@@ -238,6 +257,8 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
           stop={nearestStop.stop}
           selectedVehicle={vehicleInfo?.best.vehicle ?? null}
           otherVehicles={vehicleInfo?.others ?? []}
+          routeStops={duraklar.filter((d) => d.YON === selectedDirection)}
+          allDuraklar={duraklar}
         />
       )}
 
@@ -279,6 +300,12 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
               <div className="font-medium text-sm text-gray-900">
                 Kapı No: {vehicleInfo.best.vehicle.kapino}
               </div>
+              {vehicleInfo.vehicleStopName && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></span>
+                  <span className="text-xs text-orange-600 font-medium">{vehicleInfo.vehicleStopName} durağında</span>
+                </div>
+              )}
               <div className="mt-1">
                 <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                   vehicleInfo.best.stopsAway === 0
@@ -296,7 +323,7 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
                 </div>
               )}
               <div className="text-xs text-gray-400 mt-1">
-                Veriler her 30 saniyede güncellenir
+                Veriler her 15 saniyede güncellenir
               </div>
             </div>
           </div>
@@ -311,7 +338,7 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
                 Şu anda bu durağa yaklaşan aktif araç bulunamadı.
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                Veriler her 30 saniyede güncellenir
+                Veriler her 15 saniyede güncellenir
               </div>
             </div>
           </div>

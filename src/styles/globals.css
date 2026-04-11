@@ -101,3 +101,6 @@ table.has-fixed-layout td a:hover{
 .noblock-widget-container{
   bottom:90px;
 }
+:focus{
+  outline: none;
+}

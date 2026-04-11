@@ -143,11 +143,16 @@ const stripBlogPrefix = (html: string): string => {
 // Fetch categories from WordPress
 export const fetchCategories = async (): Promise<BlogCategory[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/categories?per_page=100&hide_empty=true`, {
+    const isClient = typeof window !== 'undefined';
+    const url = isClient
+      ? '/api/wp/proxy?endpoint=categories&per_page=100&hide_empty=true'
+      : `${API_BASE_URL}/categories?per_page=100&hide_empty=true`;
+
+    const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
       },
-      next: { revalidate: 300 }, // Revalidate every 5 minutes
+      ...(isClient ? {} : { next: { revalidate: 300 } }), // Revalidate only on server
     });
 
     if (!response.ok) {

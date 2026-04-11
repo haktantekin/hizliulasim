@@ -51,6 +51,14 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
         document.head.appendChild(link);
       }
 
+      // Custom styles for stop labels
+      if (typeof window !== 'undefined' && !document.getElementById('leaflet-stop-label-css')) {
+        const style = document.createElement('style');
+        style.id = 'leaflet-stop-label-css';
+        style.textContent = `.leaflet-stop-label { background: none !important; border: none !important; overflow: visible !important; }`;
+        document.head.appendChild(style);
+      }
+
       leafletRef.current = L;
 
       const map = L.map(container, {
@@ -58,9 +66,9 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
         zoomControl: true,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '',
       }).addTo(map);
 
       mapRef.current = map;
@@ -104,37 +112,63 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
     L.polyline(latlngs, {
       color,
       weight: 4,
-      opacity: 0.8,
+      opacity: 0.7,
     }).addTo(group);
 
-    // Stop markers
+    // Stop markers with name labels
     stops.forEach((stop, idx) => {
       const isTerminal = idx === 0 || idx === stops.length - 1;
-      const radius = isTerminal ? 8 : 4;
-      const fillColor = isTerminal ? color : '#ffffff';
-      const borderWeight = isTerminal ? 3 : 2;
 
-      const circle = L.circleMarker([stop.YKOORDINATI, stop.XKOORDINATI], {
-        radius,
-        fillColor,
+      // Circle marker
+      L.circleMarker([stop.YKOORDINATI, stop.XKOORDINATI], {
+        radius: isTerminal ? 7 : 3.5,
+        fillColor: isTerminal ? color : '#fff',
         color,
-        weight: borderWeight,
+        weight: isTerminal ? 3 : 2,
         opacity: 1,
         fillOpacity: 1,
-      }).addTo(group);
+      })
+        .bindPopup(
+          `<div style="font-size:13px;min-width:140px">
+            <strong>${stop.DURAKADI}</strong><br/>
+            <span style="color:#666;font-size:11px">${stop.SIRANO}. durak • ${stop.DURAKKODU}</span>
+            ${stop.ILCEADI ? `<br/><span style="color:#999;font-size:11px">${stop.ILCEADI}</span>` : ''}
+          </div>`,
+          { closeButton: false }
+        )
+        .on('mouseover', function (this: any) { this.openPopup(); })
+        .addTo(group);
 
-      circle.bindPopup(
-        `<div style="font-size:13px;min-width:140px">
-          <strong>${stop.DURAKADI}</strong><br/>
-          <span style="color:#666;font-size:11px">${stop.SIRANO}. durak • ${stop.DURAKKODU}</span>
-          ${stop.ILCEADI ? `<br/><span style="color:#999;font-size:11px">${stop.ILCEADI}</span>` : ''}
-        </div>`,
-        { closeButton: false }
-      );
+      // Name label
+      const fontSize = isTerminal ? '11px' : '9px';
+      const fontWeight = isTerminal ? '700' : '500';
+      const textColor = isTerminal ? color : '#555';
+      const bg = isTerminal ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.7)';
+      const padding = isTerminal ? '2px 6px' : '1px 4px';
+      const shadow = isTerminal ? 'box-shadow:0 1px 4px rgba(0,0,0,0.15);' : '';
+      const arrow = isTerminal ? (idx === 0 ? '▶ ' : '◀ ') : '';
 
-      circle.on('mouseover', function (this: any) {
-        this.openPopup();
+      const labelIcon = L.divIcon({
+        className: 'leaflet-stop-label',
+        html: `<div style="
+          color:${textColor};
+          font-size:${fontSize};
+          font-weight:${fontWeight};
+          background:${bg};
+          padding:${padding};
+          border-radius:3px;
+          white-space:nowrap;
+          pointer-events:none;
+          position:absolute;
+          left:50%;
+          bottom:4px;
+          transform:translateX(-50%);
+          ${shadow}
+        ">${arrow}${stop.DURAKADI}</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
       });
+      L.marker([stop.YKOORDINATI, stop.XKOORDINATI], { icon: labelIcon, interactive: false }).addTo(group);
     });
 
     group.addTo(map);

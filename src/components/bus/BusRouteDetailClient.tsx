@@ -20,6 +20,15 @@ const RouteMap = dynamic(() => import('./RouteMap'), {
   ),
 });
 
+const LiveVehicleMap = dynamic(() => import('./LiveVehicleMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[350px] bg-gray-100 rounded-xl animate-pulse flex items-center justify-center">
+      <MapPin className="w-8 h-8 text-gray-300" />
+    </div>
+  ),
+});
+
 interface Props {
   hatKodu: string;
   wpContent?: string | null;
@@ -500,6 +509,11 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 
       {activeTab === 'vehicles' && (
         <div className="space-y-3">
+          {/* Live vehicle map */}
+          {duraklar.length > 0 && (
+            <LiveVehicleMap duraklar={duraklar} konumlar={konumlar} />
+          )}
+
           {/* Refresh bar */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">

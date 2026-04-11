@@ -9,7 +9,12 @@ interface NearestStopMapProps {
   stop: IETTDurakDetay;
   selectedVehicle: IETTHatOtoKonum | null;
   otherVehicles: IETTHatOtoKonum[];
+  routeStops?: IETTDurakDetay[];
+  allDuraklar?: IETTDurakDetay[];
 }
+
+const ROUTE_COLOR = '#facc15'; // yellow like arac.iett.gov.tr
+const STOP_COLOR = '#22c55e';  // green for stop labels
 
 export default function NearestStopMap({
   userLat,
@@ -17,10 +22,13 @@ export default function NearestStopMap({
   stop,
   selectedVehicle,
   otherVehicles,
+  routeStops,
+  allDuraklar,
 }: NearestStopMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const layerRef = useRef<any>(null);
+  const staticLayerRef = useRef<any>(null);
+  const vehicleLayerRef = useRef<any>(null);
   const leafletRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -41,7 +49,6 @@ export default function NearestStopMap({
       if (cancelled || mapRef.current) return;
       if ((container as any)._leaflet_id) return;
 
-      // CSS once
       if (typeof window !== 'undefined' && !document.getElementById('leaflet-css')) {
         const link = document.createElement('link');
         link.id = 'leaflet-css';
@@ -50,17 +57,20 @@ export default function NearestStopMap({
         document.head.appendChild(link);
       }
 
+      // Custom styles for stop labels
+      if (typeof window !== 'undefined' && !document.getElementById('leaflet-stop-label-css')) {
+        const style = document.createElement('style');
+        style.id = 'leaflet-stop-label-css';
+        style.textContent = `.leaflet-stop-label { background: none !important; border: none !important; overflow: visible !important; }`;
+        document.head.appendChild(style);
+      }
+
       leafletRef.current = L;
 
       const map = L.map(container, {
         scrollWheelZoom: false,
         zoomControl: true,
       });
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(map);
 
       mapRef.current = map;
       setIsLoaded(true);
@@ -76,119 +86,217 @@ export default function NearestStopMap({
     };
   }, []);
 
-  // Update markers when data changes
+  // Static layer: route polyline + user marker (drawn once, or when stop/route changes)
   useEffect(() => {
     const map = mapRef.current;
     const L = leafletRef.current;
     if (!map || !L || !isLoaded) return;
 
-    if (layerRef.current) {
-      map.removeLayer(layerRef.current);
+    if (staticLayerRef.current) {
+      map.removeLayer(staticLayerRef.current);
     }
 
     const group = L.featureGroup();
 
+    // Route polyline (yellow dashed)
+    if (routeStops && routeStops.length > 1) {
+      const sorted = [...routeStops].sort((a, b) => a.SIRANO - b.SIRANO);
+      const latlngs = sorted.map((s) => [s.YKOORDINATI, s.XKOORDINATI] as [number, number]);
+      L.polyline(latlngs, { color: ROUTE_COLOR, weight: 5, opacity: 0.6, dashArray: '10 6' }).addTo(group);
+
+      // Show dots with small name labels on the route line
+      sorted.forEach((s) => {
+        L.circleMarker([s.YKOORDINATI, s.XKOORDINATI], {
+          radius: 2.5,
+          fillColor: ROUTE_COLOR,
+          color: 'rgba(255,255,255,0.3)',
+          weight: 1,
+          fillOpacity: 0.6,
+        }).addTo(group);
+
+        // Small stop name label
+        const smallLabel = L.divIcon({
+          className: 'leaflet-stop-label',
+          html: `<div style="
+            color:rgba(255,255,255,0.45);
+            font-size:8px;
+            font-weight:400;
+            white-space:nowrap;
+            pointer-events:none;
+            position:absolute;
+            left:50%;
+            bottom:2px;
+            transform:translateX(-50%);
+          ">${s.DURAKADI}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
+        });
+        L.marker([s.YKOORDINATI, s.XKOORDINATI], { icon: smallLabel, interactive: false }).addTo(group);
+      });
+    }
+
     // User marker (blue pulsing dot)
     const userIcon = L.divIcon({
-      className: '',
+      className: 'leaflet-stop-label',
       html: `<div style="
-        width:20px;height:20px;
+        width:18px;height:18px;
         background:#3b82f6;
         border:3px solid #fff;
         border-radius:50%;
-        box-shadow:0 0 0 4px rgba(59,130,246,0.3), 0 2px 6px rgba(0,0,0,0.3);
+        box-shadow:0 0 0 4px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.4);
       "></div>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
     });
     L.marker([userLat, userLng], { icon: userIcon })
-      .bindPopup('<strong>Konumunuz</strong>', { closeButton: false })
+      .bindPopup('<strong style="color:#333">Konumunuz</strong>', { closeButton: false })
       .addTo(group);
 
-    // Stop marker (orange pin)
-    const stopIcon = L.divIcon({
-      className: '',
-      html: `<div style="
-        display:flex;align-items:center;justify-content:center;
-        width:36px;height:36px;
-        background:linear-gradient(135deg,#f97316,#ea580c);
-        border:3px solid #fff;
-        border-radius:50%;
-        box-shadow:0 2px 8px rgba(0,0,0,0.3);
-      ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
-          <circle cx="12" cy="10" r="3"/>
-        </svg>
-      </div>`,
-      iconSize: [36, 36],
-      iconAnchor: [18, 36],
-      popupAnchor: [0, -36],
-    });
-    L.marker([stop.YKOORDINATI, stop.XKOORDINATI], { icon: stopIcon })
-      .bindPopup(
-        `<div style="font-size:13px;min-width:140px">
-          <strong>${stop.DURAKADI}</strong><br/>
-          <span style="color:#666;font-size:11px">${stop.SIRANO}. durak • ${stop.DURAKKODU}</span>
-        </div>`,
-        { closeButton: false }
-      )
-      .addTo(group);
+    group.addTo(map);
+    staticLayerRef.current = group;
+  }, [userLat, userLng, stop, routeStops, isLoaded]);
 
-    // Other vehicles (gray, small)
-    const otherBusIcon = L.divIcon({
-      className: '',
-      html: `<div style="
-        display:flex;align-items:center;justify-content:center;
-        width:24px;height:24px;
-        background:#9ca3af;
-        border:2px solid #fff;
-        border-radius:50%;
-        box-shadow:0 1px 4px rgba(0,0,0,0.2);
-      ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/>
-          <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/>
-          <circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>
-        </svg>
-      </div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
+  // Vehicle layer: shows labeled stops between vehicle & user, vehicle markers, auto-zoom
+  useEffect(() => {
+    const map = mapRef.current;
+    const L = leafletRef.current;
+    if (!map || !L || !isLoaded) return;
+
+    if (vehicleLayerRef.current) {
+      map.removeLayer(vehicleLayerRef.current);
+    }
+
+    const group = L.featureGroup();
+    const focusBounds = L.featureGroup();
+
+    // Determine key stops to label: vehicle's stop, next stop, and user's stop
+    let labelStops: { stop: IETTDurakDetay; type: 'vehicle' | 'next' | 'user' }[] = [];
+    const sorted = routeStops && routeStops.length > 1
+      ? [...routeStops].sort((a, b) => a.SIRANO - b.SIRANO)
+      : [];
+
+    // User's nearest stop (always shown)
+    labelStops.push({ stop, type: 'user' });
+
+    if (selectedVehicle?.yakinDurakKodu && sorted.length > 0) {
+      let vehicleIdx = sorted.findIndex((s) => s.DURAKKODU === selectedVehicle.yakinDurakKodu);
+      const userIdx = sorted.findIndex((s) => s.DURAKKODU === stop.DURAKKODU);
+
+      // If vehicle stop not in route direction, look up from all duraklar
+      let vehicleStopFromAll: IETTDurakDetay | undefined;
+      if (vehicleIdx === -1 && allDuraklar) {
+        vehicleStopFromAll = allDuraklar.find((d) => d.DURAKKODU === selectedVehicle.yakinDurakKodu);
+      }
+
+      if (vehicleIdx !== -1) {
+        if (sorted[vehicleIdx].DURAKKODU !== stop.DURAKKODU) {
+          labelStops.push({ stop: sorted[vehicleIdx], type: 'vehicle' });
+        }
+        const nextIdx = userIdx > vehicleIdx ? vehicleIdx + 1 : vehicleIdx - 1;
+        if (nextIdx >= 0 && nextIdx < sorted.length && sorted[nextIdx].DURAKKODU !== stop.DURAKKODU && sorted[nextIdx].DURAKKODU !== selectedVehicle.yakinDurakKodu) {
+          labelStops.push({ stop: sorted[nextIdx], type: 'next' });
+        }
+      } else if (vehicleStopFromAll) {
+        // Vehicle is on a different direction — still show its stop label
+        labelStops.push({ stop: vehicleStopFromAll, type: 'vehicle' });
+      }
+    }
+
+    // Draw labeled stops
+    labelStops.forEach(({ stop: s, type }) => {
+      const bgColor = type === 'user' ? STOP_COLOR : type === 'vehicle' ? '#f97316' : '#a78bfa';
+      const shadow = 'box-shadow:0 2px 8px rgba(0,0,0,0.5);';
+
+      const labelIcon = L.divIcon({
+        className: 'leaflet-stop-label',
+        html: `<div style="
+          background:${bgColor};
+          color:#fff;
+          font-size:11px;
+          font-weight:700;
+          padding:3px 8px;
+          border-radius:4px;
+          white-space:nowrap;
+          pointer-events:auto;
+          border:1px solid rgba(255,255,255,0.25);
+          position:absolute;
+          left:50%;
+          bottom:4px;
+          transform:translateX(-50%);
+          ${shadow}
+        ">${type === 'next' ? '→ ' : ''}${s.DURAKADI}</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      });
+
+      L.marker([s.YKOORDINATI, s.XKOORDINATI], { icon: labelIcon, interactive: false }).addTo(group);
+
+      L.circleMarker([s.YKOORDINATI, s.XKOORDINATI], {
+        radius: 5,
+        fillColor: bgColor,
+        color: '#fff',
+        weight: 1.5,
+        fillOpacity: 1,
+      }).addTo(group);
     });
 
+    // Other vehicles (gray badge)
     otherVehicles.forEach((v) => {
       const lat = parseFloat(v.enlem);
       const lng = parseFloat(v.boylam);
       if (!isFinite(lat) || !isFinite(lng)) return;
-      L.marker([lat, lng], { icon: otherBusIcon })
-        .bindPopup(`<span style="font-size:12px">${v.kapino}</span>`, { closeButton: false })
-        .addTo(group);
+
+      const icon = L.divIcon({
+        className: 'leaflet-stop-label',
+        html: `<div style="
+          background:#6b7280;
+          color:#fff;
+          font-size:10px;
+          font-weight:700;
+          padding:2px 6px;
+          border-radius:4px;
+          border:2px solid rgba(255,255,255,0.3);
+          white-space:nowrap;
+          position:absolute;
+          left:50%;
+          top:50%;
+          transform:translate(-50%,-50%);
+          display:flex;align-items:center;gap:3px;
+        ">🚌 ${v.kapino}</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      });
+
+      L.marker([lat, lng], { icon }).addTo(group);
     });
 
-    // Selected vehicle (green, larger)
+    // Selected vehicle (yellow badge)
     if (selectedVehicle) {
       const vLat = parseFloat(selectedVehicle.enlem);
       const vLng = parseFloat(selectedVehicle.boylam);
       if (isFinite(vLat) && isFinite(vLng)) {
         const busIcon = L.divIcon({
-          className: '',
+          className: 'leaflet-stop-label',
           html: `<div style="
-            display:flex;align-items:center;justify-content:center;
-            width:36px;height:36px;
-            background:linear-gradient(135deg,#16a34a,#15803d);
-            border:3px solid #fff;
-            border-radius:50%;
-            box-shadow:0 0 0 3px rgba(22,163,74,0.3), 0 2px 8px rgba(0,0,0,0.3);
-          ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/>
-              <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/>
-              <circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>
-            </svg>
-          </div>`,
-          iconSize: [36, 36],
-          iconAnchor: [18, 18],
+            background:#facc15;
+            color:#1a1a1a;
+            font-size:12px;
+            font-weight:800;
+            padding:4px 10px;
+            border-radius:6px;
+            border:2px solid #fff;
+            box-shadow:0 0 12px rgba(250,204,21,0.5), 0 2px 8px rgba(0,0,0,0.4);
+            white-space:nowrap;
+            position:absolute;
+            left:50%;
+            top:50%;
+            transform:translate(-50%,-50%);
+            display:flex;align-items:center;gap:4px;
+          ">🚌 ${selectedVehicle.kapino}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
         });
+
         L.marker([vLat, vLng], { icon: busIcon })
           .bindPopup(
             `<div style="font-size:13px">
@@ -198,19 +306,27 @@ export default function NearestStopMap({
             { closeButton: false }
           )
           .addTo(group);
+
+        L.marker([vLat, vLng]).addTo(focusBounds);
       }
     }
 
     group.addTo(map);
-    layerRef.current = group;
-    map.fitBounds(group.getBounds(), { padding: [40, 40] });
-  }, [userLat, userLng, stop, selectedVehicle, otherVehicles, isLoaded]);
+    vehicleLayerRef.current = group;
+
+    // Auto-zoom: only vehicle + user's nearest stop
+    L.marker([stop.YKOORDINATI, stop.XKOORDINATI]).addTo(focusBounds);
+    if (focusBounds.getLayers().length < 2) {
+      L.marker([userLat, userLng]).addTo(focusBounds);
+    }
+    map.fitBounds(focusBounds.getBounds(), { padding: [80, 80], maxZoom: 15, animate: true });
+  }, [selectedVehicle, otherVehicles, stop, userLat, userLng, routeStops, allDuraklar, isLoaded]);
 
   return (
     <div
       ref={mapContainerRef}
-      className="w-full h-[250px] md:h-[300px] border border-gray-200 rounded-xl overflow-hidden"
-      style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
+      className="w-full h-[300px] md:h-[400px] border border-gray-700 rounded-xl overflow-hidden"
+      style={{ background: '#1a1a2e' }}
     />
   );
 }
