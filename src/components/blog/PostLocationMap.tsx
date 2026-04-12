@@ -51,7 +51,7 @@ export default function PostLocationMap({ latitude, longitude, title }: PostLoca
       const map = L.map(container, {
         scrollWheelZoom: false,
         center: [latitude, longitude],
-        zoom: 21, // Higher zoom for building details
+        zoom: 17,
       });
 
       // Add OpenStreetMap tile layer

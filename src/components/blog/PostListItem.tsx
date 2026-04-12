@@ -5,6 +5,15 @@ import Image from "next/image";
 import type { BlogPost } from "@/types/WordPress";
 import { getDummyImageForCategory } from "@/lib/getDummyImage";
 
+// Categories that typically have accessibility-related info
+const ACCESSIBLE_CATEGORY_SLUGS = [
+  'otobus-hatlari',
+  'rayli-sistemler',
+  'metro-hatlari',
+  'tramvay-hatlari',
+  'ulasim-rehberi',
+];
+
 interface Props {
   post: BlogPost;
   href: string;
@@ -12,9 +21,11 @@ interface Props {
   categorySlug?: string;
   categoryName?: string;
   hideImage?: boolean;
+  showAccessibility?: boolean;
 }
 
-export default function PostListItem({ post, href, className = "", categorySlug, categoryName, hideImage }: Props) {
+export default function PostListItem({ post, href, className = "", categorySlug, categoryName, hideImage, showAccessibility }: Props) {
+  const hasAccessibilityBadge = showAccessibility || (categorySlug && ACCESSIBLE_CATEGORY_SLUGS.includes(categorySlug));
   // Resim yoksa kategori bazlı dummy resim kontrolü
   const dummyImage = !post.featuredImage && categorySlug
     ? getDummyImageForCategory(categorySlug, post.title)
@@ -56,6 +67,11 @@ export default function PostListItem({ post, href, className = "", categorySlug,
         <div className="text-xs text-gray-400 font-light mt-1">
           {new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
         </div>
+        {hasAccessibilityBadge && (
+          <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 text-[10px] bg-green-50 text-green-700 rounded-full border border-green-200 w-fit">
+            ♿ Erişilebilirlik bilgisi
+          </span>
+        )}
       </div>
      
     </Link>

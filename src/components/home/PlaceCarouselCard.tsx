@@ -14,9 +14,14 @@ interface Props {
   className?: string;
   variant?: 'plain' | 'elevated';
   ratingPlacement?: 'header' | 'below';
+  accessibility?: {
+    wheelchairEntrance?: boolean;
+    wheelchairParking?: boolean;
+    wheelchairRestroom?: boolean;
+  };
 }
 
-export default function PlaceCarouselCard({ name, address, rating, city, district, onDirections, onOpenMaps, className = "", variant = 'elevated', ratingPlacement = 'header' }: Props) {
+export default function PlaceCarouselCard({ name, address, rating, city, district, onDirections, onOpenMaps, className = "", variant = 'elevated', ratingPlacement = 'header', accessibility }: Props) {
   const containerBase = "min-w-[260px] bg-white";
   const containerVariant = variant === 'plain' ? "rounded " : "border rounded-xl shadow-sm ";
   return (
@@ -44,6 +49,19 @@ export default function PlaceCarouselCard({ name, address, rating, city, distric
           </div>
         )}
       </div>
+      {accessibility && (accessibility.wheelchairEntrance || accessibility.wheelchairParking || accessibility.wheelchairRestroom) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {accessibility.wheelchairEntrance && (
+            <span className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200">♿ Giriş</span>
+          )}
+          {accessibility.wheelchairParking && (
+            <span className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200">♿ Park</span>
+          )}
+          {accessibility.wheelchairRestroom && (
+            <span className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200">♿ WC</span>
+          )}
+        </div>
+      )}
       <div className="mt-3 flex gap-2">
         <button onClick={onDirections} className="px-3 py-1.5 text-xs bg-brand-dark-blue text-white rounded-full hover:opacity-90 flex items-center gap-1">
           Yol Tarifi <ChevronRight size={14} />

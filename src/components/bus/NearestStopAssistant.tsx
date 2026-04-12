@@ -87,7 +87,7 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
   useEffect(() => {
     if (userLocation.status !== 'active') return;
     fetchVehicles();
-    const interval = setInterval(fetchVehicles, 15000);
+    const interval = setInterval(fetchVehicles, 30000);
     return () => clearInterval(interval);
   }, [userLocation.status, fetchVehicles]);
 
