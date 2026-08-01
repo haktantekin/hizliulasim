@@ -179,10 +179,10 @@ export default function RootLayout({
         {/* Google Analytics — Only in production */}
         {process.env.NODE_ENV === 'production' && (
           <>
-            <Script
-              id="adsense-loader"
+            {/* AdSense loader must be a native script tag (no data-nscript attribute) */}
+            <script
+              async
               src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2206148989585201"
-              strategy="afterInteractive"
               crossOrigin="anonymous"
             />
             <Script
