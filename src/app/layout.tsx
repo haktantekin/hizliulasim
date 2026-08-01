@@ -180,6 +180,12 @@ export default function RootLayout({
         {process.env.NODE_ENV === 'production' && (
           <>
             <Script
+              id="adsense-loader"
+              src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2206148989585201"
+              strategy="afterInteractive"
+              crossOrigin="anonymous"
+            />
+            <Script
               src="https://www.googletagmanager.com/gtag/js?id=G-XJ33LRDG0G"
               strategy="afterInteractive"
             />
