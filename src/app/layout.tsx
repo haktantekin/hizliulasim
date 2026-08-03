@@ -8,6 +8,7 @@ import BottomBar from '../components/ui/BottomBar';
 import Footer from '../components/ui/Footer';
 import Header from '../components/ui/Header';
 import Script from "next/script";
+import CookieBanner from '../components/ui/CookieBanner';
 
 const outfit = Outfit({ subsets: ["latin"], display: "swap" });
 
@@ -90,6 +91,10 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
 
+        {/* RSS Feed */}
+        <link rel="alternate" type="application/rss+xml" title="Hızlı Ulaşım Blog RSS" href="/feed.xml" />
+      </head>
+  <body className={outfit.className}>
         {/* Google Consent Mode v2 — must load BEFORE any Google tags */}
         <Script
           id="consent-mode-defaults"
@@ -98,7 +103,6 @@ export default function RootLayout({
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
-
               gtag('consent', 'default', {
                 'ad_storage': 'denied',
                 'ad_user_data': 'denied',
@@ -113,7 +117,6 @@ export default function RootLayout({
                             'PL','PT','RO','SK','SI','ES','SE','IS','LI','NO',
                             'GB','CH']
               });
-
               gtag('consent', 'default', {
                 'ad_storage': 'granted',
                 'ad_user_data': 'granted',
@@ -127,28 +130,25 @@ export default function RootLayout({
           }}
         />
 
-        {/* Google Funding Choices CMP — Google-certified consent dialog for EEA/UK/CH */}
+        {/* Google Funding Choices CMP */}
         <Script
+          id="fc-loader"
           src="https://fundingchoicesmessages.google.com/i/pub-8627901921754492?ers=1"
           strategy="beforeInteractive"
-          nonce=""
         />
         <Script
           id="fc-setup"
           strategy="beforeInteractive"
-          nonce=""
           dangerouslySetInnerHTML={{
             __html: `(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; iframe.id = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();`,
           }}
         />
 
-        {/* RSS Feed */}
-        <link rel="alternate" type="application/rss+xml" title="Hızlı Ulaşım Blog RSS" href="/feed.xml" />
-        
         {/* JSON-LD: WebSite + SearchAction */}
         <Script
           id="schema-website"
           type="application/ld+json"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
@@ -167,6 +167,7 @@ export default function RootLayout({
         <Script
           id="schema-organization"
           type="application/ld+json"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
@@ -176,13 +177,13 @@ export default function RootLayout({
             }),
           }}
         />
-        {/* Google Analytics — Only in production */}
+
         {process.env.NODE_ENV === 'production' && (
           <>
-            {/* AdSense loader must be a native script tag (no data-nscript attribute) */}
-            <script
-              async
+            <Script
+              id="adsense-loader"
               src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2206148989585201"
+              strategy="afterInteractive"
               crossOrigin="anonymous"
             />
             <Script
@@ -199,9 +200,6 @@ export default function RootLayout({
             </Script>
           </>
         )}
-
-      </head>
-  <body className={outfit.className}>
         <ReduxProvider>
           <QueryProvider>
             <DrawerProvider>
@@ -213,6 +211,7 @@ export default function RootLayout({
             {/* Spacer to avoid BottomBar overlaying the footer */}
             <div aria-hidden className="h-16" />
             <BottomBar />
+            <CookieBanner />
             </DrawerProvider>
           </QueryProvider>
         </ReduxProvider>

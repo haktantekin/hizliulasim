@@ -58,6 +58,13 @@ export interface WPPost {
   };
   categories: number[];
   tags: number[];
+  hizliulasim_meta?: {
+    _hizliulasim_latitude?: string;
+    _hizliulasim_longitude?: string;
+    _hizliulasim_faq?: Array<{ question: string; answer: string }> | string;
+    _hizliulasim_schema?: Record<string, unknown> | string;
+    [key: string]: unknown;
+  };
   _embedded?: {
     author?: WPAuthor[];
     'wp:featuredmedia'?: WPMedia[];

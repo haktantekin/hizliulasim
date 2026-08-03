@@ -9,34 +9,29 @@ function buildPostHref(
   categoryMap: Map<number, { slug: string; parentId?: number }>
 ): string {
   if (!categoryId) return '#';
-
   const category = categoryMap.get(categoryId);
   if (!category) return '#';
-
   if (category.parentId) {
     const parent = categoryMap.get(category.parentId);
-    if (parent) {
-      return `/${parent.slug}/${category.slug}/${postSlug}`;
-    }
+    if (parent) return `/${parent.slug}/${category.slug}/${postSlug}`;
   }
-
   return `/${category.slug}/${postSlug}`;
 }
 
-export default async function LatestPostsRow() {
+export default async function SaatBilgileriRow() {
   try {
     const categories = await fetchCategories();
-    const ulasimRehberi = categories.find(c => c.slug === 'ulasim-rehberi');
+    const saatBilgileri = categories.find(c => c.slug === 'saat-bilgileri');
 
-    if (!ulasimRehberi) return null;
+    if (!saatBilgileri) return null;
 
-    const ulasimCategoryIds = [
-      ulasimRehberi.id,
-      ...categories.filter(c => c.parentId === ulasimRehberi.id).map(c => c.id),
+    const categoryIds = [
+      saatBilgileri.id,
+      ...categories.filter(c => c.parentId === saatBilgileri.id).map(c => c.id),
     ];
 
     const postsByCategory = await Promise.all(
-      ulasimCategoryIds.map(categoryId =>
+      categoryIds.map(categoryId =>
         fetchPosts({
           categoryId,
           per_page: 10,
@@ -50,9 +45,7 @@ export default async function LatestPostsRow() {
     const posts = Array.from(
       new Map(postsByCategory.flat().map(post => [post.id, post])).values()
     )
-      .sort(
-        (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-      )
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
       .slice(0, 10);
 
     if (!posts.length) return null;
@@ -64,9 +57,9 @@ export default async function LatestPostsRow() {
     return (
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-brand-soft-blue">Nasıl Gidilir Rehberi</h2>
+          <h2 className="text-lg font-bold text-brand-soft-blue">Saat Bilgileri</h2>
           <Link
-            href="/ulasim-rehberi"
+            href="/saat-bilgileri"
             className="text-sm font-medium text-brand-orange hover:opacity-80 transition-opacity"
           >
             Tumunu Gor
@@ -119,7 +112,7 @@ export default async function LatestPostsRow() {
       </section>
     );
   } catch (error) {
-    console.error('Error in LatestPostsRow:', error);
+    console.error('Error in SaatBilgileriRow:', error);
     return null;
   }
 }

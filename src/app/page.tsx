@@ -18,6 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 import QuickLinks from "../components/home/QuickLinks";
 import LatestPostsRow from "../components/home/LatestPostsRow";
+import SaatBilgileriRow from "../components/home/SaatBilgileriRow";
 import HomeSearchBar from "../components/home/HomeSearchBar";
 import TrafficIndex from "../components/home/TrafficIndex";
 import Link from "next/link";
@@ -138,6 +139,10 @@ export default function Home() {
 
       <div className="mt-6">
         <LatestPostsRow />
+      </div>
+
+      <div className="mt-6">
+        <SaatBilgileriRow />
       </div>
     </div>
   );

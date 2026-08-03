@@ -17,6 +17,8 @@ import { getDummyImageForCategory } from '@/lib/getDummyImage';
 import PostComments from '@/components/blog/PostComments';
 import InjectBusWidgetAfterTable from '@/components/blog/InjectBusWidgetAfterTable';
 import PostTransitWidget from '@/components/blog/PostTransitWidget';
+import ArticleToc from '@/components/blog/ArticleToc';
+import { buildArticleContent } from '@/lib/articleToc';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -250,6 +252,8 @@ export default async function SubCategoryPage({ params }: PageProps) {
       }
     }
 
+    const { html: renderedContent, headings } = buildArticleContent(post.content);
+
     return (
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb
@@ -273,6 +277,8 @@ export default async function SubCategoryPage({ params }: PageProps) {
         <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
 
         <PostTransitWidget postTitle={post.title} />
+
+  <ArticleToc headings={headings} />
 
         {post.featuredImage ? (
           <div className="relative w-full h-64 md:h-96 mb-6">
@@ -308,8 +314,8 @@ export default async function SubCategoryPage({ params }: PageProps) {
         <PostTransitWidget postTitle={post.title} />
 
         <article className="post-detail space-y-6">
-          {post.location && post.content.includes('[map]') ? (
-            post.content.split('[map]').map((part, idx, arr) => (
+          {post.location && renderedContent.includes('[map]') ? (
+            renderedContent.split('[map]').map((part, idx, arr) => (
               <Fragment key={`content-part-${idx}`}>
                 {part && <div dangerouslySetInnerHTML={{ __html: part }} />}
                 {idx < arr.length - 1 && post.location && (
@@ -322,13 +328,13 @@ export default async function SubCategoryPage({ params }: PageProps) {
               </Fragment>
             ))
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div dangerouslySetInnerHTML={{ __html: renderedContent }} />
           )}
         </article>
 
         <InjectBusWidgetAfterTable />
 
-        {!post.content.includes('[map]') && post.location && (
+        {!renderedContent.includes('[map]') && post.location && (
           <PostLocationMap
             latitude={post.location.latitude}
             longitude={post.location.longitude}

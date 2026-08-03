@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import type { IETTDurakDetay, IETTHatOtoKonum, IETTHat } from '@/types/iett';
 import { MapPin, Bus, Navigation, Loader2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { buildDurakSlug } from '@/lib/slugify';
 
 const NearestStopMap = dynamic(() => import('../bus/NearestStopMap'), {
@@ -59,6 +60,7 @@ function walkingTime(meters: number): string {
 }
 
 export default function HomeBusFinder() {
+  const router = useRouter();
   // Location
   const [userLocation, setUserLocation] = useState<UserLocation>({ status: 'idle' });
 
@@ -349,7 +351,7 @@ export default function HomeBusFinder() {
       {/* Hat search */}
       <div className="p-4 border-b border-gray-100">
         <form
-          onSubmit={(e) => { e.preventDefault(); searchHat(); }}
+          onSubmit={(e) => { e.preventDefault(); const code = hatInput.trim().toUpperCase(); if (code) router.push(`/otobus-hatlari/${code}`); }}
           className="flex gap-2"
         >
           <input

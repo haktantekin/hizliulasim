@@ -229,15 +229,14 @@ export const fetchPosts = async (params?: {
       // Get embedded featured media
       const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0] as WPMedia;
 
-      // Parse location from meta
+      // Parse location from meta or hizliulasim_meta
+      const m = post.hizliulasim_meta ?? post.meta;
       let location: { latitude: number; longitude: number } | undefined = undefined;
       
-      if (post.meta?._hizliulasim_latitude && post.meta?._hizliulasim_longitude) {
-        // WordPress meta can be string or array
-        let latStr = post.meta._hizliulasim_latitude;
-        let lngStr = post.meta._hizliulasim_longitude;
+      if (m?._hizliulasim_latitude && m?._hizliulasim_longitude) {
+        let latStr = m._hizliulasim_latitude;
+        let lngStr = m._hizliulasim_longitude;
         
-        // If array, get first element
         if (Array.isArray(latStr)) latStr = latStr[0];
         if (Array.isArray(lngStr)) lngStr = lngStr[0];
         
@@ -254,7 +253,6 @@ export const fetchPosts = async (params?: {
         title: decodeHtml(stripHtml(post.title.rendered)),
         slug: post.slug,
         excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
-  // Decode in case content is entity-escaped (e.g., &lt;p&gt;...)
   content: stripBlogPrefix(decodeHtml(post.content.rendered)),
         categoryIds: post.categories,
         author: {
@@ -272,8 +270,8 @@ export const fetchPosts = async (params?: {
         } : undefined,
         tags: post.tags,
         location,
-        faq: parseFaq(post.meta?._hizliulasim_faq),
-        schema: parseSchema(post.meta?._hizliulasim_schema),
+        faq: parseFaq(m?._hizliulasim_faq),
+        schema: parseSchema(m?._hizliulasim_schema),
       };
     });
   } catch (error) {
@@ -306,15 +304,13 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
     const authorData = post._embedded?.['author']?.[0] as WPAuthor;
     const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0] as WPMedia;
 
-    // Parse location from meta
+    const m = post.hizliulasim_meta ?? post.meta;
     let location: { latitude: number; longitude: number } | undefined = undefined;
     
-    if (post.meta?._hizliulasim_latitude && post.meta?._hizliulasim_longitude) {
-      // WordPress meta can be string or array
-      let latStr = post.meta._hizliulasim_latitude;
-      let lngStr = post.meta._hizliulasim_longitude;
+    if (m?._hizliulasim_latitude && m?._hizliulasim_longitude) {
+      let latStr = m._hizliulasim_latitude;
+      let lngStr = m._hizliulasim_longitude;
       
-      // If array, get first element
       if (Array.isArray(latStr)) latStr = latStr[0];
       if (Array.isArray(lngStr)) lngStr = lngStr[0];
       
@@ -331,7 +327,6 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
       title: decodeHtml(stripHtml(post.title.rendered)),
       slug: post.slug,
       excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
-  // Decode in case content is entity-escaped
   content: stripBlogPrefix(decodeHtml(post.content.rendered)),
       categoryIds: post.categories,
       author: {
@@ -349,8 +344,8 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
       } : undefined,
       tags: post.tags,
       location,
-      faq: parseFaq(post.meta?._hizliulasim_faq),
-      schema: parseSchema(post.meta?._hizliulasim_schema),
+      faq: parseFaq(m?._hizliulasim_faq),
+      schema: parseSchema(m?._hizliulasim_schema),
     };
   } catch (error) {
     console.error('Error fetching post by slug:', error);

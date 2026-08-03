@@ -26,6 +26,13 @@ body {
 .post-detail h3{
   @apply font-bold text-base mt-4 mb-2;
 }
+.post-detail h2,
+.post-detail h3,
+.post-detail h4,
+.post-detail h5,
+.post-detail h6{
+  scroll-margin-top: 6rem;
+}
 .post-detail a{
   @apply underline text-brand-soft-blue font-semibold;
 }

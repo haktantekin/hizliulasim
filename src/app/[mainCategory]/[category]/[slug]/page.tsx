@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { fetchPostBySlug, fetchCategories, fetchPosts } from "@/services/wordpress";
 import type { Metadata } from "next";
 import PostListItem from "@/components/blog/PostListItem";
@@ -10,6 +11,8 @@ import { getDummyImageForCategory } from "@/lib/getDummyImage";
 import PostComments from "@/components/blog/PostComments";
 import InjectBusWidgetAfterTable from "@/components/blog/InjectBusWidgetAfterTable";
 import PostTransitWidget from "@/components/blog/PostTransitWidget";
+import ArticleToc from "@/components/blog/ArticleToc";
+import { buildArticleContent } from "@/lib/articleToc";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -45,6 +48,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
     );
   }
 
+  const { html: renderedContent, headings } = buildArticleContent(post.content);
+
   return (
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
@@ -75,10 +80,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
 
       <PostTransitWidget postTitle={post.title} />
 
+      <ArticleToc headings={headings} />
+
       {/* İçerikte [map] shortcode'u varsa, haritayı oraya göm */}
       <article className="post-detail space-y-6">
-        {post.location && post.content.includes('[map]') ? (
-          post.content.split('[map]').map((part, idx, arr) => (
+        {post.location && renderedContent.includes('[map]') ? (
+          renderedContent.split('[map]').map((part, idx, arr) => (
             <Fragment key={`content-part-${idx}`}>
               {part && <div dangerouslySetInnerHTML={{ __html: part }} />}
               {idx < arr.length - 1 && post.location && (
@@ -91,14 +98,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
             </Fragment>
           ))
         ) : (
-          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+          <div dangerouslySetInnerHTML={{ __html: renderedContent }} />
         )}
       </article>
 
       <InjectBusWidgetAfterTable />
 
       {/* Shortcode kullanılmadıysa fallback olarak haritayı göster */}
-      {!post.content.includes('[map]') && post.location && (
+      {!renderedContent.includes('[map]') && post.location && (
         <PostLocationMap
           latitude={post.location.latitude}
           longitude={post.location.longitude}
@@ -212,17 +219,45 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
       {relatedPosts.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold mb-4">İlgili İçerikler</h2>
-          <div className="divide-y divide-gray-200">
-            {relatedPosts.map((rp) => (
-              <PostListItem
-                key={rp.id}
-                post={rp}
-                href={`/${mainCategory}/${(cat?.slug || category)}/${rp.slug}`}
-                className="py-3"
-                categorySlug={cat?.slug}
-                categoryName={cat?.name}
-              />
-            ))}
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
+            {relatedPosts.map((rp) => {
+              const rpHref = `/${mainCategory}/${(cat?.slug || category)}/${rp.slug}`;
+              const fallbackImage = getDummyImageForCategory(cat?.slug, rp.title);
+              const imageUrl = rp.featuredImage?.url || fallbackImage?.url;
+              const imageAlt = rp.featuredImage?.alt || fallbackImage?.alt || rp.title;
+
+              return (
+                <Link
+                  key={rp.id}
+                  href={rpHref}
+                  className="min-w-[240px] max-w-[240px] snap-start rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow flex-shrink-0"
+                >
+                  <div className="relative w-full h-32 bg-gray-100">
+                    {imageUrl ? (
+                      <Image
+                        src={imageUrl}
+                        alt={imageAlt}
+                        fill
+                        className="object-cover"
+                        sizes="240px"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
+                        Görsel yok
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 min-h-[2.6rem]">
+                      {rp.title}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {new Date(rp.publishedAt).toLocaleDateString('tr-TR')}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

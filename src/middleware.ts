@@ -39,14 +39,15 @@ export async function middleware(request: NextRequest) {
   const host = requestHeaders.get('host') || '';
   const pathname = request.nextUrl.pathname;
   
-  // Normalize URL: remove www, enforce HTTPS, remove trailing slash — all in one redirect
-  const isWww = host.startsWith('www.');
-  const isHttp = protocol === 'http' && !host.includes('localhost') && !host.includes('127.0.0.1');
+  // Normalize URL: add www, enforce HTTPS, remove trailing slash — all in one redirect
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+  const needsWww = !host.startsWith('www.') && !isLocalhost;
+  const isHttp = protocol === 'http' && !isLocalhost;
   const hasTrailingSlash = pathname !== '/' && pathname.endsWith('/');
 
-  if (isWww || isHttp || hasTrailingSlash) {
+  if (needsWww || isHttp || hasTrailingSlash) {
     const url = request.nextUrl.clone();
-    if (isWww) url.host = host.replace('www.', '');
+    if (needsWww) url.host = 'www.' + host;
     if (isHttp) url.protocol = 'https:';
     if (hasTrailingSlash) url.pathname = pathname.replace(/\/+$/, '');
     return NextResponse.redirect(url, 301);

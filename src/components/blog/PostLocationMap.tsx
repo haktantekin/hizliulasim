@@ -56,8 +56,7 @@ export default function PostLocationMap({ latitude, longitude, title }: PostLoca
 
       // Add OpenStreetMap tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıcıları',
+        maxZoom: 19
       }).addTo(map);
 
       // Add marker

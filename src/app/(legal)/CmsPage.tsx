@@ -34,10 +34,10 @@ async function fetchPageContent(slug: string): Promise<string | null> {
 export default async function CmsPage({ slug, heading }: { slug: string; heading?: string }) {
   const html = await fetchPageContent(slug);
   return (
-    <div className="container mx-auto pb-4 px-4 pt-6 prose max-w-none prose-h1:text-2xl prose-p:leading-relaxed">
-      {heading ? <h1 className="mb-4">{heading}</h1> : null}
+    <div className="container mx-auto pb-4 px-4 pt-6 max-w-3xl">
+      {heading ? <h1 className="text-2xl font-bold mb-4">{heading}</h1> : null}
       {html ? (
-        <div className="prose" dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="prose max-w-none prose-h1:text-2xl prose-p:leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
         <p className="text-gray-600 text-sm">İçerik yüklenemedi.</p>
       )}
