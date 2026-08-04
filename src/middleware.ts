@@ -39,18 +39,38 @@ export async function middleware(request: NextRequest) {
   const host = requestHeaders.get('host') || '';
   const pathname = request.nextUrl.pathname;
   
-  // Normalize URL: add www, enforce HTTPS, remove trailing slash — all in one redirect
+  // Normalize domain, protocol, trailing slash, and bus route slug in one redirect
   const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
-  const needsWww = !host.startsWith('www.') && !isLocalhost;
+  const needsApexDomain = host.startsWith('www.') && !isLocalhost;
   const isHttp = protocol === 'http' && !isLocalhost;
   const hasTrailingSlash = pathname !== '/' && pathname.endsWith('/');
+  const hatMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)\/?$/);
+  const normalizedHatCode = hatMatch?.[1].toLowerCase();
+  const hasNonCanonicalHatCode = Boolean(hatMatch && hatMatch[1] !== normalizedHatCode);
+  const isBrokenHat = Boolean(
+    normalizedHatCode
+    && Array.from(BROKEN_HAT_SLUGS).some((slug) => slug.toLowerCase() === normalizedHatCode),
+  );
 
-  if (needsWww || isHttp || hasTrailingSlash) {
+  if (needsApexDomain || isHttp || hasTrailingSlash || hasNonCanonicalHatCode || isBrokenHat) {
     const url = request.nextUrl.clone();
-    if (needsWww) url.host = 'www.' + host;
+    if (needsApexDomain) {
+      url.hostname = 'hizliulasim.com';
+      url.port = '';
+    }
     if (isHttp) url.protocol = 'https:';
-    if (hasTrailingSlash) url.pathname = pathname.replace(/\/+$/, '');
-    return NextResponse.redirect(url, 301);
+    if (isBrokenHat) {
+      url.pathname = '/otobus-hatlari';
+    } else if (hatMatch && normalizedHatCode) {
+      url.pathname = `/otobus-hatlari/${normalizedHatCode}`;
+    } else if (hasTrailingSlash) {
+      url.pathname = pathname.replace(/\/+$/, '');
+    }
+    url.pathname = url.pathname.replace(/\/+$/, '') || '/';
+    return new NextResponse(null, {
+      status: 301,
+      headers: { Location: url.toString() },
+    });
   }
 
   // Redirect broken durak/hat detail pages to /otobus-hatlari
@@ -58,11 +78,6 @@ export async function middleware(request: NextRequest) {
   if (durakMatch && BROKEN_DURAK_SLUGS.has(durakMatch[1])) {
     return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
   }
-  const hatMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)$/);
-  if (hatMatch && BROKEN_HAT_SLUGS.has(hatMatch[1])) {
-    return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
-  }
-
   // Check for custom redirects from API
   const redirects = await fetchRedirects();
   if (redirects) {

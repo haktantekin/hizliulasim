@@ -310,7 +310,7 @@ export default function UserProfilePage() {
                     <ul className="space-y-2">
                       {displayFavorites.routes.map((route) => (
                         <li key={route.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                          <Link href={`/otobus-hatlari/${route.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                          <Link href={`/otobus-hatlari/${route.id.toLowerCase()}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                             <span className="flex-shrink-0 w-16 h-8 rounded-lg bg-brand-soft-blue text-white text-xs font-bold flex items-center justify-center">
                               {route.id}
                             </span>

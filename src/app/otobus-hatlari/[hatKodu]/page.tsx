@@ -5,7 +5,7 @@ import Breadcrumb from '@/components/ui/Breadcrumb';
 import BusRouteDetailClient from '@/components/bus/BusRouteDetailClient';
 import PostComments from '@/components/blog/PostComments';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
+const SITE_URL = 'https://hizliulasim.com';
 const DEFAULT_IMAGE = 'https://cms.hizliulasim.com/wp-content/uploads/2026/02/otobus-hatlari.jpeg';
 
 export const revalidate = 300; // Revalidate every 5 minutes
@@ -14,7 +14,7 @@ export const revalidate = 300; // Revalidate every 5 minutes
 export async function generateStaticParams() {
   try {
     const hatlar = await getHat();
-    return hatlar.map((h) => ({ hatKodu: h.SHATKODU }));
+    return hatlar.map((h) => ({ hatKodu: h.SHATKODU.toLowerCase() }));
   } catch {
     return [];
   }
@@ -27,6 +27,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { hatKodu } = await params;
   const upperCode = hatKodu.toUpperCase();
+  const canonicalSlug = hatKodu.toLowerCase();
 
   const title = `${upperCode} Otobüs Hattı - Güzergah, Sefer Saatleri`;
   const description = `İETT ${upperCode} otobüs hattı güzergahı, hareket saatleri, canlı araç konumları ve duyuruları.`;
@@ -34,11 +35,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `${SITE_URL}/otobus-hatlari/${upperCode}` },
+    alternates: { canonical: `${SITE_URL}/otobus-hatlari/${canonicalSlug}` },
     openGraph: {
       title: `${upperCode} Otobüs Hattı | Hızlı Ulaşım`,
       description,
-      url: `${SITE_URL}/otobus-hatlari/${upperCode}`,
+      url: `${SITE_URL}/otobus-hatlari/${canonicalSlug}`,
       type: 'article',
       siteName: 'Hızlı Ulaşım',
       locale: 'tr_TR',

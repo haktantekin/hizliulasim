@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getHat } from '@/services/iett';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
+const SITE_URL = 'https://hizliulasim.com';
 const INDEX_NOW_KEY = process.env.INDEX_NOW_KEY || '';
 
 /**
@@ -29,10 +29,10 @@ export async function POST(request: Request) {
       const hatlar = await getHat();
       urlList = [
         `${SITE_URL}/otobus-hatlari`,
-        ...hatlar.map((h) => `${SITE_URL}/otobus-hatlari/${h.SHATKODU}`),
+        ...hatlar.map((h) => `${SITE_URL}/otobus-hatlari/${h.SHATKODU.toLowerCase()}`),
       ];
     } else if (hatKodu) {
-      urlList = [`${SITE_URL}/otobus-hatlari/${hatKodu.toUpperCase()}`];
+      urlList = [`${SITE_URL}/otobus-hatlari/${hatKodu.toLowerCase()}`];
     } else {
       return NextResponse.json(
         { error: 'scope=all veya hat={hatKodu} parametresi gerekli' },

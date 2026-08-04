@@ -351,7 +351,7 @@ export default function HomeBusFinder() {
       {/* Hat search */}
       <div className="p-4 border-b border-gray-100">
         <form
-          onSubmit={(e) => { e.preventDefault(); const code = hatInput.trim().toUpperCase(); if (code) router.push(`/otobus-hatlari/${code}`); }}
+          onSubmit={(e) => { e.preventDefault(); const code = hatInput.trim().toLowerCase(); if (code) router.push(`/otobus-hatlari/${code}`); }}
           className="flex gap-2"
         >
           <input
@@ -383,7 +383,7 @@ export default function HomeBusFinder() {
               <div className="text-xs text-gray-500 truncate">{hat.SHATADI}</div>
             </div>
             <Link
-              href={`/otobus-hatlari/${hat.SHATKODU}`}
+              href={`/otobus-hatlari/${hat.SHATKODU.toLowerCase()}`}
               className="text-xs text-brand-soft-blue hover:underline flex-shrink-0"
             >
               Detay →

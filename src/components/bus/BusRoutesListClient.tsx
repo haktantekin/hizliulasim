@@ -147,7 +147,7 @@ export default function BusRoutesListClient() {
             {visibleHatlar.map((h) => (
               <Link
                 key={h.SHATKODU}
-                href={`/otobus-hatlari/${h.SHATKODU}`}
+                href={`/otobus-hatlari/${h.SHATKODU.toLowerCase()}`}
                 className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3 hover:border-brand-soft-blue/30 hover:shadow-sm transition-all group"
               >
                 <div className="w-16 text-center">

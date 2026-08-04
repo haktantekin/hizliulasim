@@ -91,7 +91,7 @@ export default function FavorilerPage() {
                       className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
                     >
                       <Link
-                        href={`/otobus-hatlari/${route.id}`}
+                        href={`/otobus-hatlari/${route.id.toLowerCase()}`}
                         className="flex items-center gap-3 flex-1 min-w-0"
                       >
                         <span className="flex-shrink-0 w-16 h-8 rounded-lg bg-brand-soft-blue text-white text-xs font-bold flex items-center justify-center">

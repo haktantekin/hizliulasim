@@ -13,7 +13,7 @@ import CookieBanner from '../components/ui/CookieBanner';
 const outfit = Outfit({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com'),
+  metadataBase: new URL('https://hizliulasim.com'),
   title: {
     default: 'Hızlı Ulaşım - Ulaşım Rehberi, Rota Planlama ve Gezi Önerileri',
     template: '%s | Hızlı Ulaşım',
@@ -77,7 +77,7 @@ export const viewport: Viewport = {
   themeColor: '#272445',
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
+const SITE_URL = 'https://hizliulasim.com';
 
 export default function RootLayout({
   children,

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   trailingSlash: false,
+  skipTrailingSlashRedirect: true,
   images: {
     remotePatterns: [
       {
@@ -75,21 +76,6 @@ const nextConfig: NextConfig = {
       {
         source: '/blog/:path*',
         destination: '/ulasim-rehberi/:path*',
-        permanent: true,
-      },
-      // Redirect URLs with trailing slash to non-trailing slash
-      // NOTE: Trailing slash removal is handled in middleware to avoid redirect chains
-      // (e.g., www + trailing slash resolved in a single redirect)
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'header',
-            key: 'x-forwarded-proto',
-            value: 'http',
-          },
-        ],
-        destination: 'https://hizliulasim.com/:path*',
         permanent: true,
       },
     ];

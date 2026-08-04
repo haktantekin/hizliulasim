@@ -178,7 +178,7 @@ export default function HomeSearchBar() {
     setBusSearched(false);
     setBusResults([]);
     setBusCode('');
-    router.push(`/otobus-hatlari/${post.slug}`);
+    router.push(`/otobus-hatlari/${post.slug.toLowerCase()}`);
   }, [router]);
 
   return (

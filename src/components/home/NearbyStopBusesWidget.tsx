@@ -176,7 +176,7 @@ export default function NearbyStopBusesWidget() {
                 <tr key={line.hatKodu} className="border-t border-gray-100">
                   <td className="px-3 py-2 align-top whitespace-nowrap">
                     <Link
-                      href={`/otobus-hatlari/${line.hatKodu}`}
+                      href={`/otobus-hatlari/${line.hatKodu.toLowerCase()}`}
                       className="inline-flex items-center gap-1 text-brand-soft-blue font-semibold hover:underline"
                     >
                       <Bus className="w-3.5 h-3.5" /> {line.hatKodu}

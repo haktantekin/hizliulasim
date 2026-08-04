@@ -424,7 +424,7 @@ export default function TransitDirectionsClient() {
                         {/* Link to bus line */}
                         {step.transit.vehicleType?.toUpperCase() === 'BUS' && step.transit.line && (
                           <Link
-                            href={`/otobus-hatlari/${step.transit.line}`}
+                            href={`/otobus-hatlari/${step.transit.line.toLowerCase()}`}
                             className="inline-flex items-center gap-1 mt-2 text-xs text-brand-soft-blue hover:underline"
                           >
                             <Navigation className="w-3 h-3" />
