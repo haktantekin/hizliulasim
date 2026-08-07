@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { getHat } from '@/services/iett';
 
+export const revalidate = 3600;
+
 const API_BASE = 'https://cms.hizliulasim.com/wp-json/wp/v2';
 
 interface WPCategorySitemap {
