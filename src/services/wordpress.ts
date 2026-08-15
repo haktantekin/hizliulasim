@@ -173,7 +173,7 @@ export const fetchCategories = async (): Promise<BlogCategory[]> => {
       }));
   } catch (error) {
     console.error('Error fetching categories:', error);
-    throw new Error('Kategoriler yüklenirken bir hata oluştu');
+    return [];
   }
 };
 
@@ -276,7 +276,7 @@ export const fetchPosts = async (params?: {
     });
   } catch (error) {
     console.error('Error fetching posts:', error);
-    throw new Error('Gönderiler yüklenirken bir hata oluştu');
+    return [];
   }
 };
 

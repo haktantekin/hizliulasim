@@ -24,11 +24,25 @@ export async function generateMetaForSlug(slug: string): Promise<Metadata> {
 
 async function fetchPageContent(slug: string): Promise<string | null> {
   const base = process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2';
-  const res = await fetch(`${base}/pages?slug=${encodeURIComponent(slug)}`, { next: { revalidate: 300 } });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!Array.isArray(data) || data.length === 0) return null;
-  return data[0]?.content?.rendered || null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const res = await fetch(`${base}/pages?slug=${encodeURIComponent(slug)}`, {
+      next: { revalidate: 300 },
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return null;
+    return data[0]?.content?.rendered || null;
+  } catch (error) {
+    console.error(`Legal page content could not be loaded: ${slug}`, error);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export default async function CmsPage({ slug, heading }: { slug: string; heading?: string }) {
