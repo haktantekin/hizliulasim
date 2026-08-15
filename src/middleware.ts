@@ -44,6 +44,7 @@ export async function middleware(request: NextRequest) {
   const needsApexDomain = host.startsWith('www.') && !isLocalhost;
   const isHttp = protocol === 'http' && !isLocalhost;
   const hasTrailingSlash = pathname !== '/' && pathname.endsWith('/');
+  const isHierarchicalPostPath = /^\/(?!api\/)[^/]+\/[^/]+\/[^/]+$/.test(pathname);
   const hatMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)\/?$/);
   const normalizedHatCode = hatMatch?.[1].toLowerCase();
   const hasNonCanonicalHatCode = Boolean(hatMatch && hatMatch[1] !== normalizedHatCode);
@@ -80,7 +81,7 @@ export async function middleware(request: NextRequest) {
   }
   // Check for custom redirects from API
   const redirects = await fetchRedirects();
-  if (redirects) {
+  if (redirects && !isHierarchicalPostPath) {
     const redirect = redirects.find(r => r.source === pathname);
     if (redirect) {
       const dest = redirect.destination.startsWith('http') ? redirect.destination : new URL(redirect.destination, request.url).toString();

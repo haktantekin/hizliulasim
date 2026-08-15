@@ -2,10 +2,28 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search as SearchIcon, X, Bus, Loader2 } from 'lucide-react';
+import { Search as SearchIcon, X, Bus } from 'lucide-react';
 import { fetchPosts, fetchCategories } from '@/services/wordpress';
 import type { BlogPost, BlogCategory } from '@/types/WordPress';
-import PostListItem from '@/components/blog/PostListItem';
+
+function buildPostHref(post: BlogPost, categories: BlogCategory[]): string {
+  const postCategoryIds = new Set(post.categoryIds);
+  const postCategories = categories.filter(category => postCategoryIds.has(category.id));
+  const postCategory = postCategories.find(category => category.parentId)
+    ?? postCategories.find(category => !category.parentId)
+    ?? null;
+  const parentCategory = postCategory?.parentId
+    ? categories.find(category => category.id === postCategory.parentId)
+    : null;
+
+  if (parentCategory && postCategory?.parentId) {
+    return `/${parentCategory.slug}/${postCategory.slug}/${post.slug}`;
+  }
+  if (postCategory && !postCategory.parentId) {
+    return `/${postCategory.slug}/${post.slug}`;
+  }
+  return `/ulasim-rehberi/${post.slug}`;
+}
 
 export default function HomeSearchBar() {
   const router = useRouter();
@@ -55,7 +73,7 @@ export default function HomeSearchBar() {
     } finally {
       setSearchLoading(false);
     }
-  }, [allCategories]);
+  }, []);
 
   // Debounced live search for ulaşım rehberi
   useEffect(() => {
@@ -94,23 +112,8 @@ export default function HomeSearchBar() {
     setSearchSearched(false);
     setSearchResults([]);
     setSearchTerm('');
-    router.push(buildPostHref(post));
-  }, [router]);
-
-  function buildPostHref(post: BlogPost): string {
-    const postCategoryId = post.categoryIds?.[0];
-    const postCategory = postCategoryId ? allCategories.find(c => c.id === postCategoryId) : null;
-    const parentCategory = postCategory?.parentId
-      ? allCategories.find(c => c.id === postCategory.parentId)
-      : null;
-    if (parentCategory && postCategory?.parentId) {
-      return `/${parentCategory.slug}/${postCategory.slug}/${post.slug}`;
-    }
-    if (postCategory && !postCategory.parentId) {
-      return `/${postCategory.slug}/${post.slug}`;
-    }
-    return `/ulasim-rehberi/${post.slug}`;
-  }
+    router.push(buildPostHref(post, allCategories));
+  }, [allCategories, router]);
 
   const fetchBusResults = useCallback(async (term: string) => {
     const q = term.trim();

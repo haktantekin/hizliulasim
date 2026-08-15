@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { fetchPostBySlug, fetchCategories, fetchPosts } from "@/services/wordpress";
 import type { Metadata } from "next";
-import PostListItem from "@/components/blog/PostListItem";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { Fragment } from "react";
 import PostLocationMap from "@/components/blog/PostLocationMap";
@@ -13,6 +12,7 @@ import InjectBusWidgetAfterTable from "@/components/blog/InjectBusWidgetAfterTab
 import PostTransitWidget from "@/components/blog/PostTransitWidget";
 import ArticleToc from "@/components/blog/ArticleToc";
 import { buildArticleContent } from "@/lib/articleToc";
+import { notFound } from "next/navigation";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -23,10 +23,20 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
   ]);
   const cat = categories.find((c) => c.slug === category) || null;
   const mainCat = categories.find((c) => c.slug === mainCategory) || null;
+
+  if (
+    !post
+    || !cat
+    || !mainCat
+    || cat.parentId !== mainCat.id
+    || !post.categoryIds.includes(cat.id)
+  ) {
+    notFound();
+  }
   
   // Related posts from the same category (by date desc)
   let relatedPosts: Awaited<ReturnType<typeof fetchPosts>> = [];
-  if (post && post.categoryIds && post.categoryIds.length > 0) {
+  if (post.categoryIds.length > 0) {
     try {
       const fetched = await fetchPosts({
         categoryId: post.categoryIds[0],
@@ -38,14 +48,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
     } catch {
       relatedPosts = [];
     }
-  }
-
-  if (!post) {
-    return (
-      <div className="container mx-auto px-4 py-10">
-        <div className="text-center text-gray-600">Yazı bulunamadı.</div>
-      </div>
-    );
   }
 
   const { html: renderedContent, headings } = buildArticleContent(post.content);
@@ -267,19 +269,23 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
 
 export async function generateMetadata({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }): Promise<Metadata> {
   const { slug, category, mainCategory } = await params;
-  const post = await fetchPostBySlug(slug);
+  const [post, categories] = await Promise.all([
+    fetchPostBySlug(slug),
+    fetchCategories(),
+  ]);
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
-  
-  // Fallbacks if post not found
-  if (!post) {
-    return {
-      title: 'Yazı bulunamadı - Blog',
-      description: 'Aradığınız blog yazısı bulunamadı.',
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+
+  const cat = categories.find((item) => item.slug === category);
+  const mainCat = categories.find((item) => item.slug === mainCategory);
+
+  if (
+    !post
+    || !cat
+    || !mainCat
+    || cat.parentId !== mainCat.id
+    || !post.categoryIds.includes(cat.id)
+  ) {
+    notFound();
   }
 
   const title = post.title;
