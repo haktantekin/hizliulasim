@@ -4,6 +4,10 @@ import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from './broken-redirects';
 
 type RedirectRule = { source: string; destination: string };
 
+function normalizeRedirectSource(source: string): string {
+  return source.startsWith('/') ? source : `/${source}`;
+}
+
 async function fetchRedirect(pathname: string): Promise<RedirectRule | null> {
   try {
     const endpoint = new URL('https://cms.hizliulasim.com/wp-json/hizliulasim/v1/redirects');
@@ -16,7 +20,7 @@ async function fetchRedirect(pathname: string): Promise<RedirectRule | null> {
 
     if (response.ok) {
       const redirects = await response.json() as RedirectRule[];
-      return redirects.find(rule => rule.source === pathname) ?? null;
+      return redirects.find(rule => normalizeRedirectSource(rule.source) === pathname) ?? null;
     }
   } catch (error) {
     console.error('Error fetching redirect:', error);
