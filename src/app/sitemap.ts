@@ -18,6 +18,42 @@ interface WPPostSitemap {
   categories: number[];
 }
 
+interface CMSSitemapFeedItem {
+  id: number;
+  type: 'post' | 'page';
+  title: string;
+  url: string;
+  modified: string;
+}
+
+interface CMSSitemapFeedResponse {
+  generated_at: string;
+  count: number;
+  items: CMSSitemapFeedItem[];
+}
+
+/** CMS'nin hazirladigi tam permalink listesini tek istekte alir. */
+async function fetchCmsSitemapFeed(): Promise<MetadataRoute.Sitemap | null> {
+  const response = await fetch(
+    'https://cms.hizliulasim.com/wp-json/hizliulasim/v1/sitemap-feed',
+    { cache: 'no-store' },
+  );
+
+  if (!response.ok) return null;
+
+  const feed: CMSSitemapFeedResponse = await response.json();
+  if (!Array.isArray(feed.items)) return null;
+
+  return feed.items
+    .filter((item) => item.url && item.modified)
+    .map((item) => ({
+      url: item.url,
+      lastModified: new Date(item.modified),
+      changeFrequency: item.type === 'post' ? 'weekly' as const : 'monthly' as const,
+      priority: item.type === 'post' ? 0.8 : 0.6,
+    }));
+}
+
 /** Fetch all posts with pagination (WP REST API caps per_page at 100) */
 async function fetchAllPosts(
   categoriesMap: Record<number, { slug: string; parent?: number }>,
@@ -27,7 +63,6 @@ async function fetchAllPosts(
   let page = 1;
   const routes: MetadataRoute.Sitemap = [];
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const res = await fetch(
       `${API_BASE}/posts?per_page=${perPage}&page=${page}&_fields=slug,modified,categories`,
@@ -115,7 +150,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         });
     }
 
-    blogRoutes = await fetchAllPosts(allCategoriesMap);
+    // Yeni endpoint butun kayitlari ve gercek permalinkleri tek seferde verir.
+    // CMS guncellenmeden onceki kisa gecis doneminde eski sayfali akis fallback'tir.
+    blogRoutes = await fetchCmsSitemapFeed() ?? await fetchAllPosts(allCategoriesMap);
   } catch (error) {
     console.error('Error fetching blog data for sitemap:', error);
   }
@@ -142,5 +179,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error fetching IETT data for sitemap:', error);
   }
 
-  return [...staticRoutes, ...busRoutes, ...categoryRoutes, ...blogRoutes];
+  // Statik sayfa, WordPress sayfasi veya kategori cakisirsa tek URL dondur.
+  const routes = [...staticRoutes, ...busRoutes, ...categoryRoutes, ...blogRoutes];
+  return Array.from(new Map(routes.map((route) => [route.url, route])).values());
 }
