@@ -92,7 +92,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  requestHeaders.set('x-hizliulasim-pathname', pathname);
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 }
 
 // Configure which routes to run middleware on
