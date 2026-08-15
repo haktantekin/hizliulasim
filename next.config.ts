@@ -64,22 +64,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Force HTTPS in production and normalize trailing slashes
-  async redirects() {
-    return [
-      // Redirect /blog to /ulasim-rehberi
-      {
-        source: '/blog',
-        destination: '/ulasim-rehberi',
-        permanent: true,
-      },
-      {
-        source: '/blog/:path*',
-        destination: '/ulasim-rehberi/:path*',
-        permanent: true,
-      },
-    ];
-  },
 };
 
 export default nextConfig;

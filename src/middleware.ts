@@ -88,6 +88,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // CMS'te birebir bir kural yoksa eski /blog yollarını genel yapıya taşı.
+  if (pathname === '/blog' || pathname.startsWith('/blog/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(/^\/blog(?=\/|$)/, '/ulasim-rehberi');
+    return NextResponse.redirect(url, 301);
+  }
+
   // Protected routes — require auth cookie
   const protectedPaths = ['/profil', '/u/', '/favoriler'];
   const isProtected = protectedPaths.some(p => pathname.startsWith(p));
