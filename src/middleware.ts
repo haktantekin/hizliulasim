@@ -2,31 +2,26 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from './broken-redirects';
 
-// Cache for redirects
-let redirectsCache: Array<{ source: string; destination: string }> | null = null;
-let redirectsCacheTime = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+type RedirectRule = { source: string; destination: string };
 
-async function fetchRedirects() {
+async function fetchRedirect(pathname: string): Promise<RedirectRule | null> {
   try {
-    // Use cached redirects if still valid
-    if (redirectsCache && Date.now() - redirectsCacheTime < CACHE_DURATION) {
-      return redirectsCache;
-    }
+    const endpoint = new URL('https://cms.hizliulasim.com/wp-json/hizliulasim/v1/redirects');
+    endpoint.searchParams.set('source', pathname);
 
-    const response = await fetch('https://cms.hizliulasim.com/wp-json/hizliulasim/v1/redirects', {
-      next: { revalidate: 3600 } // Revalidate every hour
+    const response = await fetch(endpoint, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
     });
-    
+
     if (response.ok) {
-      redirectsCache = await response.json();
-      redirectsCacheTime = Date.now();
-      return redirectsCache;
+      const redirects = await response.json() as RedirectRule[];
+      return redirects.find(rule => rule.source === pathname) ?? null;
     }
   } catch (error) {
-    console.error('Error fetching redirects:', error);
+    console.error('Error fetching redirect:', error);
   }
-  
+
   return null;
 }
 
@@ -78,21 +73,11 @@ export async function middleware(request: NextRequest) {
   if (durakMatch && BROKEN_DURAK_SLUGS.has(durakMatch[1])) {
     return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
   }
-  // Check for custom redirects from API
-  const redirects = await fetchRedirects();
-  if (redirects) {
-    const redirect = redirects.find(r => r.source === pathname);
-    if (redirect) {
-      const dest = redirect.destination.startsWith('http') ? redirect.destination : new URL(redirect.destination, request.url).toString();
-      return NextResponse.redirect(dest, 301);
-    }
-  }
-
-  // CMS'te birebir bir kural yoksa eski /blog yollarını genel yapıya taşı.
-  if (pathname === '/blog' || pathname.startsWith('/blog/')) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.replace(/^\/blog(?=\/|$)/, '/ulasim-rehberi');
-    return NextResponse.redirect(url, 301);
+  // Check for an exact custom redirect from the CMS.
+  const redirect = await fetchRedirect(pathname);
+  if (redirect) {
+    const dest = redirect.destination.startsWith('http') ? redirect.destination : new URL(redirect.destination, request.url).toString();
+    return NextResponse.redirect(dest, 301);
   }
 
   // Protected routes — require auth cookie

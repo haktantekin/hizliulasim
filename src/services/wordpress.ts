@@ -22,7 +22,6 @@ type WPPage = {
     robots?: { index?: 'index' | 'noindex'; follow?: 'follow' | 'nofollow' };
   };
 };
-
 type PageSEO = {
   title?: string;
   description?: string;
@@ -46,10 +45,8 @@ export const fetchPageSeoBySlug = async (slug: string): Promise<PageSEO | null> 
     const title = y?.title || (p.title?.rendered ? stripHtml(p.title.rendered) : undefined);
     const description = y?.description || (p.excerpt?.rendered ? stripHtml(p.excerpt.rendered) : undefined);
     const canonical = y?.canonical || p.link;
-    // Strip legacy /blog/ prefix from canonical URL
-    const cleanCanonical = canonical?.replace(/\/blog\//i, '/');
     const ogImages = y?.og_image;
-    return { title, description, canonical: cleanCanonical, ogImages };
+    return { title, description, canonical, ogImages };
   } catch (err) {
     console.error('Error fetching page SEO:', err);
     return null;
@@ -128,16 +125,6 @@ const parseSchema = (raw: unknown): Record<string, unknown> | undefined => {
     return raw as Record<string, unknown>;
   }
   return undefined;
-};
-
-/**
- * Remove legacy /blog/ prefix from internal links in WordPress content.
- * Handles both absolute (https://www.hizliulasim.com/blog/...) and relative (/blog/...) URLs.
- */
-const stripBlogPrefix = (html: string): string => {
-  return html
-    .replace(/(href=["'])https?:\/\/(www\.)?hizliulasim\.com\/blog\//gi, '$1/')
-    .replace(/(href=["'])\/blog\//gi, '$1/');
 };
 
 // Fetch categories from WordPress
@@ -253,7 +240,7 @@ export const fetchPosts = async (params?: {
         title: decodeHtml(stripHtml(post.title.rendered)),
         slug: post.slug,
         excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
-  content: stripBlogPrefix(decodeHtml(post.content.rendered)),
+        content: decodeHtml(post.content.rendered),
         categoryIds: post.categories,
         author: {
           id: post.author,
@@ -327,7 +314,7 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
       title: decodeHtml(stripHtml(post.title.rendered)),
       slug: post.slug,
       excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
-  content: stripBlogPrefix(decodeHtml(post.content.rendered)),
+      content: decodeHtml(post.content.rendered),
       categoryIds: post.categories,
       author: {
         id: post.author,
@@ -386,9 +373,4 @@ export const fetchCategoryBySlug = async (slug: string): Promise<BlogCategory | 
     console.error('Error fetching category by slug:', error);
     return null;
   }
-};
-
-// Convenience: recent posts for a category
-const fetchRecentPostsByCategory = async (categoryId: number, limit = 5): Promise<BlogPost[]> => {
-  return fetchPosts({ categoryId, per_page: limit });
 };

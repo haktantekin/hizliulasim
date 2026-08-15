@@ -19,7 +19,6 @@ export const blogs: BlogPost[] = [
     categoryId: 2,
     excerpt: "Üsküdar'a toplu taşıma ve alternatif güzergahlar...",
     date: new Date().toISOString(),
-    url: "/nasil-giderim/uskudar-nasil-giderim",
   },
   {
     id: "2",
@@ -29,7 +28,6 @@ export const blogs: BlogPost[] = [
     categoryId: 2,
     excerpt: "Vapur, metro ve otobüsle Kadıköy ulaşım rehberi...",
     date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    url: "/nasil-giderim/kadikoy-nasil-giderim",
   },
   {
     id: "3",
@@ -39,7 +37,6 @@ export const blogs: BlogPost[] = [
     categoryId: 2,
     excerpt: "Avrupa yakasının kalbine en hızlı ulaşım önerileri...",
     date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    url: "/nasil-giderim/besiktas-nasil-giderim",
   },
   {
     id: "4",
@@ -49,7 +46,6 @@ export const blogs: BlogPost[] = [
     categoryId: 2,
     excerpt: "M2 metro hattı ve alternatif rota ipuçları...",
     date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    url: "/nasil-giderim/taksim-nasil-giderim",
   },
   {
     id: "5",
@@ -59,7 +55,6 @@ export const blogs: BlogPost[] = [
     categoryId: 2,
     excerpt: "Havaist, belediye otobüsleri ve taksi alternatifleri...",
     date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    url: "/nasil-giderim/sabiha-gokcen-nasil-giderim",
   },
   {
     id: "6",
@@ -69,6 +64,5 @@ export const blogs: BlogPost[] = [
     categoryId: 2,
     excerpt: "M11 metro hattı ve Havaist ile ulaşım...",
     date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    url: "/nasil-giderim/istanbul-havalimani-nasil-giderim",
   },
 ];

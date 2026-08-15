@@ -1,17 +1,11 @@
 import { 
   MapPin, 
   Clock, 
-  Bus, 
-  ParkingCircle, 
-  Train, 
-  Ship, 
-  Car, 
   Fuel, 
-  Calendar, 
 } from 'lucide-react';
 
 export const homeCardDatas = [
-  { id: 1, label: 'Nasıl<br/>Giderim', href: '/nasil-giderim', bgColor: 'bg-blue-100', textColor: 'text-blue-700', icon: MapPin },
+  { id: 1, label: 'Nasıl<br/>Giderim', href: '/ulasim-rehberi', bgColor: 'bg-blue-100', textColor: 'text-blue-700', icon: MapPin },
   { id: 2, label: 'Saat<br/>Bilgileri', href: '/saat-bilgileri', bgColor: 'bg-gray-100', textColor: 'text-gray-700', icon: Clock },
   // { id: 3, label: 'Otobüs<br/>Güzergahlari', href: '/otobus-hatlari', bgColor: 'bg-red-100', textColor: 'text-red-700', icon: Bus },
   // { id: 4, label: 'Otopark<br/>Ücretleri', href: '/otopark-ucretleri', bgColor: 'bg-emerald-100', textColor: 'text-emerald-700', icon: ParkingCircle },
@@ -19,5 +13,4 @@ export const homeCardDatas = [
   // { id: 6, label: 'Deniz<br/>Ulaşımı', href: '/deniz-ulasimi', bgColor: 'bg-orange-100', textColor: 'text-orange-700', icon: Ship },
   // { id: 7, label: 'Taksi<br/>Ücretleri', href: '/taksi-ucretleri', bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', icon: Car },
   { id: 8, label: 'Ne Kadar<br/>Yakar', href: '/ne-kadar-yakar', bgColor: 'bg-purple-100', textColor: 'text-purple-700', icon: Fuel },
-  // { id: 9, label: 'Etkinlikler', href: '/blog/etkinlikler', bgColor: 'bg-cyan-100', textColor: 'text-cyan-700', icon: Calendar },
 ];
