@@ -96,7 +96,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  requestHeaders.set('x-hizliulasim-pathname', pathname);
   return NextResponse.next({
     request: { headers: requestHeaders },
   });
