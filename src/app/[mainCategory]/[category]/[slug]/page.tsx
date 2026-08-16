@@ -13,10 +13,13 @@ import PostTransitWidget from "@/components/blog/PostTransitWidget";
 import ArticleToc from "@/components/blog/ArticleToc";
 import { buildArticleContent } from "@/lib/articleToc";
 import { notFound } from "next/navigation";
+import StructuredData from "@/components/seo/StructuredData";
+import { buildArticleEntitySchema } from "@/lib/entitySchema";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
+  const canonicalUrl = `${baseUrl}/${mainCategory}/${category}/${slug}`;
   const [post, categories] = await Promise.all([
     fetchPostBySlug(slug),
     fetchCategories(),
@@ -120,25 +123,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
         <FaqAccordion items={post.faq} />
       )}
 
-      {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'BlogPosting',
-            headline: post.title,
-            description: post.excerpt || post.title,
-            datePublished: post.publishedAt,
-            dateModified: post.modifiedAt || post.publishedAt,
-            author: post.author?.name ? { '@type': 'Person', name: post.author.name } : undefined,
-            image: post.featuredImage?.url,
-            mainEntityOfPage: {
-              '@type': 'WebPage',
-              '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com'}/${mainCategory}/${category}/${post.slug}`,
-            },
-          }),
-        }}
+      <StructuredData
+        id={`schema-article-${post.slug}`}
+        data={buildArticleEntitySchema({
+          post,
+          category: cat,
+          canonicalUrl,
+          siteUrl: baseUrl,
+        })}
       />
       <script
         type="application/ld+json"
@@ -199,18 +191,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
                   text: item.answer,
                 },
               })),
-            }),
-          }}
-        />
-      )}
-      {/* Custom Schema (e.g. ShoppingCenter, Restaurant, etc.) */}
-      {post.schema && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              ...post.schema,
             }),
           }}
         />

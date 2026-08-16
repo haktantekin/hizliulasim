@@ -19,6 +19,8 @@ import InjectBusWidgetAfterTable from '@/components/blog/InjectBusWidgetAfterTab
 import PostTransitWidget from '@/components/blog/PostTransitWidget';
 import ArticleToc from '@/components/blog/ArticleToc';
 import { buildArticleContent } from '@/lib/articleToc';
+import StructuredData from '@/components/seo/StructuredData';
+import { buildArticleEntitySchema } from '@/lib/entitySchema';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -238,13 +240,15 @@ export default async function SubCategoryPage({ params }: PageProps) {
 
   /* ────── CASE 2: Post detail (slug matched a post, not a category) ────── */
   if (post) {
-    const postCategoryId = post.categoryIds?.[0];
-    const postCategory = postCategoryId
-      ? allCategories.find((c) => c.id === postCategoryId)
-      : null;
+    const postCategoryIds = new Set(post.categoryIds);
+    const matchingCategories = allCategories.filter((item) => postCategoryIds.has(item.id));
+    const postCategory = matchingCategories.find((item) => item.parentId)
+      ?? matchingCategories.find((item) => !item.parentId)
+      ?? null;
     const postMainCategory = postCategory?.parentId
       ? allCategories.find((c) => c.id === postCategory.parentId)
       : mainCategory;
+    const postCanonicalUrl = `${SITE_URL}/${mainCategorySlug}/${post.slug}`;
 
     // Related posts
     let relatedPosts: Awaited<ReturnType<typeof fetchPosts>> = [];
@@ -352,28 +356,14 @@ export default async function SubCategoryPage({ params }: PageProps) {
           />
         )}
 
-        {/* JSON-LD: BlogPosting */}
-        <Script
-          id={`schema-post-${post.slug}`}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'BlogPosting',
-              headline: post.title,
-              description: post.excerpt || post.title,
-              datePublished: post.publishedAt,
-              dateModified: post.modifiedAt || post.publishedAt,
-              author: post.author?.name
-                ? { '@type': 'Person', name: post.author.name }
-                : undefined,
-              image: post.featuredImage?.url,
-              mainEntityOfPage: {
-                '@type': 'WebPage',
-                '@id': `${SITE_URL}/${mainCategorySlug}/${post.slug}`,
-              },
-            }),
-          }}
+        <StructuredData
+          id={`schema-article-${post.slug}`}
+          data={buildArticleEntitySchema({
+            post,
+            category: postCategory || mainCategory,
+            canonicalUrl: postCanonicalUrl,
+            siteUrl: SITE_URL,
+          })}
         />
         {/* JSON-LD: BreadcrumbList */}
         <Script

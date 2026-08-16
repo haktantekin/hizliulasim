@@ -10,6 +10,8 @@ import MuseumPostsRow from "@/components/home/MuseumPostsRow";
 import TransitStructuresPostsRow from "@/components/home/TransitStructuresPostsRow";
 import type { Metadata } from 'next';
 import { fetchPageSeoBySlug } from '@/services/wordpress';
+import StructuredData from '@/components/seo/StructuredData';
+import { buildSiteEntitySchema } from '@/lib/entitySchema';
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await fetchPageSeoBySlug('anasayfa');
@@ -32,6 +34,10 @@ import { ParkingCircle, TrainFront, Zap, Navigation, Accessibility, MapPin } fro
 export default function Home() {
   return (
     <div className="container mx-auto pb-4 px-4 pt-8 h-auto relative">
+      <StructuredData
+        id="schema-site-entities"
+        data={buildSiteEntitySchema(process.env.NEXT_PUBLIC_SITE_URL)}
+      />
       <div className='text-gray-400 text-lg'>
         <span className='text-brand-orange font-bold text-xl'>Hızlı Ulaşım</span>&apos;a hoş geldiniz!
       </div>

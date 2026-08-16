@@ -77,8 +77,6 @@ export const viewport: Viewport = {
   themeColor: '#272445',
 };
 
-const SITE_URL = 'https://hizliulasim.com';
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -141,40 +139,6 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; iframe.id = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();`,
-          }}
-        />
-
-        {/* JSON-LD: WebSite + SearchAction */}
-        <Script
-          id="schema-website"
-          type="application/ld+json"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'WebSite',
-              name: 'Hızlı Ulaşım',
-              url: SITE_URL,
-              potentialAction: {
-                '@type': 'SearchAction',
-                target: `${SITE_URL}/kategoriler?query={search_term_string}`,
-                'query-input': 'required name=search_term_string',
-              },
-            }),
-          }}
-        />
-        {/* JSON-LD: Organization */}
-        <Script
-          id="schema-organization"
-          type="application/ld+json"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'Hızlı Ulaşım',
-              url: SITE_URL,
-            }),
           }}
         />
 
