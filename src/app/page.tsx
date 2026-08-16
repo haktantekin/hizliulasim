@@ -3,6 +3,11 @@ import HomeBusFinder from "@/components/home/HomeBusFinder";
 import NearbyStopBusesWidget from "@/components/home/NearbyStopBusesWidget";
 import DistrictIsparkWidget from "@/components/home/DistrictIsparkWidget";
 import TransitDirectionsWidget from "@/components/home/TransitDirectionsWidget";
+import AvmPostsRow from "@/components/home/AvmPostsRow";
+import HospitalPostsRow from "@/components/home/HospitalPostsRow";
+import OfficialOfficesPostsRow from "@/components/home/OfficialOfficesPostsRow";
+import MuseumPostsRow from "@/components/home/MuseumPostsRow";
+import TransitStructuresPostsRow from "@/components/home/TransitStructuresPostsRow";
 import type { Metadata } from 'next';
 import { fetchPageSeoBySlug } from '@/services/wordpress';
 
@@ -61,7 +66,7 @@ export default function Home() {
 
         <Link
           href="/sarj-istasyonlari"
-          className="col-span-2 block rounded-xl bg-gradient-to-r from-green-600 to-emerald-700 p-4 text-white hover:opacity-90 transition-opacity"
+          className="block rounded-xl bg-gradient-to-r from-green-600 to-emerald-700 p-4 text-white hover:opacity-90 transition-opacity"
         >
           <div className="flex items-center gap-3">
             <Zap className="w-7 h-7 flex-none" />
@@ -74,7 +79,7 @@ export default function Home() {
 
         <Link
           href="/yol-tarifi"
-          className="col-span-2 block rounded-xl bg-gradient-to-r from-brand-orange to-orange-600 p-4 text-white hover:opacity-90 transition-opacity"
+          className="block rounded-xl bg-gradient-to-r from-brand-orange to-orange-600 p-4 text-white hover:opacity-90 transition-opacity"
         >
           <div className="flex items-center gap-3">
             <Navigation className="w-7 h-7 flex-none" />
@@ -84,6 +89,10 @@ export default function Home() {
             </div>
           </div>
         </Link>
+      </div>
+
+      <div className="mt-6">
+        <TransitStructuresPostsRow />
       </div>
 
       {/* Engelsiz Erişim */}
@@ -121,16 +130,32 @@ export default function Home() {
         <TransitDirectionsWidget />
       </div>
 
+      <div className="mt-6">
+        <AvmPostsRow />
+      </div>
+
       <div className="mt-4">
         <HomeBusFinder />
+      </div>
+
+      <div className="mt-6">
+        <HospitalPostsRow />
       </div>
 
       <div className="mt-4">
         <NearbyStopBusesWidget />
       </div>
 
+      <div className="mt-6">
+        <OfficialOfficesPostsRow />
+      </div>
+
       <div className="mt-4">
         <DistrictIsparkWidget />
+      </div>
+
+      <div className="mt-6">
+        <MuseumPostsRow />
       </div>
 
       <div className="mt-4">

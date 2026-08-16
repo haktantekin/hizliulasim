@@ -3,13 +3,24 @@ import Link from 'next/link';
 import { fetchCategories, fetchPosts } from '@/services/wordpress';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
 
+function findPostCategory(
+  categoryIds: number[],
+  categoryMap: Map<number, { slug: string; parentId?: number }>,
+  preferredParentId: number
+) {
+  const postCategories = categoryIds
+    .map(categoryId => categoryMap.get(categoryId))
+    .filter((category): category is { slug: string; parentId?: number } => Boolean(category));
+  return postCategories.find(postCategory => postCategory.parentId === preferredParentId)
+    ?? postCategories.find(postCategory => postCategory.parentId)
+    ?? postCategories.find(postCategory => !postCategory.parentId);
+}
+
 function buildPostHref(
   postSlug: string,
-  categoryId: number | undefined,
+  category: { slug: string; parentId?: number } | undefined,
   categoryMap: Map<number, { slug: string; parentId?: number }>
 ): string {
-  if (!categoryId) return '#';
-  const category = categoryMap.get(categoryId);
   if (!category) return '#';
   if (category.parentId) {
     const parent = categoryMap.get(category.parentId);
@@ -68,9 +79,8 @@ export default async function SaatBilgileriRow() {
 
         <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
           {posts.map(post => {
-            const categoryId = post.categoryIds?.[0];
-            const category = categoryId ? categoryMap.get(categoryId) : undefined;
-            const href = buildPostHref(post.slug, categoryId, categoryMap);
+            const category = findPostCategory(post.categoryIds, categoryMap, saatBilgileri.id);
+            const href = buildPostHref(post.slug, category, categoryMap);
             const fallbackImage = getDummyImageForCategory(category?.slug, post.title);
             const imageUrl = post.featuredImage?.url || fallbackImage?.url;
             const imageAlt = post.featuredImage?.alt || fallbackImage?.alt || post.title;

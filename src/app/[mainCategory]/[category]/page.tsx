@@ -32,13 +32,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { mainCategory, category: categorySlug } = await params;
 
   // try both: the slug may refer to a sub-category OR a post
-  const [cat, post] = await Promise.all([
+  const [cat, post, allCategories] = await Promise.all([
     fetchCategoryBySlug(categorySlug),
     fetchPostBySlug(categorySlug),
+    fetchCategories(),
   ]);
 
   // 1) Sub-category page metadata
   if (cat) {
+    const mainCat = allCategories.find((category) => category.slug === mainCategory);
+    if (!mainCat || cat.parentId !== mainCat.id) {
+      notFound();
+    }
+
     const description =
       cat.description || `${cat.name} kategorisindeki tüm blog yazıları ve içerikler.`;
     return {
@@ -125,6 +131,10 @@ export default async function SubCategoryPage({ params }: PageProps) {
   ]);
 
   const mainCategory = allCategories.find((c) => c.slug === mainCategorySlug) || null;
+
+  if (category && (!mainCategory || category.parentId !== mainCategory.id)) {
+    notFound();
+  }
 
   /* ────── CASE 1: Sub-category listing ────── */
   if (category) {
