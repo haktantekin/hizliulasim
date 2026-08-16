@@ -95,10 +95,18 @@ export default function MainCategoryClient({ category, allCategories, subCategor
     setSearchTerm("");
   }, []);
 
+  function resolvePostCategory(post: BlogPost): BlogCategory | null {
+    const postCategoryIds = new Set(post.categoryIds);
+    const postCategories = allCategories.filter(item => postCategoryIds.has(item.id));
+
+    return postCategories.find(item => item.parentId === category.id)
+      ?? postCategories.find(item => item.parentId)
+      ?? postCategories.find(item => !item.parentId)
+      ?? null;
+  }
+
   /** Resolve the display URL for a given post */
-  function buildPostHref(post: BlogPost): string {
-    const postCategoryId = post.categoryIds?.[0];
-    const postCategory = postCategoryId ? allCategories.find(c => c.id === postCategoryId) : null;
+  function buildPostHref(post: BlogPost, postCategory = resolvePostCategory(post)): string {
     const postMainCategory = postCategory?.parentId
       ? allCategories.find(c => c.id === postCategory.parentId)
       : null;
@@ -179,16 +187,19 @@ export default function MainCategoryClient({ category, allCategories, subCategor
           )}
           {!searchLoading && searchResults.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
-              {searchResults.map((post: BlogPost) => (
-                <PostListItem
-                  key={post.id}
-                  post={post}
-                  href={buildPostHref(post)}
-                  categorySlug={allCategories.find(c => c.id === post.categoryIds?.[0])?.slug}
-                  categoryName={allCategories.find(c => c.id === post.categoryIds?.[0])?.name}
-                  hideImage={category.slug === 'otobus-duraklari'}
-                />
-              ))}
+              {searchResults.map((post: BlogPost) => {
+                const postCategory = resolvePostCategory(post);
+                return (
+                  <PostListItem
+                    key={post.id}
+                    post={post}
+                    href={buildPostHref(post, postCategory)}
+                    categorySlug={postCategory?.slug}
+                    categoryName={postCategory?.name}
+                    hideImage={category.slug === 'otobus-duraklari'}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -205,16 +216,19 @@ export default function MainCategoryClient({ category, allCategories, subCategor
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
-            {categoryPosts.map((post: BlogPost) => (
-              <PostListItem
-                key={post.id}
-                post={post}
-                href={buildPostHref(post)}
-                categorySlug={allCategories.find(c => c.id === post.categoryIds?.[0])?.slug}
-                categoryName={allCategories.find(c => c.id === post.categoryIds?.[0])?.name}
-                hideImage={category.slug === 'otobus-duraklari'}
-              />
-            ))}
+            {categoryPosts.map((post: BlogPost) => {
+              const postCategory = resolvePostCategory(post);
+              return (
+                <PostListItem
+                  key={post.id}
+                  post={post}
+                  href={buildPostHref(post, postCategory)}
+                  categorySlug={postCategory?.slug}
+                  categoryName={postCategory?.name}
+                  hideImage={category.slug === 'otobus-duraklari'}
+                />
+              );
+            })}
           </div>
 
           {/* Infinite scroll loading indicator */}

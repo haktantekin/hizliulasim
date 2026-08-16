@@ -78,8 +78,12 @@ export default async function MainCategoryPage(
                   '@type': 'ListItem',
                   position: i + 1,
                   url: (() => {
-                    const catId = post.categoryIds?.[0];
-                    const cat = catId ? allCategories.find(c => c.id === catId) : null;
+                    const postCategoryIds = new Set(post.categoryIds);
+                    const postCategories = allCategories.filter(item => postCategoryIds.has(item.id));
+                    const cat = postCategories.find(item => item.parentId === category.id)
+                      ?? postCategories.find(item => item.parentId)
+                      ?? postCategories.find(item => !item.parentId)
+                      ?? null;
                     const parent = cat?.parentId ? allCategories.find(c => c.id === cat.parentId) : null;
                     if (parent && cat) return `${SITE_URL}/${parent.slug}/${cat.slug}/${post.slug}`;
                     if (cat) return `${SITE_URL}/${cat.slug}/${post.slug}`;
