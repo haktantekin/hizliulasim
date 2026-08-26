@@ -21,6 +21,8 @@ import ArticleToc from '@/components/blog/ArticleToc';
 import { buildArticleContent } from '@/lib/articleToc';
 import StructuredData from '@/components/seo/StructuredData';
 import { buildArticleEntitySchema } from '@/lib/entitySchema';
+import { isLegacyContentPath } from '@/lib/legacyContentPaths';
+import { formatTrDateTime } from '@/lib/dateTime';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -32,6 +34,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { mainCategory, category: categorySlug } = await params;
+  if (isLegacyContentPath(`/${mainCategory}`)) notFound();
 
   // try both: the slug may refer to a sub-category OR a post
   const [cat, post, allCategories] = await Promise.all([
@@ -124,6 +127,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SubCategoryPage({ params }: PageProps) {
   const { mainCategory: mainCategorySlug, category: categorySlug } = await params;
+  if (isLegacyContentPath(`/${mainCategorySlug}`)) notFound();
 
   // Parallel fetch: category, post, allCategories
   const [category, post, allCategories] = await Promise.all([
@@ -322,7 +326,7 @@ export default async function SubCategoryPage({ params }: PageProps) {
         })()}
 
         <div className="text-xs text-gray-500 mb-4">
-          <span>{new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          <span>{formatTrDateTime(post.publishedAt)}</span>
         </div>
 
         <PostTransitWidget postTitle={post.title} />

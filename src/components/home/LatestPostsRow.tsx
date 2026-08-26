@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { fetchCategories, fetchPosts } from '@/services/wordpress';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
+import { formatTrDateTime } from '@/lib/dateTime';
 
 function findPostCategory(
   categoryIds: number[],
@@ -118,7 +119,7 @@ export default async function LatestPostsRow() {
                     {post.title}
                   </h3>
                   <p className="text-xs text-gray-400 mt-2">
-                    {new Date(post.publishedAt).toLocaleDateString('tr-TR')}
+                    {formatTrDateTime(post.publishedAt)}
                   </p>
                 </div>
               </Link>

@@ -15,9 +15,13 @@ import { buildArticleContent } from "@/lib/articleToc";
 import { notFound } from "next/navigation";
 import StructuredData from "@/components/seo/StructuredData";
 import { buildArticleEntitySchema } from "@/lib/entitySchema";
+import { isLegacyContentPath } from "@/lib/legacyContentPaths";
+import { formatTrDateTime } from "@/lib/dateTime";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
+  if (isLegacyContentPath(`/${mainCategory}`)) notFound();
+
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
   const canonicalUrl = `${baseUrl}/${mainCategory}/${category}/${slug}`;
   const [post, categories] = await Promise.all([
@@ -80,7 +84,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
         ) : null;
       })()}
       <div className="text-xs text-gray-500 mb-4">
-        <span>{new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+        <span>{formatTrDateTime(post.publishedAt)}</span>
       </div>
 
       <PostTransitWidget postTitle={post.title} />
@@ -234,7 +238,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
                       {rp.title}
                     </h3>
                     <p className="text-xs text-gray-400 mt-2">
-                      {new Date(rp.publishedAt).toLocaleDateString('tr-TR')}
+                      {formatTrDateTime(rp.publishedAt)}
                     </p>
                   </div>
                 </Link>
@@ -249,6 +253,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
 
 export async function generateMetadata({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }): Promise<Metadata> {
   const { slug, category, mainCategory } = await params;
+  if (isLegacyContentPath(`/${mainCategory}`)) notFound();
+
   const [post, categories] = await Promise.all([
     fetchPostBySlug(slug),
     fetchCategories(),

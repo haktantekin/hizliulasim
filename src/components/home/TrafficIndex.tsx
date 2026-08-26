@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Activity, Loader2 } from 'lucide-react';
+import { formatTrDateTime } from '@/lib/dateTime';
 
 interface TrafficData {
   index: number;
@@ -105,7 +106,7 @@ export default function TrafficIndex() {
                   key={i}
                   className={`flex-1 rounded-sm ${barColor.bg} opacity-70 transition-all`}
                   style={{ height: `${height}%` }}
-                  title={`${h.index} - ${h.date}`}
+                  title={`${h.index} - ${formatTrDateTime(h.date)}`}
                 />
               );
             })}

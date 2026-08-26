@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
 import { fetchCategories, fetchPosts } from '@/services/wordpress';
+import { formatTrDateTime } from '@/lib/dateTime';
 
 export default async function OfficialOfficesPostsRow() {
   try {
@@ -72,7 +73,7 @@ export default async function OfficialOfficesPostsRow() {
                     {post.title}
                   </h3>
                   <p className="mt-2 text-xs text-gray-400">
-                    {new Date(post.publishedAt).toLocaleDateString('tr-TR')}
+                    {formatTrDateTime(post.publishedAt)}
                   </p>
                 </div>
               </Link>

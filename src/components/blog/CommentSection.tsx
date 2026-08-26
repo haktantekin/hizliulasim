@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Send, Loader2, LogIn, ChevronDown } from 'lucide-react';
 import { useAppSelector } from '../../store/hooks';
 import type { BlogComment } from '../../types/WordPress';
+import { formatTrDateTime } from '@/lib/dateTime';
 
 interface CommentSectionProps {
   postId: number;
@@ -94,16 +95,6 @@ const CommentSection = ({ postId, onAuthClick }: CommentSectionProps) => {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <section className="mt-10 border-t border-gray-200 pt-8">
       <h2 className="flex items-center gap-2 text-xl font-semibold text-brand-soft-blue mb-6">
@@ -181,7 +172,7 @@ const CommentSection = ({ postId, onAuthClick }: CommentSectionProps) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm font-medium text-gray-900">{comment.author}</span>
-                  <span className="text-xs text-gray-400">{formatDate(comment.date)}</span>
+                  <span className="text-xs text-gray-400">{formatTrDateTime(comment.date)}</span>
                 </div>
                 <p className="text-sm text-gray-700 mt-1 whitespace-pre-line break-words">{comment.content}</p>
               </div>

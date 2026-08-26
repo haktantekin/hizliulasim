@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import MainCategoryClient from './MainCategoryClient';
 import Script from 'next/script';
+import { isLegacyContentPath } from '@/lib/legacyContentPaths';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -10,6 +11,8 @@ export async function generateMetadata(
   { params }: { params: Promise<{ mainCategory: string }> },
 ): Promise<Metadata> {
   const { mainCategory } = await params;
+  if (isLegacyContentPath(`/${mainCategory}`)) notFound();
+
   const category = await fetchCategoryBySlug(mainCategory);
 
   if (!category) {
@@ -45,6 +48,7 @@ export default async function MainCategoryPage(
   { params }: { params: Promise<{ mainCategory: string }> },
 ) {
   const { mainCategory } = await params;
+  if (isLegacyContentPath(`/${mainCategory}`)) notFound();
 
   const category = await fetchCategoryBySlug(mainCategory);
   if (!category) notFound();

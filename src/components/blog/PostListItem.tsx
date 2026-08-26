@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { BlogPost } from "@/types/WordPress";
 import { getDummyImageForCategory } from "@/lib/getDummyImage";
+import { formatTrDateTime } from "@/lib/dateTime";
 
 // Categories that typically have accessibility-related info
 const ACCESSIBLE_CATEGORY_SLUGS = [
@@ -65,7 +66,7 @@ export default function PostListItem({ post, href, className = "", categorySlug,
           <p className="text-xs font-light text-gray-400 line-clamp-3">{post.excerpt}</p>
         )}
         <div className="text-xs text-gray-400 font-light mt-1">
-          {new Date(post.publishedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          {formatTrDateTime(post.publishedAt)}
         </div>
         {hasAccessibilityBadge && (
           <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 text-[10px] bg-green-50 text-green-700 rounded-full border border-green-200 w-fit">

@@ -7,6 +7,7 @@ import { setAvatar } from '@/store/slices/userSlice';
 import { User, MessageSquare, Bus, ParkingCircle, Camera, Loader2, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import AuthModal from '@/components/ui/AuthModal';
+import { formatTrDateTime } from '@/lib/dateTime';
 
 
 interface ProfileUser {
@@ -200,10 +201,7 @@ export default function UserProfilePage() {
           <p className="text-sm text-gray-500 mt-1">@{profileUser.username}</p>
           {profileUser.registered_date && (
             <p className="text-xs text-gray-400 mt-1">
-              {new Date(profileUser.registered_date).toLocaleDateString('tr-TR', {
-                year: 'numeric',
-                month: 'long',
-              })} tarihinden beri üye
+              {formatTrDateTime(profileUser.registered_date)} tarihinden beri üye
             </p>
           )}
         </div>
@@ -286,11 +284,7 @@ export default function UserProfilePage() {
                             dangerouslySetInnerHTML={{ __html: comment.content }}
                           />
                           <time className="text-xs text-gray-400 mt-1 block">
-                            {new Date(comment.date).toLocaleDateString('tr-TR', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            })}
+                            {formatTrDateTime(comment.date)}
                           </time>
                         </li>
                       ))}

@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from './broken-redirects';
+import { isLegacyContentPath, resolveLegacyPostDestination } from './lib/legacyContentPaths';
+import { getCanonicalRequestUrl } from './lib/canonicalRequestUrl';
 
 type RedirectRule = { source: string; destination: string };
+type WordPressPostLink = { slug: string; link: string };
+
+const WP_API_URL = (process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2').replace(/\/+$/, '');
 
 function normalizeRedirectSource(source: string): string {
   return source.startsWith('/') ? source : `/${source}`;
@@ -29,6 +34,29 @@ async function fetchRedirect(pathname: string): Promise<RedirectRule | null> {
   return null;
 }
 
+async function fetchLegacyPostDestination(pathname: string): Promise<string | null> {
+  try {
+    return await resolveLegacyPostDestination(pathname, async (slug) => {
+      const endpoint = new URL(`${WP_API_URL}/posts`);
+      endpoint.searchParams.set('slug', slug);
+      endpoint.searchParams.set('per_page', '1');
+      endpoint.searchParams.set('_fields', 'slug,link');
+
+      const response = await fetch(endpoint, {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) return null;
+
+      const posts = await response.json() as WordPressPostLink[];
+      return posts.find(post => post.slug.toLowerCase() === slug) ?? null;
+    });
+  } catch (error) {
+    console.error('Error resolving legacy post URL:', error);
+    return null;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   // Get the request headers
   const requestHeaders = new Headers(request.headers);
@@ -39,10 +67,11 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
   // Normalize domain, protocol, trailing slash, and bus route slug in one redirect
-  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
-  const needsApexDomain = host.startsWith('www.') && !isLocalhost;
-  const isHttp = protocol === 'http' && !isLocalhost;
-  const hasTrailingSlash = pathname !== '/' && pathname.endsWith('/');
+  const canonicalRequestUrl = getCanonicalRequestUrl({
+    requestUrl: request.url,
+    forwardedProtocol: protocol,
+    host,
+  });
   const hatMatch = pathname.match(/^\/otobus-hatlari\/([^/]+)\/?$/);
   const normalizedHatCode = hatMatch?.[1].toLowerCase();
   const hasNonCanonicalHatCode = Boolean(hatMatch && hatMatch[1] !== normalizedHatCode);
@@ -51,19 +80,12 @@ export async function middleware(request: NextRequest) {
     && Array.from(BROKEN_HAT_SLUGS).some((slug) => slug.toLowerCase() === normalizedHatCode),
   );
 
-  if (needsApexDomain || isHttp || hasTrailingSlash || hasNonCanonicalHatCode || isBrokenHat) {
-    const url = request.nextUrl.clone();
-    if (needsApexDomain) {
-      url.hostname = 'hizliulasim.com';
-      url.port = '';
-    }
-    if (isHttp) url.protocol = 'https:';
+  if (canonicalRequestUrl || hasNonCanonicalHatCode || isBrokenHat) {
+    const url = canonicalRequestUrl ?? request.nextUrl.clone();
     if (isBrokenHat) {
       url.pathname = '/otobus-hatlari';
     } else if (hatMatch && normalizedHatCode) {
       url.pathname = `/otobus-hatlari/${normalizedHatCode}`;
-    } else if (hasTrailingSlash) {
-      url.pathname = pathname.replace(/\/+$/, '');
     }
     url.pathname = url.pathname.replace(/\/+$/, '') || '/';
     return new NextResponse(null, {
@@ -77,11 +99,21 @@ export async function middleware(request: NextRequest) {
   if (durakMatch && BROKEN_DURAK_SLUGS.has(durakMatch[1])) {
     return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
   }
-  // Check for an exact custom redirect from the CMS.
-  const redirect = await fetchRedirect(pathname);
-  if (redirect) {
-    const dest = redirect.destination.startsWith('http') ? redirect.destination : new URL(redirect.destination, request.url).toString();
-    return NextResponse.redirect(dest, 301);
+
+  const legacyPostDestination = await fetchLegacyPostDestination(pathname);
+  if (legacyPostDestination) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyPostDestination;
+    return NextResponse.redirect(url, 301);
+  }
+
+  // Removed content roots must reach the app's 404 boundary, even if an old CMS redirect exists.
+  if (!isLegacyContentPath(pathname)) {
+    const redirect = await fetchRedirect(pathname);
+    if (redirect) {
+      const dest = redirect.destination.startsWith('http') ? redirect.destination : new URL(redirect.destination, request.url).toString();
+      return NextResponse.redirect(dest, 301);
+    }
   }
 
   // Protected routes — require auth cookie
