@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { Facebook, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility } from 'lucide-react';
+import { ExternalLink, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -138,7 +138,7 @@ const Header = () => {
             rel="nofollow noopener noreferrer"
             className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
           >
-            <Facebook size={20} />
+            <ExternalLink size={20} />
             <span>Facebook&apos;ta takip et</span>
           </a>
           <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">

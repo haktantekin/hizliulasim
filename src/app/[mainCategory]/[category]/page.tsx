@@ -23,6 +23,7 @@ import StructuredData from '@/components/seo/StructuredData';
 import { buildArticleEntitySchema } from '@/lib/entitySchema';
 import { isLegacyContentPath } from '@/lib/legacyContentPaths';
 import { formatTrDateTime } from '@/lib/dateTime';
+import { resolveRootPostRoute } from '@/lib/postRoute';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -74,9 +75,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   // 2) Post detail fallback metadata
   if (post) {
+    const route = resolveRootPostRoute({
+      mainCategorySlug: mainCategory,
+      postSlug: post.slug,
+      postCategoryIds: post.categoryIds,
+      categories: allCategories,
+    });
+    if (!route) notFound();
+
     const title = post.title;
     const description = post.excerpt || post.title;
-    const canonical = `${SITE_URL}/${mainCategory}/${post.slug}`;
+    const canonical = `${SITE_URL}${route.pathname}`;
     const images = post.featuredImage
       ? [
           {
@@ -244,15 +253,17 @@ export default async function SubCategoryPage({ params }: PageProps) {
 
   /* ────── CASE 2: Post detail (slug matched a post, not a category) ────── */
   if (post) {
-    const postCategoryIds = new Set(post.categoryIds);
-    const matchingCategories = allCategories.filter((item) => postCategoryIds.has(item.id));
-    const postCategory = matchingCategories.find((item) => item.parentId)
-      ?? matchingCategories.find((item) => !item.parentId)
-      ?? null;
-    const postMainCategory = postCategory?.parentId
-      ? allCategories.find((c) => c.id === postCategory.parentId)
-      : mainCategory;
-    const postCanonicalUrl = `${SITE_URL}/${mainCategorySlug}/${post.slug}`;
+    const route = resolveRootPostRoute({
+      mainCategorySlug,
+      postSlug: post.slug,
+      postCategoryIds: post.categoryIds,
+      categories: allCategories,
+    });
+    if (!route) notFound();
+
+    const postCategory = route.category;
+    const postMainCategory = route.category;
+    const postCanonicalUrl = `${SITE_URL}${route.pathname}`;
 
     // Related posts
     let relatedPosts: Awaited<ReturnType<typeof fetchPosts>> = [];

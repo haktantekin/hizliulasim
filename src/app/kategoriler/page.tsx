@@ -1,6 +1,8 @@
 import { fetchCategories, fetchPosts } from "@/services/wordpress";
 import BlogPageClient from "@/app/BlogPageClient";
 
+export { metadata } from './metadata';
+
 export default async function KategorilerPage() {
   const categories = await fetchCategories();
   const initialPosts = await fetchPosts({ per_page: 12, page: 1, orderby: 'date', order: 'desc' });

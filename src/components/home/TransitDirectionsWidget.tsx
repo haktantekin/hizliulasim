@@ -155,7 +155,7 @@ export default function TransitDirectionsWidget() {
   const loading = locating || loadingPlace || loadingDir;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-none p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Navigation className="w-5 h-5 text-brand-orange" />
@@ -175,7 +175,7 @@ export default function TransitDirectionsWidget() {
           value={query}
           onChange={(e) => { setQuery(e.target.value); setSelectedPlace(null); setRoute(null); setDirError(''); }}
           onFocus={() => predictions.length > 0 && setShowPredictions(true)}
-          className="w-full pl-10 pr-9 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-soft-blue/40"
+          className="w-full pl-10 pr-9 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-soft-blue/40 !shadow-none"
         />
         {query && (
           <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -183,7 +183,7 @@ export default function TransitDirectionsWidget() {
           </button>
         )}
         {showPredictions && predictions.length > 0 && (
-          <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-xl shadow-none max-h-48 overflow-y-auto">
             {predictions.slice(0, 5).map((p) => (
               <button
                 key={p.place_id}

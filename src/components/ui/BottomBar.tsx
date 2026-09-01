@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Bus, Map, ParkingCircle, Menu, X, Facebook, UserPlus, User, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility } from 'lucide-react';
+import { Home, Bus, Map, ParkingCircle, Menu, X, ExternalLink, UserPlus, User, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -126,7 +126,7 @@ const BottomBar = () => {
             rel="nofollow noopener noreferrer"
             className="flex items-center gap-3 px-5 py-3.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
           >
-            <Facebook size={20} />
+            <ExternalLink size={20} />
             <span>Facebook&apos;ta takip et</span>
           </a>
           <div className="border-t border-gray-100 mx-5 my-2" />
@@ -183,7 +183,7 @@ const BottomBar = () => {
   return (
     <>
       <div className={`fixed bottom-3 left-0 w-full transition-opacity duration-300 ${drawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-        <nav className="flex justify-around items-center max-w-md w-[90%] mx-auto py-2 shadow-md border-[0.4px] border-gray bg-white rounded-full">
+        <nav className="flex justify-around items-center max-w-md w-[90%] mx-auto py-2 border border-gray-200 shadow-none bg-white rounded-full">
           {navItems.map(renderItem)}
           {isAuthenticated ? (
             <Link

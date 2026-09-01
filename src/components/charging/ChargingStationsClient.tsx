@@ -208,7 +208,7 @@ export default function ChargingStationsClient() {
             placeholder="İstasyon adı, adres veya operatör ara…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setShowCount(30); }}
-            className="w-full pl-10 pr-9 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-soft-blue/40"
+            className="w-full pl-10 pr-9 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-soft-blue/40 shadow-none"
           />
           {search && (
             <button
