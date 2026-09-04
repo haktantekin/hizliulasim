@@ -70,6 +70,8 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
+        <meta name="msvalidate.01" content="9D75C96845A12DF982910AEDB25C3C4B" />
+
         {/* Preconnect to external domains */}
         <link rel="dns-prefetch" href="https://cms.hizliulasim.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
