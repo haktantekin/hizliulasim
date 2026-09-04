@@ -9,7 +9,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seo:audit": "node scripts/seo/seo-audit.mjs",
+    "seo:orphans": "node scripts/seo/orphan-page-detector.mjs"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",

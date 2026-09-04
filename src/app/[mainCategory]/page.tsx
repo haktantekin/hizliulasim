@@ -2,8 +2,8 @@ import { fetchCategoryBySlug, fetchCategories, fetchPosts } from '@/services/wor
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import MainCategoryClient from './MainCategoryClient';
-import Script from 'next/script';
 import { isLegacyContentPath } from '@/lib/legacyContentPaths';
+import StructuredData from '@/components/seo/StructuredData';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -63,11 +63,9 @@ export default async function MainCategoryPage(
   return (
     <>
       {/* JSON-LD: CollectionPage */}
-      <Script
+      <StructuredData
         id={`schema-collection-${category.slug}`}
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+        data={{
             '@context': 'https://schema.org',
             '@type': 'CollectionPage',
             name: category.name,
@@ -97,15 +95,12 @@ export default async function MainCategoryPage(
                 })),
               },
             }),
-          }),
         }}
       />
       {/* JSON-LD: BreadcrumbList */}
-      <Script
+      <StructuredData
         id={`schema-breadcrumb-${category.slug}`}
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+        data={{
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
             itemListElement: [
@@ -113,7 +108,6 @@ export default async function MainCategoryPage(
               { '@type': 'ListItem', position: 2, name: 'Kategoriler', item: `${SITE_URL}/kategoriler` },
               { '@type': 'ListItem', position: 3, name: category.name, item: `${SITE_URL}/${category.slug}` },
             ],
-          }),
         }}
       />
       <MainCategoryClient

@@ -25,9 +25,6 @@ export const metadata: Metadata = {
   publisher: 'Hızlı Ulaşım',
   applicationName: 'Hızlı Ulaşım',
   manifest: '/manifest.webmanifest',
-  alternates: {
-    canonical: 'https://hizliulasim.com',
-  },
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -58,18 +55,6 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Hızlı Ulaşım',
     description: 'Ulaşım rehberi, rota planlama ve gezi önerileri',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    nocache: false,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
   },
 };
 

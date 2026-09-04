@@ -175,7 +175,7 @@ export default function TransitDirectionsWidget() {
           value={query}
           onChange={(e) => { setQuery(e.target.value); setSelectedPlace(null); setRoute(null); setDirError(''); }}
           onFocus={() => predictions.length > 0 && setShowPredictions(true)}
-          className="w-full pl-10 pr-9 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-soft-blue/40 !shadow-none"
+          className="w-full pl-10 pr-9 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/30 !shadow-none"
         />
         {query && (
           <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">

@@ -1,4 +1,5 @@
 import { WPCategory, WPPost, WPAuthor, WPMedia, BlogCategory, BlogPost } from '../types/WordPress';
+import type { InternalLinkCandidate } from '../lib/internalLinking';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2';
 // Minimal Page type including Yoast head json if available
@@ -169,6 +170,7 @@ export const fetchPosts = async (params?: {
   categoryId?: number;
   per_page?: number;
   page?: number;
+  offset?: number;
   search?: string;
   orderby?: string; // e.g., 'date'
   order?: 'asc' | 'desc';
@@ -179,6 +181,7 @@ export const fetchPosts = async (params?: {
     if (params?.categoryId) queryParams.append('categories', params.categoryId.toString());
     if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.offset !== undefined) queryParams.append('offset', params.offset.toString());
     if (params?.search) queryParams.append('search', params.search);
     if (params?.orderby) queryParams.append('orderby', params.orderby);
     if (params?.order) queryParams.append('order', params.order);
@@ -263,6 +266,67 @@ export const fetchPosts = async (params?: {
     });
   } catch (error) {
     console.error('Error fetching posts:', error);
+    return [];
+  }
+};
+
+type WPInternalLinkPost = Pick<
+  WPPost,
+  'id' | 'slug' | 'title' | 'excerpt' | 'categories' | 'date' | 'meta' | 'hizliulasim_meta'
+>;
+
+// Fetch a bounded, media-free candidate pool for server-rendered internal links.
+export const fetchInternalLinkCandidates = async ({
+  categoryIds,
+  perPage = 60,
+}: {
+  categoryIds: number[];
+  perPage?: number;
+}): Promise<InternalLinkCandidate[]> => {
+  const uniqueCategoryIds = [...new Set(categoryIds)].filter(Number.isFinite);
+  if (uniqueCategoryIds.length === 0) return [];
+
+  try {
+    const queryParams = new URLSearchParams({
+      categories: uniqueCategoryIds.join(','),
+      per_page: String(Math.min(80, Math.max(1, perPage))),
+      orderby: 'date',
+      order: 'desc',
+      _fields: 'id,slug,title,excerpt,categories,date,meta,hizliulasim_meta',
+    });
+    const response = await fetch(`${API_BASE_URL}/posts?${queryParams.toString()}`, {
+      headers: { 'Content-Type': 'application/json' },
+      next: { revalidate: 300 },
+    });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const posts: WPInternalLinkPost[] = await response.json();
+    return posts.map((post) => {
+      const meta = post.hizliulasim_meta ?? post.meta;
+      const rawLatitude = Array.isArray(meta?._hizliulasim_latitude)
+        ? meta._hizliulasim_latitude[0]
+        : meta?._hizliulasim_latitude;
+      const rawLongitude = Array.isArray(meta?._hizliulasim_longitude)
+        ? meta._hizliulasim_longitude[0]
+        : meta?._hizliulasim_longitude;
+      const latitude = Number.parseFloat(String(rawLatitude ?? ''));
+      const longitude = Number.parseFloat(String(rawLongitude ?? ''));
+
+      return {
+        id: post.id,
+        title: decodeHtml(stripHtml(post.title.rendered)),
+        slug: post.slug,
+        excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
+        content: '',
+        categoryIds: post.categories,
+        publishedAt: post.date,
+        ...(Number.isFinite(latitude) && Number.isFinite(longitude)
+          ? { location: { latitude, longitude } }
+          : {}),
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching internal link candidates:', error);
     return [];
   }
 };

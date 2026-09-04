@@ -12,7 +12,8 @@ export function getCanonicalRequestUrl({
   const url = new URL(requestUrl);
   const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
   const needsApexDomain = host.startsWith('www.') && !isLocalhost;
-  const needsHttps = forwardedProtocol === 'http' && !isLocalhost;
+  const effectiveProtocol = forwardedProtocol?.split(',')[0]?.trim() || url.protocol.replace(':', '');
+  const needsHttps = effectiveProtocol === 'http' && !isLocalhost;
   const hasTrailingSlash = url.pathname !== '/' && url.pathname.endsWith('/');
 
   if (!needsApexDomain && !needsHttps && !hasTrailingSlash) return null;

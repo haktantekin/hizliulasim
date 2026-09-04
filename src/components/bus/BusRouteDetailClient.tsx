@@ -243,7 +243,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
             <div key={i} className="bg-gray-100 rounded-xl p-4 h-20" />
           ))}
         </div>
-        <div className="flex gap-2 border-b pb-2">
+        <div className="flex gap-2 border-b border-gray-200 pb-2">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-gray-100 rounded h-9 w-32" />
           ))}
@@ -357,7 +357,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b overflow-x-auto">
+      <div className="flex border-b border-gray-200 overflow-x-auto">
         <button
           onClick={() => setActiveTab('schedule')}
           className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
@@ -455,7 +455,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
               const displayTimes = isExpanded ? group.times : group.times.slice(0, 12);
 
               return (
-                <div key={groupKey} className="bg-white border rounded-xl overflow-hidden">
+                <div key={groupKey} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                   <button
                     onClick={() => toggleGroup(groupKey)}
                     className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
@@ -559,7 +559,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
                   : '';
 
                 return (
-                  <div key={`vehicle-${idx}`} className="flex items-center gap-3 bg-white border rounded-lg p-3">
+                  <div key={`vehicle-${idx}`} className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-3">
                     <div className="w-10 h-10 bg-brand-soft-blue/10 rounded-full flex items-center justify-center">
                       <Bus className="w-5 h-5 text-brand-soft-blue" />
                     </div>

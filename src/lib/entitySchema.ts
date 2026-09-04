@@ -180,47 +180,110 @@ export function buildPlaceEntity(
 export function buildArticleEntitySchema({
   post,
   category,
+  mainCategory,
   canonicalUrl,
   siteUrl = DEFAULT_SITE_URL,
 }: {
   post: BlogPost;
   category: BlogCategory | null;
+  mainCategory?: BlogCategory | null;
   canonicalUrl: string;
   siteUrl?: string;
 }): JsonLdObject {
   const normalizedSiteUrl = normalizeSiteUrl(siteUrl);
   const place = buildPlaceEntity(post, category, canonicalUrl);
+  const articleId = `${canonicalUrl}#article`;
+  const webPageId = `${canonicalUrl}#webpage`;
+  const breadcrumbId = `${canonicalUrl}#breadcrumb`;
+  const description = post.excerpt || post.title;
+  const categories = [mainCategory, category].filter(
+    (item, index, items): item is BlogCategory =>
+      Boolean(item) && items.findIndex((candidate) => candidate?.id === item?.id) === index,
+  );
+  const breadcrumbItems: JsonLdObject[] = [
+    { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: normalizedSiteUrl },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Kategoriler',
+      item: `${normalizedSiteUrl}/kategoriler`,
+    },
+  ];
+
+  for (const item of categories) {
+    const parent = mainCategory && item.id !== mainCategory.id ? mainCategory : null;
+    breadcrumbItems.push({
+      '@type': 'ListItem',
+      position: breadcrumbItems.length + 1,
+      name: item.name,
+      item: parent
+        ? `${normalizedSiteUrl}/${parent.slug}/${item.slug}`
+        : `${normalizedSiteUrl}/${item.slug}`,
+    });
+  }
+
+  breadcrumbItems.push({
+    '@type': 'ListItem',
+    position: breadcrumbItems.length + 1,
+    name: post.title,
+    item: canonicalUrl,
+  });
 
   return {
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    '@id': `${canonicalUrl}#article`,
-    headline: post.title,
-    description: post.excerpt || post.title,
-    datePublished: post.publishedAt,
-    dateModified: post.modifiedAt || post.publishedAt,
-    inLanguage: 'tr-TR',
-    author: post.author?.name
-      ? { '@type': 'Person', name: post.author.name }
-      : { '@id': `${normalizedSiteUrl}/#organization` },
-    publisher: {
-      '@type': 'Organization',
-      '@id': `${normalizedSiteUrl}/#organization`,
-      name: 'Hızlı Ulaşım',
-      url: normalizedSiteUrl,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${normalizedSiteUrl}/android-chrome-512x512.png`,
-        width: 512,
-        height: 512,
+    '@graph': [
+      {
+        '@type': 'BlogPosting',
+        '@id': articleId,
+        url: canonicalUrl,
+        headline: post.title,
+        description,
+        datePublished: post.publishedAt,
+        dateModified: post.modifiedAt || post.publishedAt,
+        inLanguage: 'tr-TR',
+        author: post.author?.name
+          ? { '@type': 'Person', name: post.author.name }
+          : { '@id': `${normalizedSiteUrl}/#organization` },
+        publisher: {
+          '@type': 'Organization',
+          '@id': `${normalizedSiteUrl}/#organization`,
+          name: 'Hızlı Ulaşım',
+          url: normalizedSiteUrl,
+          logo: {
+            '@type': 'ImageObject',
+            url: `${normalizedSiteUrl}/android-chrome-512x512.png`,
+            width: 512,
+            height: 512,
+          },
+        },
+        image: post.featuredImage?.url,
+        mainEntityOfPage: { '@id': webPageId },
+        about: place,
       },
-    },
-    image: post.featuredImage?.url,
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': canonicalUrl,
-      isPartOf: { '@id': `${normalizedSiteUrl}/#website` },
-    },
-    about: place,
+      {
+        '@type': 'WebPage',
+        '@id': webPageId,
+        url: canonicalUrl,
+        name: post.title,
+        description,
+        datePublished: post.publishedAt,
+        dateModified: post.modifiedAt || post.publishedAt,
+        inLanguage: 'tr-TR',
+        isPartOf: { '@id': `${normalizedSiteUrl}/#website` },
+        mainEntity: { '@id': articleId },
+        breadcrumb: { '@id': breadcrumbId },
+        ...(post.featuredImage?.url && {
+          primaryImageOfPage: {
+            '@type': 'ImageObject',
+            url: post.featuredImage.url,
+          },
+        }),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': breadcrumbId,
+        itemListElement: breadcrumbItems,
+      },
+    ],
   };
 }

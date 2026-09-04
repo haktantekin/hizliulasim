@@ -2,15 +2,14 @@ import Image from 'next/image';
 import {
   fetchCategoryBySlug,
   fetchCategories,
+  fetchInternalLinkCandidates,
   fetchPosts,
   fetchPostBySlug,
 } from '@/services/wordpress';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Script from 'next/script';
 import SubCategoryClient from './SubCategoryClient';
 import Breadcrumb from '@/components/ui/Breadcrumb';
-import PostListItem from '@/components/blog/PostListItem';
 import PostLocationMap from '@/components/blog/PostLocationMap';
 import { Fragment } from 'react';
 import { getDummyImageForCategory } from '@/lib/getDummyImage';
@@ -24,6 +23,10 @@ import { buildArticleEntitySchema } from '@/lib/entitySchema';
 import { isLegacyContentPath } from '@/lib/legacyContentPaths';
 import { formatTrDateTime } from '@/lib/dateTime';
 import { resolveRootPostRoute } from '@/lib/postRoute';
+import { rankInternalLinks } from '@/lib/internalLinking';
+import SemanticInternalLinks from '@/components/blog/SemanticInternalLinks';
+import AnswerSummary from '@/components/blog/AnswerSummary';
+import { extractAnswerSummary } from '@/lib/answerSummary';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -168,11 +171,9 @@ export default async function SubCategoryPage({ params }: PageProps) {
     return (
       <>
         {/* JSON-LD: CollectionPage */}
-        <Script
+        <StructuredData
           id={`schema-collection-${category.slug}`}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+          data={{
               '@context': 'https://schema.org',
               '@type': 'CollectionPage',
               name: category.name,
@@ -196,15 +197,12 @@ export default async function SubCategoryPage({ params }: PageProps) {
                   })),
                 },
               }),
-            }),
           }}
         />
         {/* JSON-LD: BreadcrumbList */}
-        <Script
+        <StructuredData
           id={`schema-breadcrumb-${category.slug}`}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+          data={{
               '@context': 'https://schema.org',
               '@type': 'BreadcrumbList',
               itemListElement: [
@@ -237,7 +235,6 @@ export default async function SubCategoryPage({ params }: PageProps) {
                   item: `${SITE_URL}/${mainCategorySlug}/${category.slug}`,
                 },
               ],
-            }),
           }}
         />
         <SubCategoryClient
@@ -265,23 +262,18 @@ export default async function SubCategoryPage({ params }: PageProps) {
     const postMainCategory = route.category;
     const postCanonicalUrl = `${SITE_URL}${route.pathname}`;
 
-    // Related posts
-    let relatedPosts: Awaited<ReturnType<typeof fetchPosts>> = [];
-    if (post.categoryIds?.length) {
-      try {
-        const fetched = await fetchPosts({
-          categoryId: post.categoryIds[0],
-          per_page: 6,
-          orderby: 'date',
-          order: 'desc',
-        });
-        relatedPosts = fetched.filter((p) => p.id !== post.id);
-      } catch {
-        relatedPosts = [];
-      }
-    }
+    const internalLinkCandidates = await fetchInternalLinkCandidates({
+      categoryIds: [postMainCategory.id],
+    });
+    const internalLinks = rankInternalLinks({
+      currentPost: post,
+      candidates: internalLinkCandidates,
+      categories: allCategories,
+      preferredRootCategoryId: postMainCategory.id,
+    });
 
-    const { html: renderedContent, headings } = buildArticleContent(post.content);
+    const { summaryHtml, contentHtml } = extractAnswerSummary(post.content, post.excerpt);
+    const { html: renderedContent, headings } = buildArticleContent(contentHtml);
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -300,14 +292,9 @@ export default async function SubCategoryPage({ params }: PageProps) {
                   },
                 ]
               : []),
+            { label: post.title },
           ]}
         />
-
-        <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
-
-        <PostTransitWidget postTitle={post.title} />
-
-  <ArticleToc headings={headings} />
 
         {post.featuredImage ? (
           <div className="relative w-full h-64 md:h-96 mb-6">
@@ -336,11 +323,17 @@ export default async function SubCategoryPage({ params }: PageProps) {
           ) : null;
         })()}
 
+        <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
+
+        <AnswerSummary html={summaryHtml} />
+
+        <PostTransitWidget postTitle={post.title} />
+
         <div className="text-xs text-gray-500 mb-4">
           <span>{formatTrDateTime(post.publishedAt)}</span>
         </div>
 
-        <PostTransitWidget postTitle={post.title} />
+        <ArticleToc headings={headings} />
 
         <article className="post-detail space-y-6">
           {post.location && renderedContent.includes('[map]') ? (
@@ -376,80 +369,16 @@ export default async function SubCategoryPage({ params }: PageProps) {
           data={buildArticleEntitySchema({
             post,
             category: postCategory || mainCategory,
+            mainCategory: postMainCategory,
             canonicalUrl: postCanonicalUrl,
             siteUrl: SITE_URL,
           })}
-        />
-        {/* JSON-LD: BreadcrumbList */}
-        <Script
-          id={`schema-breadcrumb-post-${post.slug}`}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'BreadcrumbList',
-              itemListElement: [
-                {
-                  '@type': 'ListItem',
-                  position: 1,
-                  name: 'Ana Sayfa',
-                  item: SITE_URL,
-                },
-                {
-                  '@type': 'ListItem',
-                  position: 2,
-                  name: 'Kategoriler',
-                  item: `${SITE_URL}/kategoriler`,
-                },
-                ...(postMainCategory
-                  ? [
-                      {
-                        '@type': 'ListItem',
-                        position: 3,
-                        name: postMainCategory.name,
-                        item: `${SITE_URL}/${postMainCategory.slug}`,
-                      },
-                    ]
-                  : []),
-              ],
-            }),
-          }}
         />
 
         {/* Yorumlar */}
         <PostComments postId={post.id} />
 
-        {relatedPosts.length > 0 && (
-          <section className="mt-10">
-            <h2 className="text-xl font-semibold mb-4">İlgili İçerikler</h2>
-            <div className="divide-y divide-gray-200">
-              {relatedPosts.map((rp) => {
-                const rpCategoryId = rp.categoryIds?.[0];
-                const rpCategory = rpCategoryId
-                  ? allCategories.find((c) => c.id === rpCategoryId)
-                  : null;
-                const rpMainCategory = rpCategory?.parentId
-                  ? allCategories.find((c) => c.id === rpCategory.parentId)
-                  : postMainCategory;
-                const href =
-                  rpMainCategory && rpCategory
-                    ? `/${rpMainCategory.slug}/${rpCategory.slug}/${rp.slug}`
-                    : `/${mainCategorySlug}/${rp.slug}`;
-
-                return (
-                  <PostListItem
-                    key={rp.id}
-                    post={rp}
-                    href={href}
-                    className="py-3"
-                    categorySlug={rpCategory?.slug}
-                    categoryName={rpCategory?.name}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        )}
+        <SemanticInternalLinks links={internalLinks} categories={allCategories} />
       </div>
     );
   }

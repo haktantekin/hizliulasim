@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Bus, Map, ParkingCircle, Menu, X, ExternalLink, UserPlus, User, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility } from 'lucide-react';
+import { Home, Search, Bus, Map, ParkingCircle, Menu, X, ExternalLink, UserPlus, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
 import LogoIcon from '../icons/LogoIcon';
 import AuthModal from './AuthModal';
+import DrawerSearchForm from './DrawerSearchForm';
+import { bottomBarItems, shouldFocusDrawerSearch } from '../../lib/bottomBarNavigation';
 
 const drawerLinks = [
   { href: '/', icon: Home, label: 'Ana Sayfa' },
@@ -31,10 +33,11 @@ const legalLinks = [
 
 const BottomBar = () => {
   const pathname = usePathname();
-  const { isOpen: drawerOpen, toggle, close } = useDrawer();
+  const { isOpen: drawerOpen, open, close } = useDrawer();
   const [mounted, setMounted] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [focusDrawerSearch, setFocusDrawerSearch] = useState(false);
 
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const logoutMutation = useLogout();
@@ -44,35 +47,23 @@ const BottomBar = () => {
   // Close drawer on route change
   useEffect(() => { close(); }, [pathname, close]);
 
+  useEffect(() => {
+    if (!drawerOpen) setFocusDrawerSearch(false);
+  }, [drawerOpen]);
+
   // Lock body scroll when drawer is open
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
 
-  const navItems = [
-    { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
-    { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otoparklar' },
-    { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
-  ];
-
-  const renderItem = (item: { href: string; icon: typeof Map; label: string }) => {
-    const isActive = pathname === item.href;
-    const IconComponent = item.icon;
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        aria-label={item.label}
-        aria-current={isActive ? 'page' : undefined}
-        className={`flex items-center justify-center transition-colors p-1 rounded-full ${
-          isActive ? 'font-bold text-brand-orange' : 'text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue'
-        }`}
-      >
-        <IconComponent strokeWidth={1} size={25} aria-hidden="true" />
-      </Link>
-    );
-  };
+  const bottomBarIcons = {
+    map: Map,
+    bus: Bus,
+    home: Home,
+    search: Search,
+    menu: Menu,
+  } as const;
 
   const drawerContent = drawerOpen ? (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
@@ -104,19 +95,21 @@ const BottomBar = () => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={close}
-                className={`flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${
-                  isActive
-                    ? 'text-brand-orange bg-orange-50 font-semibold border-r-2 border-brand-orange'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-brand-soft-blue'
-                }`}
-              >
-                <Icon size={20} strokeWidth={1.5} />
-                <span>{item.label}</span>
-              </Link>
+              <Fragment key={item.href}>
+                {item.href === '/' && <DrawerSearchForm autoFocus={focusDrawerSearch} />}
+                <Link
+                  href={item.href}
+                  onClick={close}
+                  className={`flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${
+                    isActive
+                      ? 'text-brand-orange bg-orange-50 font-semibold border-r-2 border-brand-orange'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-brand-soft-blue'
+                  }`}
+                >
+                  <Icon size={20} strokeWidth={1.5} />
+                  <span>{item.label}</span>
+                </Link>
+              </Fragment>
             );
           })}
           <div className="border-t border-gray-100 mx-5 my-2" />
@@ -184,33 +177,41 @@ const BottomBar = () => {
     <>
       <div className={`fixed bottom-3 left-0 w-full transition-opacity duration-300 ${drawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <nav className="flex justify-around items-center max-w-md w-[90%] mx-auto py-2 border border-gray-200 shadow-none bg-white rounded-full">
-          {navItems.map(renderItem)}
-          {isAuthenticated ? (
-            <Link
-              href={user?.username ? `/u/${user.username}` : '/profil'}
-              aria-label="Profilim"
-              className={`flex items-center justify-center transition-colors p-1 rounded-full ${
-                pathname.startsWith('/u/') || pathname === '/profil' ? 'font-bold text-brand-orange' : 'text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue'
-              }`}
-            >
-              <User strokeWidth={1} size={25} aria-hidden="true" />
-            </Link>
-          ) : (
-            <button
-              onClick={() => setAuthModalOpen(true)}
-              aria-label="Üye Ol"
-              className="flex items-center justify-center transition-colors p-1 rounded-full text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue"
-            >
-              <UserPlus strokeWidth={1} size={25} aria-hidden="true" />
-            </button>
-          )}
-          <button
-            onClick={toggle}
-            aria-label="Menü"
-            className="flex items-center justify-center transition-colors p-1 rounded-full text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue"
-          >
-            <Menu strokeWidth={1} size={25} aria-hidden="true" />
-          </button>
+          {bottomBarItems.map((item) => {
+            const Icon = bottomBarIcons[item.icon];
+
+            if (item.kind === 'link') {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex items-center justify-center transition-colors p-1 rounded-full ${
+                    isActive ? 'font-bold text-brand-orange' : 'text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue'
+                  }`}
+                >
+                  <Icon strokeWidth={1} size={25} aria-hidden="true" />
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={item.intent}
+                type="button"
+                onClick={() => {
+                  setFocusDrawerSearch(shouldFocusDrawerSearch(item.intent));
+                  open();
+                }}
+                aria-label={item.label}
+                className="flex items-center justify-center transition-colors p-1 rounded-full text-gray-400 hover:text-brand-soft-blue hover:bg-brand-light-blue"
+              >
+                <Icon strokeWidth={1} size={25} aria-hidden="true" />
+              </button>
+            );
+          })}
         </nav>
       </div>
       {mounted && drawerContent && createPortal(drawerContent, document.body)}

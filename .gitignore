@@ -12,6 +12,16 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+**/*.test.mjs
+**/*.spec.ts
+**/*.spec.tsx
+**/*.spec.js
+**/*.spec.mjs
 
 # next.js
 /.next/
@@ -32,6 +42,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,4 +50,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated SEO audit reports
+/reports/seo/
+**/seo-audit.json
+**/orphan-pages.json
+**/orphan-pages.csv
+
+# local implementation notes
+/docs/superpowers/
+/scripts/seo/README.md
 settings.json

@@ -1,6 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
-import { fetchPostBySlug, fetchCategories, fetchPosts } from "@/services/wordpress";
+import { fetchPostBySlug, fetchCategories, fetchInternalLinkCandidates } from "@/services/wordpress";
 import type { Metadata } from "next";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { Fragment } from "react";
@@ -17,6 +16,10 @@ import StructuredData from "@/components/seo/StructuredData";
 import { buildArticleEntitySchema } from "@/lib/entitySchema";
 import { isLegacyContentPath } from "@/lib/legacyContentPaths";
 import { formatTrDateTime } from "@/lib/dateTime";
+import { rankInternalLinks } from "@/lib/internalLinking";
+import SemanticInternalLinks from "@/components/blog/SemanticInternalLinks";
+import AnswerSummary from "@/components/blog/AnswerSummary";
+import { extractAnswerSummary } from "@/lib/answerSummary";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -41,33 +44,28 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
     notFound();
   }
   
-  // Related posts from the same category (by date desc)
-  let relatedPosts: Awaited<ReturnType<typeof fetchPosts>> = [];
-  if (post.categoryIds.length > 0) {
-    try {
-      const fetched = await fetchPosts({
-        categoryId: post.categoryIds[0],
-        per_page: 6,
-        orderby: 'date',
-        order: 'desc',
-      });
-      relatedPosts = fetched.filter((p) => p.id !== post.id);
-    } catch {
-      relatedPosts = [];
-    }
-  }
+  const internalLinkCandidates = await fetchInternalLinkCandidates({
+    categoryIds: [cat.id, mainCat.id],
+  });
+  const internalLinks = rankInternalLinks({
+    currentPost: post,
+    candidates: internalLinkCandidates,
+    categories,
+    preferredRootCategoryId: mainCat.id,
+  });
 
-  const { html: renderedContent, headings } = buildArticleContent(post.content);
+  const { summaryHtml, contentHtml } = extractAnswerSummary(post.content, post.excerpt);
+  const { html: renderedContent, headings } = buildArticleContent(contentHtml);
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
-
       <Breadcrumb
         className="mb-6"
         items={[
+          { label: 'Kategoriler', href: '/kategoriler' },
           ...(mainCat ? [{ label: mainCat.name, href: `/${mainCat.slug}` }] : []),
           ...(cat ? [{ label: cat.name, href: `/${mainCategory}/${cat.slug}` }] : []),
+          { label: post.title },
         ]}
       />
 
@@ -83,11 +81,16 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
           </div>
         ) : null;
       })()}
+
+      <h1 className="text-2xl font-bold mb-4 text-brand-soft-blue">{post.title}</h1>
+
+      <AnswerSummary html={summaryHtml} />
+
+      <PostTransitWidget postTitle={post.title} />
+
       <div className="text-xs text-gray-500 mb-4">
         <span>{formatTrDateTime(post.publishedAt)}</span>
       </div>
-
-      <PostTransitWidget postTitle={post.title} />
 
       <ArticleToc headings={headings} />
 
@@ -132,121 +135,33 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
         data={buildArticleEntitySchema({
           post,
           category: cat,
+          mainCategory: mainCat,
           canonicalUrl,
           siteUrl: baseUrl,
         })}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              {
-                '@type': 'ListItem',
-                position: 1,
-                name: 'Ana Sayfa',
-                item: `${baseUrl}/`,
-              },
-              {
-                '@type': 'ListItem',
-                position: 2,
-                name: 'Kategoriler',
-                item: `${baseUrl}/kategoriler`,
-              },
-              ...(mainCat
-                ? [
-                  {
-                    '@type': 'ListItem',
-                    position: 3,
-                    name: mainCat.name,
-                    item: `${baseUrl}/${mainCat.slug}`,
-                  },
-                ]
-                : []),
-              ...(cat
-                ? [
-                  {
-                    '@type': 'ListItem',
-                    position: 4,
-                    name: cat.name,
-                    item: `${baseUrl}/${mainCategory}/${cat.slug}`,
-                  },
-                ]
-                : []),
-            ],
-          }),
-        }}
-      />
       {/* FAQ Schema */}
       {post.faq && post.faq.length > 0 && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'FAQPage',
-              mainEntity: post.faq.map((item) => ({
-                '@type': 'Question',
-                name: item.question,
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: item.answer,
-                },
-              })),
-            }),
+        <StructuredData
+          id={`schema-faq-${post.slug}`}
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: post.faq.map((item) => ({
+              '@type': 'Question',
+              name: item.question,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.answer,
+              },
+            })),
           }}
         />
       )}
       {/* Yorumlar */}
       <PostComments postId={post.id} />
 
-      {relatedPosts.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold mb-4">İlgili İçerikler</h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
-            {relatedPosts.map((rp) => {
-              const rpHref = `/${mainCategory}/${(cat?.slug || category)}/${rp.slug}`;
-              const fallbackImage = getDummyImageForCategory(cat?.slug, rp.title);
-              const imageUrl = rp.featuredImage?.url || fallbackImage?.url;
-              const imageAlt = rp.featuredImage?.alt || fallbackImage?.alt || rp.title;
-
-              return (
-                <Link
-                  key={rp.id}
-                  href={rpHref}
-                  className="min-w-[240px] max-w-[240px] snap-start rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow flex-shrink-0"
-                >
-                  <div className="relative w-full h-32 bg-gray-100">
-                    {imageUrl ? (
-                      <Image
-                        src={imageUrl}
-                        alt={imageAlt}
-                        fill
-                        className="object-cover"
-                        sizes="240px"
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
-                        Görsel yok
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 min-h-[2.6rem]">
-                      {rp.title}
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {formatTrDateTime(rp.publishedAt)}
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      <SemanticInternalLinks links={internalLinks} categories={categories} />
     </div>
   );
 }

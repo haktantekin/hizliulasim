@@ -46,8 +46,34 @@ export default function MainCategoryClient({ category, allCategories, subCategor
   // Local state for category-scoped search
   const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<BlogPost[]>([]);
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
+
+  const {
+    data: searchData,
+    hasNextPage: hasNextSearchPage,
+    fetchNextPage: fetchNextSearchPage,
+    isFetchingNextPage: isFetchingNextSearchPage,
+    isLoading: searchLoading,
+  } = useInfiniteQuery<BlogPost[], Error>({
+    queryKey: ['posts', 'category', 'search', 'infinite', category.id, activeSearchTerm],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchPosts({
+        categoryId: category.id,
+        search: activeSearchTerm,
+        per_page: 20,
+        page: pageParam as number,
+        orderby: 'date',
+        order: 'desc',
+      }),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 20 ? allPages.length + 1 : undefined,
+    initialPageParam: 1,
+    enabled: searching && activeSearchTerm.length >= 2,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 5,
+  });
+
+  const searchResults = searchData?.pages.flatMap(page => page) || [];
 
   // Intersection observer for infinite scroll
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -55,7 +81,14 @@ export default function MainCategoryClient({ category, allCategories, subCategor
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage && !searching) {
+        if (!entries[0].isIntersecting) return;
+
+        if (searching && hasNextSearchPage && !isFetchingNextSearchPage) {
+          fetchNextSearchPage();
+          return;
+        }
+
+        if (!searching && hasNextPage && !isFetchingNextPage) {
           fetchNextPage();
         }
       },
@@ -71,27 +104,27 @@ export default function MainCategoryClient({ category, allCategories, subCategor
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, searching]);
+  }, [
+    fetchNextPage,
+    fetchNextSearchPage,
+    hasNextPage,
+    hasNextSearchPage,
+    isFetchingNextPage,
+    isFetchingNextSearchPage,
+    searching,
+  ]);
 
-  const onSubmitSearch = useCallback(async (e: React.FormEvent) => {
+  const onSubmitSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     const term = searchTerm.trim();
     if (term.length < 2) return;
+    setActiveSearchTerm(term);
     setSearching(true);
-    setSearchLoading(true);
-    try {
-      const data = await fetchPosts({ categoryId: category.id, search: term, per_page: 20, page: 1 });
-      setSearchResults(data || []);
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [category.id, searchTerm]);
+  }, [searchTerm]);
 
   const clearSearch = useCallback(() => {
     setSearching(false);
-    setSearchResults([]);
+    setActiveSearchTerm("");
     setSearchTerm("");
   }, []);
 
@@ -180,7 +213,7 @@ export default function MainCategoryClient({ category, allCategories, subCategor
       {/* Posts Grid */}
       {searching ? (
         <div>
-          <h2 className="text-lg font-semibold mb-3">&ldquo;{searchTerm.trim()}&rdquo; için sonuçlar</h2>
+          <h2 className="text-lg font-semibold mb-3">&ldquo;{activeSearchTerm}&rdquo; için sonuçlar</h2>
           {searchLoading && <div className="text-sm text-gray-500">Yükleniyor…</div>}
           {!searchLoading && searchResults.length === 0 && (
             <div className="text-gray-600 text-sm">Sonuç bulunamadı.</div>
@@ -202,6 +235,18 @@ export default function MainCategoryClient({ category, allCategories, subCategor
               })}
             </div>
           )}
+
+          <div ref={observerTarget} className="mt-8 flex justify-center">
+            {isFetchingNextSearchPage && (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-soft-blue"></div>
+                <span className="text-sm text-gray-600">Daha fazla yazı yükleniyor…</span>
+              </div>
+            )}
+            {!searchLoading && !hasNextSearchPage && searchResults.length > 0 && (
+              <p className="text-sm text-gray-500">Tüm yazılar yüklendi</p>
+            )}
+          </div>
         </div>
       ) : !categoryPosts || categoryPosts.length === 0 ? (
         <div className="text-center py-12">

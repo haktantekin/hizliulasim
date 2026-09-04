@@ -1,4 +1,5 @@
 import type { JsonLdObject } from '@/lib/entitySchema';
+import { serializeJsonLd } from '@/lib/structuredData';
 
 export default function StructuredData({ id, data }: { id: string; data: JsonLdObject }) {
   return (
@@ -6,7 +7,7 @@ export default function StructuredData({ id, data }: { id: string; data: JsonLdO
       id={id}
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(data).replace(/</g, '\\u003c'),
+        __html: serializeJsonLd(data),
       }}
     />
   );

@@ -17,7 +17,7 @@ interface Props {
 export default function Breadcrumb({ items, className = "" }: Props) {
   const crumbs: Crumb[] = [{ label: "Ana Sayfa", href: "/" }, ...items];
   return (
-    <nav className={`flex items-center text-xs text-gray-600 ${className}`} aria-label="Breadcrumb">
+    <nav className={`flex flex-wrap items-center text-xs text-gray-600 ${className}`} aria-label="Breadcrumb">
       {crumbs.map((c, idx) => (
         <React.Fragment key={c.href || c.label}>
           {idx > 0 && <span className="mx-2">/</span>}
@@ -26,7 +26,7 @@ export default function Breadcrumb({ items, className = "" }: Props) {
               {c.label}
             </Link>
           ) : (
-            <span className="text-gray-900">{c.label}</span>
+            <span className="break-words text-gray-900">{c.label}</span>
           )}
         </React.Fragment>
       ))}

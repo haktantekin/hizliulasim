@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { Fragment, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { ExternalLink, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility } from 'lucide-react';
@@ -10,6 +10,7 @@ import { useLogout } from '../../hooks/useAuth';
 import LogoIcon from '../icons/LogoIcon';
 import Link from 'next/link';
 import AuthModal from './AuthModal';
+import DrawerSearchForm from './DrawerSearchForm';
 
 const drawerLinks = [
   { href: '/', icon: Home, label: 'Ana Sayfa' },
@@ -113,19 +114,21 @@ const Header = () => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={close}
-                className={`flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${
-                  isActive
-                    ? 'text-brand-orange bg-orange-50 font-semibold border-r-2 border-brand-orange'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-brand-soft-blue'
-                }`}
-              >
-                <Icon size={20} strokeWidth={1.5} />
-                <span>{item.label}</span>
-              </Link>
+              <Fragment key={item.href}>
+                {item.href === '/' && <DrawerSearchForm />}
+                <Link
+                  href={item.href}
+                  onClick={close}
+                  className={`flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${
+                    isActive
+                      ? 'text-brand-orange bg-orange-50 font-semibold border-r-2 border-brand-orange'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-brand-soft-blue'
+                  }`}
+                >
+                  <Icon size={20} strokeWidth={1.5} />
+                  <span>{item.label}</span>
+                </Link>
+              </Fragment>
             );
           })}
         </div>
