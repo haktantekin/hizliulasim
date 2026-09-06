@@ -22,6 +22,7 @@ interface StopLine {
 }
 
 type LocationState =
+  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'active'; lat: number; lng: number }
   | { status: 'denied' }
@@ -33,18 +34,19 @@ function formatDistance(meters: number): string {
 }
 
 export default function NearbyStopBusesWidget() {
-  const [location, setLocation] = useState<LocationState>({ status: 'loading' });
+  const [location, setLocation] = useState<LocationState>({ status: 'idle' });
   const [nearestStop, setNearestStop] = useState<NearestStop | null>(null);
   const [lines, setLines] = useState<StopLine[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const requestLocation = () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setLocation({ status: 'error' });
       return;
     }
 
+    setLocation({ status: 'loading' });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({
@@ -58,7 +60,7 @@ export default function NearbyStopBusesWidget() {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
-  }, []);
+  };
 
   useEffect(() => {
     if (location.status !== 'active') return;
@@ -128,6 +130,16 @@ export default function NearbyStopBusesWidget() {
         Yakınımdaki duraktan geçen otobüsler
       </h3>
 
+      {location.status === 'idle' && (
+        <button
+          type="button"
+          onClick={requestLocation}
+          className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-brand-soft-blue hover:underline"
+        >
+          <MapPin className="w-3.5 h-3.5" /> Konum izni ver
+        </button>
+      )}
+
       {location.status === 'loading' && (
         <div className="mt-3 text-xs text-gray-500 flex items-center gap-2">
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Konum aliniyor...
@@ -135,7 +147,12 @@ export default function NearbyStopBusesWidget() {
       )}
 
       {(location.status === 'denied' || location.status === 'error') && (
-        <p className="mt-3 text-xs text-gray-500">Konum bilgisi olmadan yakin durak tespit edilemedi.</p>
+        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+          <span>Konum bilgisi olmadan yakın durak tespit edilemedi.</span>
+          <button type="button" onClick={requestLocation} className="text-brand-soft-blue hover:underline">
+            Tekrar dene
+          </button>
+        </div>
       )}
 
       {loading && (

@@ -69,7 +69,7 @@ export default async function HospitalPostsRow() {
                 </div>
 
                 <div className="p-3">
-                  <h3 className="line-clamp-2 min-h-[2.6rem] text-sm font-semibold text-gray-800">
+                  <h3 className="line-clamp-2 min-h-[2.6rem] text-base font-semibold text-gray-800">
                     {post.title}
                   </h3>
                   <p className="mt-2 text-xs text-gray-400">

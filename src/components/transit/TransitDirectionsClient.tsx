@@ -125,8 +125,6 @@ export default function TransitDirectionsClient() {
     );
   }, []);
 
-  useEffect(() => { requestLocation(); }, [requestLocation]);
-
   /* --- autocomplete --- */
   useEffect(() => {
     if (query.length < 2) { setPredictions([]); return; }
@@ -225,6 +223,16 @@ export default function TransitDirectionsClient() {
   return (
     <div>
       {/* Location status */}
+      {userLat == null && !locating && !locError && (
+        <button
+          type="button"
+          onClick={requestLocation}
+          className="inline-flex items-center gap-1.5 mb-3 text-sm font-medium text-brand-soft-blue hover:underline"
+        >
+          <LocateFixed className="w-4 h-4" /> Konum izni ver
+        </button>
+      )}
+
       {locError && (
         <div className="flex items-center gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
           <AlertCircle className="w-4 h-4 flex-none" />

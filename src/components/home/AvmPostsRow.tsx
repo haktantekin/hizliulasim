@@ -52,15 +52,15 @@ export default async function AvmPostsRow() {
               <Link
                 key={post.id}
                 href={href}
-                className="min-w-[270px] max-w-[270px] snap-start overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
+                className="min-w-[270px] max-w-[270px] snap-start overflow-hidden rounded-xl bg-white shadow-[0_6px_6px_-6px_rgba(15,23,42,0.28)] transition-shadow hover:shadow-[0_10px_10px_-10px_rgba(15,23,42,0.38)]"
               >
-                <div className="relative h-36 w-full bg-gray-100">
+                <div className="relative h-36 w-full bg-white">
                   {imageUrl ? (
                     <Image
                       src={imageUrl}
                       alt={imageAlt}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                       sizes="270px"
                     />
                   ) : (
@@ -71,7 +71,7 @@ export default async function AvmPostsRow() {
                 </div>
 
                 <div className="p-3">
-                  <h3 className="line-clamp-2 min-h-[2.6rem] text-sm font-semibold text-gray-800">
+                  <h3 className="line-clamp-2 min-h-[2.6rem] text-base font-semibold text-gray-800">
                     {post.title}
                   </h3>
                   <p className="mt-2 text-xs text-gray-400">

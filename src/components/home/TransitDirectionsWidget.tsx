@@ -90,8 +90,6 @@ export default function TransitDirectionsWidget() {
     );
   }, []);
 
-  useEffect(() => { requestLocation(); }, [requestLocation]);
-
   // Autocomplete
   useEffect(() => {
     if (query.length < 2) { setPredictions([]); return; }
@@ -165,6 +163,16 @@ export default function TransitDirectionsWidget() {
           Detaylı arama →
         </Link>
       </div>
+
+      {userLat == null && !locating && !locError && (
+        <button
+          type="button"
+          onClick={requestLocation}
+          className="inline-flex items-center gap-1.5 mb-3 text-xs font-medium text-brand-soft-blue hover:underline"
+        >
+          <MapPin className="w-3.5 h-3.5" /> Konum izni ver
+        </button>
+      )}
 
       {/* Search */}
       <div ref={searchRef} className="relative mb-3">

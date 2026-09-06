@@ -8,6 +8,7 @@ import { useUpdateFavorite } from '@/hooks/useAuth';
 import AuthModal from '@/components/ui/AuthModal';
 
 type ParkTypeFilter = 'ALL' | 'AÇIK OTOPARK' | 'KAPALI OTOPARK' | 'YOL ÜSTÜ';
+type LocationStatus = 'idle' | 'loading' | 'active' | 'denied' | 'error';
 
 interface NearestStopDistrict {
   ilceAdi: string;
@@ -36,6 +37,7 @@ export default function OtoparkListClient() {
   const [typeFilter, setTypeFilter] = useState<ParkTypeFilter>('ALL');
   const [showCount, setShowCount] = useState(30);
   const [nearDistrict, setNearDistrict] = useState('');
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [autoSelectedDistrict, setAutoSelectedDistrict] = useState('');
   const [districtAutoApplied, setDistrictAutoApplied] = useState(false);
 
@@ -65,13 +67,13 @@ export default function OtoparkListClient() {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
+  const requestLocation = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocationStatus('error');
       return;
     }
 
-    let cancelled = false;
-
+    setLocationStatus('loading');
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
@@ -96,22 +98,21 @@ export default function OtoparkListClient() {
             }
           }
 
-          if (!cancelled && ilce) {
+          if (ilce) {
             setNearDistrict(ilce);
+            setLocationStatus('active');
+          } else {
+            setLocationStatus('error');
           }
         } catch {
-          // Silent fallback: page still works with normal ordering
+          setLocationStatus('error');
         }
       },
-      () => {
-        // Permission denied or location error; keep default list behavior
+      (err) => {
+        setLocationStatus(err.code === err.PERMISSION_DENIED ? 'denied' : 'error');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const districts = useMemo(() => {
@@ -295,6 +296,31 @@ export default function OtoparkListClient() {
           </select>
         </div>
       </div>
+
+      {locationStatus === 'idle' && (
+        <button
+          type="button"
+          onClick={requestLocation}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-soft-blue hover:underline"
+        >
+          <MapPin className="w-3.5 h-3.5" /> Konum izni ver ve yakındaki otoparkları göster
+        </button>
+      )}
+
+      {locationStatus === 'loading' && (
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Konum alınıyor…
+        </div>
+      )}
+
+      {(locationStatus === 'denied' || locationStatus === 'error') && (
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span>{locationStatus === 'denied' ? 'Konum izni reddedildi.' : 'Konum alınamadı.'}</span>
+          <button type="button" onClick={requestLocation} className="text-brand-soft-blue hover:underline">
+            Tekrar dene
+          </button>
+        </div>
+      )}
 
       {/* Result count */}
       <div className="text-sm text-gray-500 py-1">

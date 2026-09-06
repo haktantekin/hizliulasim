@@ -15,6 +15,7 @@ interface ReverseDistrictResponse {
 }
 
 type LocationState =
+  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'active'; lat: number; lng: number }
   | { status: 'denied' }
@@ -30,18 +31,19 @@ function normalizeDistrictName(value: string): string {
 }
 
 export default function DistrictIsparkWidget() {
-  const [location, setLocation] = useState<LocationState>({ status: 'loading' });
+  const [location, setLocation] = useState<LocationState>({ status: 'idle' });
   const [district, setDistrict] = useState<string>('');
   const [parks, setParks] = useState<ISPARKPark[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const requestLocation = () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setLocation({ status: 'error' });
       return;
     }
 
+    setLocation({ status: 'loading' });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({
@@ -55,7 +57,7 @@ export default function DistrictIsparkWidget() {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
-  }, []);
+  };
 
   useEffect(() => {
     if (location.status !== 'active') return;
@@ -140,6 +142,16 @@ export default function DistrictIsparkWidget() {
         Yakınımdaki ISPARK otoparkları
       </h3>
 
+      {location.status === 'idle' && (
+        <button
+          type="button"
+          onClick={requestLocation}
+          className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-brand-soft-blue hover:underline"
+        >
+          <MapPin className="w-3.5 h-3.5" /> Konum izni ver
+        </button>
+      )}
+
       {location.status === 'loading' && (
         <div className="mt-3 text-xs text-gray-500 flex items-center gap-2">
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Konum aliniyor...
@@ -147,7 +159,12 @@ export default function DistrictIsparkWidget() {
       )}
 
       {(location.status === 'denied' || location.status === 'error') && (
-        <p className="mt-3 text-xs text-gray-500">Konum bilgisi olmadan ilce tespit edilemedi.</p>
+        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+          <span>Konum bilgisi olmadan ilçe tespit edilemedi.</span>
+          <button type="button" onClick={requestLocation} className="text-brand-soft-blue hover:underline">
+            Tekrar dene
+          </button>
+        </div>
       )}
 
       {loading && (

@@ -48,6 +48,7 @@ interface OCMStation {
 }
 
 type LocationState =
+  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'active'; lat: number; lng: number }
   | { status: 'denied' }
@@ -69,15 +70,16 @@ export default function ChargingStationsClient() {
   const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
   const [showCount, setShowCount] = useState(30);
-  const [location, setLocation] = useState<LocationState>({ status: 'loading' });
+  const [location, setLocation] = useState<LocationState>({ status: 'idle' });
   const [distanceFilter, setDistanceFilter] = useState<number>(25);
 
-  // Get user location
-  useEffect(() => {
+  // Get user location only after an explicit user action.
+  const requestLocation = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setLocation({ status: 'error' });
       return;
     }
+    setLocation({ status: 'loading' });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({ status: 'active', lat: pos.coords.latitude, lng: pos.coords.longitude });
@@ -233,14 +235,34 @@ export default function ChargingStationsClient() {
         </select>
       </div>
 
+      {location.status === 'idle' && (
+        <button
+          type="button"
+          onClick={requestLocation}
+          className="inline-flex items-center gap-1.5 mb-3 text-xs font-medium text-brand-soft-blue hover:underline"
+        >
+          <MapPin className="w-3.5 h-3.5" /> Konum izni ver ve yakındakileri sırala
+        </button>
+      )}
+
+      {location.status === 'loading' && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Konum alınıyor…
+        </div>
+      )}
+
+      {(location.status === 'denied' || location.status === 'error') && (
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+          <span>{location.status === 'denied' ? 'Konum izni reddedildi.' : 'Konum alınamadı.'}</span>
+          <button type="button" onClick={requestLocation} className="text-brand-soft-blue hover:underline">
+            Tekrar dene
+          </button>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="text-xs text-gray-500 mb-3">
         {filtered.length} şarj istasyonu bulundu
-        {location.status === 'denied' && (
-          <span className="ml-2 text-amber-600">
-            (Konum izni verilmedi — mesafe bilgisi gösterilemiyor)
-          </span>
-        )}
       </div>
 
       {/* Station List */}

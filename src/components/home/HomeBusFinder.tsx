@@ -78,7 +78,7 @@ export default function HomeBusFinder() {
   const [konumLoading, setKonumLoading] = useState(false);
   const [showAllStops, setShowAllStops] = useState(false);
 
-  // Request location on mount
+  // Request location only after an explicit user action.
   const requestLocation = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setUserLocation({ status: 'error' });
@@ -91,10 +91,6 @@ export default function HomeBusFinder() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   }, []);
-
-  useEffect(() => {
-    requestLocation();
-  }, [requestLocation]);
 
   const saveSearch = useCallback(async (code: string, name?: string) => {
     try {
@@ -330,6 +326,15 @@ export default function HomeBusFinder() {
         <p className="text-xs text-gray-500 mt-1">Hat kodunu girin, yön seçin — en yakın durağınız ve yaklaşan otobüsü görün.</p>
 
         {/* Location status */}
+        {userLocation.status === 'idle' && (
+          <button
+            type="button"
+            onClick={requestLocation}
+            className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-brand-soft-blue hover:underline"
+          >
+            <MapPin className="w-3.5 h-3.5" /> Konum izni ver
+          </button>
+        )}
         {userLocation.status === 'loading' && (
           <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Konum alınıyor...
