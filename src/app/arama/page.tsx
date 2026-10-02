@@ -1,22 +1,21 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { ArrowRight, Bus, Search } from 'lucide-react';
 
-import PostListItem from '@/components/blog/PostListItem';
+import GoogleProgrammableSearch from '@/components/search/GoogleProgrammableSearch';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
   BUS_SEARCH_CATEGORY_SLUG,
-  buildSearchPageHref,
-  buildSearchPostHref,
-  buildSearchRequest,
+  buildBusRouteHref,
+  buildGoogleSearchUrl,
+  getSearchMode,
   normalizeSearchQuery,
   parseSearchCategory,
-  parseSearchPage,
-  SEARCH_RESULTS_PER_PAGE,
+  resolveGoogleSearchEngineId,
 } from '@/lib/searchPage';
 import { canonicalMetadata, noIndexMetadata } from '@/lib/seoMetadata';
-import { fetchCategories, fetchPosts } from '@/services/wordpress';
-import type { BlogCategory, BlogPost } from '@/types/WordPress';
+import { searchHatlar } from '@/services/iett';
+import type { IETTHat } from '@/types/iett';
 
 type SearchPageProps = {
   searchParams: Promise<{
@@ -44,39 +43,25 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   };
 }
 
-function findDisplayCategory(post: BlogPost, categories: BlogCategory[]): BlogCategory | undefined {
-  const assignedIds = new Set(post.categoryIds);
-  const assigned = categories.filter((category) => assignedIds.has(category.id));
-  return assigned.find((category) => category.parentId)
-    ?? assigned.find((category) => !category.parentId);
-}
-
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   const query = normalizeSearchQuery(params.q);
-  const currentPage = parseSearchPage(params.page);
   const categorySlug = parseSearchCategory(params.kategori);
+  const searchMode = getSearchMode(query, categorySlug);
+  const googleSearchEngineId = resolveGoogleSearchEngineId(
+    process.env.GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID,
+  );
 
-  let posts: BlogPost[] = [];
-  let categories: BlogCategory[] = [];
+  let busRoutes: IETTHat[] = [];
+  let busSearchFailed = false;
 
-  if (query.length >= 2) {
-    if (categorySlug) {
-      categories = await fetchCategories();
-      const categoryId = categories.find((category) => category.slug === categorySlug)?.id;
-      posts = categoryId
-        ? await fetchPosts(buildSearchRequest(query, currentPage, categoryId))
-        : [];
-    } else {
-      [posts, categories] = await Promise.all([
-        fetchPosts(buildSearchRequest(query, currentPage)),
-        fetchCategories(),
-      ]);
+  if (searchMode === 'iett') {
+    try {
+      busRoutes = await searchHatlar(query);
+    } catch {
+      busSearchFailed = true;
     }
   }
-
-  const hasNextPage = posts.length > SEARCH_RESULTS_PER_PAGE;
-  const results = posts.slice(0, SEARCH_RESULTS_PER_PAGE);
 
   return (
     <main className="container mx-auto min-h-[60vh] px-4 py-8">
@@ -132,59 +117,61 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 <h2 id="search-results-title" className="text-xl font-bold text-gray-900">
                   “{query}” için {categorySlug ? 'Otobüs Hatları sonuçları' : 'sonuçlar'}
                 </h2>
-                {results.length > 0 && (
+                {searchMode === 'iett' && !busSearchFailed && (
                   <p className="mt-1 text-sm text-gray-500">
-                    {currentPage}. sayfada {results.length} içerik gösteriliyor.
+                    {busRoutes.length} hat bulundu.
                   </p>
                 )}
               </div>
             </div>
 
-            {results.length === 0 ? (
+            {searchMode === 'google' ? (
+              <GoogleProgrammableSearch
+                engineId={googleSearchEngineId}
+                fallbackHref={buildGoogleSearchUrl(query)}
+              />
+            ) : busSearchFailed ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+                <p className="font-medium text-red-700">Hat bilgileri yüklenemedi.</p>
+                <p className="mt-1 text-sm text-red-600">
+                  İETT servisi geçici olarak yanıt vermiyor olabilir. Lütfen tekrar deneyin.
+                </p>
+              </div>
+            ) : busRoutes.length === 0 ? (
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center">
-                <p className="font-medium text-gray-700">Sonuç bulunamadı.</p>
+                <Bus className="mx-auto mb-3 h-10 w-10 text-gray-300" aria-hidden="true" />
+                <p className="font-medium text-gray-700">Hat bulunamadı.</p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Daha kısa veya farklı bir arama terimi deneyebilirsiniz.
+                  Farklı bir hat kodu veya güzergâh adı deneyebilirsiniz.
                 </p>
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2">
-                {results.map((post) => {
-                  const category = findDisplayCategory(post, categories);
-                  return (
-                    <PostListItem
-                      key={post.id}
-                      post={post}
-                      href={buildSearchPostHref(post, categories)}
-                      categorySlug={category?.slug}
-                      categoryName={category?.name}
-                    />
-                  );
-                })}
+              <div className="grid gap-2">
+                {busRoutes.map((route) => (
+                  <Link
+                    key={route.SHATKODU}
+                    href={buildBusRouteHref(route.SHATKODU)}
+                    className="group flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 transition-all hover:border-brand-soft-blue/30 hover:shadow-sm"
+                  >
+                    <div className="w-16 shrink-0 text-center">
+                      <span className="inline-block rounded-lg bg-brand-soft-blue px-2.5 py-1 text-sm font-bold text-white">
+                        {route.SHATKODU}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-gray-900">
+                        {route.SHATADI}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-gray-500">
+                        <span>{Number(route.HAT_UZUNLUGU).toFixed(1)} km</span>
+                        <span>{Math.round(Number(route.SEFER_SURESI))} dk</span>
+                        <span>{route.TARIFE}</span>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 transition-colors group-hover:text-brand-soft-blue" aria-hidden="true" />
+                  </Link>
+                ))}
               </div>
-            )}
-
-            {(currentPage > 1 || hasNextPage) && (
-              <nav className="mt-8 flex items-center justify-between gap-3" aria-label="Arama sonuçları sayfaları">
-                {currentPage > 1 ? (
-                  <Link
-                    href={buildSearchPageHref(query, currentPage - 1, categorySlug)}
-                    rel="prev"
-                    className="rounded-full border border-brand-light-blue px-4 py-2 text-sm font-medium text-brand-soft-blue hover:bg-blue-50"
-                  >
-                    Önceki sayfa
-                  </Link>
-                ) : <span />}
-                {hasNextPage && (
-                  <Link
-                    href={buildSearchPageHref(query, currentPage + 1, categorySlug)}
-                    rel="next"
-                    className="rounded-full bg-brand-soft-blue px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-                  >
-                    Sonraki sayfa
-                  </Link>
-                )}
-              </nav>
             )}
           </section>
         )}

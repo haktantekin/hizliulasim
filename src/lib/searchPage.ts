@@ -10,12 +10,34 @@ type SearchCategory = {
 };
 
 const MAX_SEARCH_QUERY_LENGTH = 100;
+const GOOGLE_SITE_SEARCH_DOMAIN = 'hizliulasim.com';
+const DEFAULT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID = 'a451c442f6af04df3';
 export const SEARCH_RESULTS_PER_PAGE = 12;
 export const BUS_SEARCH_CATEGORY_SLUG = 'otobus-hatlari';
+
+export type SearchMode = 'idle' | 'google' | 'iett';
 
 export function normalizeSearchQuery(value: string | string[] | undefined): string {
   const rawValue = Array.isArray(value) ? value[0] : value;
   return (rawValue || '').replace(/\s+/g, ' ').trim().slice(0, MAX_SEARCH_QUERY_LENGTH);
+}
+
+export function buildGoogleSearchUrl(query: string): string {
+  const normalizedQuery = normalizeSearchQuery(query);
+  const params = new URLSearchParams({
+    q: `site:${GOOGLE_SITE_SEARCH_DOMAIN} ${normalizedQuery}`.trim(),
+  });
+
+  return `https://www.google.com/search?${params.toString()}`;
+}
+
+export function buildGoogleProgrammableSearchScriptUrl(engineId: string): string {
+  const params = new URLSearchParams({ cx: engineId.trim() });
+  return `https://cse.google.com/cse.js?${params.toString()}`;
+}
+
+export function resolveGoogleSearchEngineId(configuredEngineId: string | undefined): string {
+  return configuredEngineId?.trim() || DEFAULT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID;
 }
 
 export function parseSearchPage(value: string | string[] | undefined): number {
@@ -30,6 +52,25 @@ export function parseSearchCategory(
 ): typeof BUS_SEARCH_CATEGORY_SLUG | undefined {
   const rawValue = Array.isArray(value) ? value[0] : value;
   return rawValue === BUS_SEARCH_CATEGORY_SLUG ? BUS_SEARCH_CATEGORY_SLUG : undefined;
+}
+
+export function shouldUseGoogleSiteSearch(
+  query: string,
+  categorySlug: typeof BUS_SEARCH_CATEGORY_SLUG | undefined,
+): boolean {
+  return !categorySlug && normalizeSearchQuery(query).length >= 2;
+}
+
+export function getSearchMode(
+  query: string,
+  categorySlug: typeof BUS_SEARCH_CATEGORY_SLUG | undefined,
+): SearchMode {
+  if (normalizeSearchQuery(query).length < 2) return 'idle';
+  return categorySlug === BUS_SEARCH_CATEGORY_SLUG ? 'iett' : 'google';
+}
+
+export function buildBusRouteHref(lineCode: string): string {
+  return `/otobus-hatlari/${encodeURIComponent(lineCode.trim().toLocaleLowerCase('tr-TR'))}`;
 }
 
 export function buildSearchPostHref(post: SearchPost, categories: SearchCategory[]): string {

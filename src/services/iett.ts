@@ -7,6 +7,7 @@ import type {
   IETTGaraj,
   IETTDurakDetay,
 } from '@/types/iett';
+import { buildIettHatParams } from '@/lib/iettRequest';
 
 // IETT SOAP API Endpoints
 const ENDPOINTS = {
@@ -111,7 +112,7 @@ export async function getHat(hatKodu: string = ''): Promise<IETTHat[]> {
   return callSoapMethod<IETTHat>(
     ENDPOINTS.hatDurakGuzergah,
     'GetHat_json',
-    hatKodu ? { HatKodu: hatKodu } : {},
+    buildIettHatParams(hatKodu),
     15000,
     hatKodu ? 300 : 3600 // Single hat: 5 min, all hats: 1 hour
   );
