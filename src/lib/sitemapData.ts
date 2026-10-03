@@ -6,6 +6,7 @@ import {
   type SitemapFallbackPost,
   type SitemapGroup,
 } from './sitemapEngine.ts';
+import { fetchAllWordPressCategories } from './wordpressCategories.ts';
 
 const SITE_URL = 'https://hizliulasim.com';
 const API_BASE_URL = 'https://cms.hizliulasim.com/wp-json/wp/v2';
@@ -31,13 +32,11 @@ type SitemapFetch = (
 
 async function fetchCategories(fetchImpl: SitemapFetch, apiBaseUrl: string): Promise<SitemapCategory[]> {
   try {
-    const response = await fetchImpl(
-      `${apiBaseUrl}/categories?per_page=100&_fields=id,slug,parent,count`,
-      { next: { revalidate: REVALIDATE_SECONDS } },
-    );
-    if (!response.ok) return [];
-    const categories: SitemapCategory[] = await response.json();
-    return Array.isArray(categories) ? categories : [];
+    return await fetchAllWordPressCategories({
+      endpoint: `${apiBaseUrl}/categories`,
+      fetchImpl,
+      requestInit: { next: { revalidate: REVALIDATE_SECONDS } },
+    });
   } catch {
     return [];
   }

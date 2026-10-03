@@ -1,5 +1,6 @@
 import { WPCategory, WPPost, WPAuthor, WPMedia, BlogCategory, BlogPost } from '../types/WordPress';
 import type { InternalLinkCandidate } from '../lib/internalLinking';
+import { fetchAllWordPressCategories } from '../lib/wordpressCategories';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2';
 // Minimal Page type including Yoast head json if available
@@ -132,22 +133,15 @@ const parseSchema = (raw: unknown): Record<string, unknown> | undefined => {
 export const fetchCategories = async (): Promise<BlogCategory[]> => {
   try {
     const isClient = typeof window !== 'undefined';
-    const url = isClient
-      ? '/api/wp/proxy?endpoint=categories&per_page=100&hide_empty=true'
-      : `${API_BASE_URL}/categories?per_page=100&hide_empty=true`;
-
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
+    const categories = await fetchAllWordPressCategories({
+      endpoint: isClient
+        ? '/api/wp/proxy?endpoint=categories'
+        : `${API_BASE_URL}/categories`,
+      requestInit: {
+        headers: { 'Content-Type': 'application/json' },
+        ...(isClient ? {} : { next: { revalidate: 300 } }),
       },
-      ...(isClient ? {} : { next: { revalidate: 300 } }), // Revalidate only on server
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const categories: WPCategory[] = await response.json();
     
     return categories
       .filter(category => category.slug !== 'uncategorized') // Remove default category
