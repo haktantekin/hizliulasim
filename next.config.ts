@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { loadRedirectManifestWithFallback } from "./src/lib/redirectManifest";
+import { hasLegacyContentSegment } from "./src/lib/legacyContentPaths";
+import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from "./src/broken-redirects";
+import redirectSnapshot from "./src/data/redirects.snapshot.json";
 
 const nextConfig: NextConfig = {
   trailingSlash: false,
@@ -32,6 +36,41 @@ const nextConfig: NextConfig = {
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Resolve ordinary CMS-managed redirects at build time so page requests do not boot WordPress.
+  async redirects() {
+    const {
+      manifest,
+      usedFallback,
+      refreshError,
+    } = await loadRedirectManifestWithFallback({
+      fallbackPayload: redirectSnapshot,
+      minimumRules: 100,
+    });
+    if (usedFallback) {
+      console.warn(
+        `CMS redirect manifest could not be refreshed; using ${manifest.length} checked-in rules.`,
+        refreshError,
+      );
+    }
+
+    // Legacy and generated broken-route rules keep their existing middleware behavior.
+    const redirects = manifest
+      .filter((rule) => {
+        if (hasLegacyContentSegment(rule.source)) return false;
+
+        const stopMatch = rule.source.match(/^\/otobus-duraklari\/([^/]+)$/);
+        if (stopMatch && BROKEN_DURAK_SLUGS.has(stopMatch[1])) return false;
+
+        const routeMatch = rule.source.match(/^\/otobus-hatlari\/([^/]+)$/);
+        if (routeMatch && BROKEN_HAT_SLUGS.has(routeMatch[1])) return false;
+
+        return true;
+      });
+    if (redirects.length > 2048) {
+      throw new Error(`CMS redirect count (${redirects.length}) exceeds Vercel's 2048 static rule limit`);
+    }
+    return redirects;
   },
   // Security and performance headers
   async headers() {

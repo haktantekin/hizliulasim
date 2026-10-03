@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { getHat } from '@/services/iett';
 import { fetchPostBySlug } from '@/services/wordpress';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import BusRouteDetailClient from '@/components/bus/BusRouteDetailClient';
@@ -8,16 +7,11 @@ import PostComments from '@/components/blog/PostComments';
 const SITE_URL = 'https://hizliulasim.com';
 const DEFAULT_IMAGE = 'https://cms.hizliulasim.com/wp-content/uploads/2026/02/otobus-hatlari.jpeg';
 
-export const revalidate = 300; // Revalidate every 5 minutes
+export const revalidate = 3600; // Published route content changes infrequently.
+export const dynamicParams = true;
 
-// Pre-render all bus routes at build time → no API delay for users
 export async function generateStaticParams() {
-  try {
-    const hatlar = await getHat();
-    return hatlar.map((h) => ({ hatKodu: h.SHATKODU.toLowerCase() }));
-  } catch {
-    return [];
-  }
+  return [];
 }
 
 export async function generateMetadata({

@@ -1,5 +1,10 @@
 import Image from "next/image";
-import { fetchPostBySlug, fetchCategories, fetchInternalLinkCandidates } from "@/services/wordpress";
+import {
+  fetchPostBySlug,
+  fetchCategories,
+  fetchCategoryBySlug,
+  fetchInternalLinkCandidates,
+} from "@/services/wordpress";
 import type { Metadata } from "next";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { Fragment } from "react";
@@ -27,20 +32,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
   const canonicalUrl = `${baseUrl}/${mainCategory}/${category}/${slug}`;
-  const [post, categories] = await Promise.all([
-    fetchPostBySlug(slug),
-    fetchCategories(),
-  ]);
-  const cat = categories.find((c) => c.slug === category) || null;
-  const mainCat = categories.find((c) => c.slug === mainCategory) || null;
+  const categories = await fetchCategories();
+  const mainCat = categories.find((item) => item.slug === mainCategory)
+    ?? await fetchCategoryBySlug(mainCategory);
+  if (!mainCat) {
+    notFound();
+  }
 
-  if (
-    !post
-    || !cat
-    || !mainCat
-    || cat.parentId !== mainCat.id
-    || !post.categoryIds.includes(cat.id)
-  ) {
+  const cat = categories.find((item) => item.slug === category)
+    ?? await fetchCategoryBySlug(category);
+
+  if (!cat || cat.parentId !== mainCat.id) {
+    notFound();
+  }
+  const resolvedCategories = Array.from(
+    new Map([...categories, mainCat, cat].map((item) => [item.id, item])).values(),
+  );
+
+  const post = await fetchPostBySlug(slug);
+  if (!post || !post.categoryIds.includes(cat.id)) {
     notFound();
   }
   
@@ -50,7 +60,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
   const internalLinks = rankInternalLinks({
     currentPost: post,
     candidates: internalLinkCandidates,
-    categories,
+    categories: resolvedCategories,
     preferredRootCategoryId: mainCat.id,
   });
 
@@ -161,7 +171,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
       {/* Yorumlar */}
       <PostComments postId={post.id} />
 
-      <SemanticInternalLinks links={internalLinks} categories={categories} />
+      <SemanticInternalLinks links={internalLinks} categories={resolvedCategories} />
     </div>
   );
 }
@@ -170,22 +180,23 @@ export async function generateMetadata({ params }: { params: Promise<{ mainCateg
   const { slug, category, mainCategory } = await params;
   if (isLegacyContentPath(`/${mainCategory}`)) notFound();
 
-  const [post, categories] = await Promise.all([
-    fetchPostBySlug(slug),
-    fetchCategories(),
-  ]);
+  const categories = await fetchCategories();
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
-  const cat = categories.find((item) => item.slug === category);
-  const mainCat = categories.find((item) => item.slug === mainCategory);
+  const mainCat = categories.find((item) => item.slug === mainCategory)
+    ?? await fetchCategoryBySlug(mainCategory);
+  if (!mainCat) {
+    notFound();
+  }
 
-  if (
-    !post
-    || !cat
-    || !mainCat
-    || cat.parentId !== mainCat.id
-    || !post.categoryIds.includes(cat.id)
-  ) {
+  const cat = categories.find((item) => item.slug === category)
+    ?? await fetchCategoryBySlug(category);
+  if (!cat || cat.parentId !== mainCat.id) {
+    notFound();
+  }
+
+  const post = await fetchPostBySlug(slug);
+  if (!post || !post.categoryIds.includes(cat.id)) {
     notFound();
   }
 

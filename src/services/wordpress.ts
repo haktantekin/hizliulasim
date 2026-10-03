@@ -3,6 +3,57 @@ import type { InternalLinkCandidate } from '../lib/internalLinking';
 import { fetchAllWordPressCategories } from '../lib/wordpressCategories';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2';
+const WORDPRESS_REVALIDATE_SECONDS = 3600;
+const POST_LIST_FIELDS = [
+  'id',
+  'date',
+  'modified',
+  'slug',
+  'title',
+  'excerpt',
+  'categories',
+  'author',
+  'tags',
+  '_links',
+  '_embedded',
+].join(',');
+const POST_DETAIL_FIELDS = [
+  'id',
+  'date',
+  'modified',
+  'slug',
+  'title',
+  'excerpt',
+  'content',
+  'categories',
+  'author',
+  'tags',
+  'meta',
+  'hizliulasim_meta',
+  '_links',
+  '_embedded',
+].join(',');
+
+type WPPostSummary = Pick<
+  WPPost,
+  'id' | 'date' | 'modified' | 'slug' | 'title' | 'excerpt' | 'categories' | 'author' | 'tags' | '_embedded'
+>;
+type WPPostDetail = Pick<
+  WPPost,
+  | 'id'
+  | 'date'
+  | 'modified'
+  | 'slug'
+  | 'title'
+  | 'excerpt'
+  | 'content'
+  | 'categories'
+  | 'author'
+  | 'tags'
+  | 'meta'
+  | 'hizliulasim_meta'
+  | '_embedded'
+>;
 // Minimal Page type including Yoast head json if available
 type WPPage = {
   id: number;
@@ -37,7 +88,7 @@ export const fetchPageSeoBySlug = async (slug: string): Promise<PageSEO | null> 
   try {
     const res = await fetch(`${API_BASE_URL}/pages?slug=${encodeURIComponent(slug)}`, {
       headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 300 },
+      next: { revalidate: WORDPRESS_REVALIDATE_SECONDS },
     });
     if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
     const pages: WPPage[] = await res.json();
@@ -139,7 +190,7 @@ export const fetchCategories = async (): Promise<BlogCategory[]> => {
         : `${API_BASE_URL}/categories`,
       requestInit: {
         headers: { 'Content-Type': 'application/json' },
-        ...(isClient ? {} : { next: { revalidate: 300 } }),
+        ...(isClient ? {} : { next: { revalidate: WORDPRESS_REVALIDATE_SECONDS } }),
       },
     });
     
@@ -162,6 +213,7 @@ export const fetchCategories = async (): Promise<BlogCategory[]> => {
 // Fetch posts from WordPress
 export const fetchPosts = async (params?: {
   categoryId?: number;
+  categoryIds?: number[];
   per_page?: number;
   page?: number;
   offset?: number;
@@ -172,7 +224,12 @@ export const fetchPosts = async (params?: {
   try {
     const queryParams = new URLSearchParams();
     
-    if (params?.categoryId) queryParams.append('categories', params.categoryId.toString());
+    const categoryIds = params?.categoryIds?.length
+      ? [...new Set(params.categoryIds)].filter(Number.isFinite)
+      : params?.categoryId
+        ? [params.categoryId]
+        : [];
+    if (categoryIds.length) queryParams.append('categories', categoryIds.join(','));
     if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.offset !== undefined) queryParams.append('offset', params.offset.toString());
@@ -182,6 +239,7 @@ export const fetchPosts = async (params?: {
     
     // Always embed author and featured media
     queryParams.append('_embed', 'author,wp:featuredmedia');
+    queryParams.append('_fields', POST_LIST_FIELDS);
 
     const isClient = typeof window !== 'undefined';
     let response: Response;
@@ -196,7 +254,7 @@ export const fetchPosts = async (params?: {
         headers: {
           'Content-Type': 'application/json',
         },
-        next: { revalidate: 300 },
+        next: { revalidate: WORDPRESS_REVALIDATE_SECONDS },
       });
     }
 
@@ -204,7 +262,7 @@ export const fetchPosts = async (params?: {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const posts: WPPost[] = await response.json();
+    const posts: WPPostSummary[] = await response.json();
     
     return posts.map((post): BlogPost => {
       // Get embedded author data
@@ -213,31 +271,12 @@ export const fetchPosts = async (params?: {
       // Get embedded featured media
       const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0] as WPMedia;
 
-      // Parse location from meta or hizliulasim_meta
-      const m = post.hizliulasim_meta ?? post.meta;
-      let location: { latitude: number; longitude: number } | undefined = undefined;
-      
-      if (m?._hizliulasim_latitude && m?._hizliulasim_longitude) {
-        let latStr = m._hizliulasim_latitude;
-        let lngStr = m._hizliulasim_longitude;
-        
-        if (Array.isArray(latStr)) latStr = latStr[0];
-        if (Array.isArray(lngStr)) lngStr = lngStr[0];
-        
-        const lat = parseFloat(latStr as string);
-        const lng = parseFloat(lngStr as string);
-        
-        if (!isNaN(lat) && !isNaN(lng)) {
-          location = { latitude: lat, longitude: lng };
-        }
-      }
-
       return {
         id: post.id,
         title: decodeHtml(stripHtml(post.title.rendered)),
         slug: post.slug,
         excerpt: decodeHtml(stripHtml(post.excerpt.rendered)),
-        content: decodeHtml(post.content.rendered),
+        content: '',
         categoryIds: post.categories,
         author: {
           id: post.author,
@@ -253,9 +292,6 @@ export const fetchPosts = async (params?: {
           height: featuredMedia.media_details?.height || 600,
         } : undefined,
         tags: post.tags,
-        location,
-        faq: parseFaq(m?._hizliulasim_faq),
-        schema: parseSchema(m?._hizliulasim_schema),
       };
     });
   } catch (error) {
@@ -290,7 +326,7 @@ export const fetchInternalLinkCandidates = async ({
     });
     const response = await fetch(`${API_BASE_URL}/posts?${queryParams.toString()}`, {
       headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 300 },
+      next: { revalidate: WORDPRESS_REVALIDATE_SECONDS },
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -328,18 +364,23 @@ export const fetchInternalLinkCandidates = async ({
 // Fetch single post by slug
 export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/posts?slug=${slug}&_embed=author,wp:featuredmedia`, {
+    const queryParams = new URLSearchParams({
+      slug,
+      _embed: 'author,wp:featuredmedia',
+      _fields: POST_DETAIL_FIELDS,
+    });
+    const response = await fetch(`${API_BASE_URL}/posts?${queryParams.toString()}`, {
       headers: {
         'Content-Type': 'application/json',
       },
-      next: { revalidate: 300 },
+      next: { revalidate: WORDPRESS_REVALIDATE_SECONDS },
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const posts: WPPost[] = await response.json();
+    const posts: WPPostDetail[] = await response.json();
     
     if (posts.length === 0) {
       return null;
@@ -401,11 +442,11 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
 // Fetch category by slug
 export const fetchCategoryBySlug = async (slug: string): Promise<BlogCategory | null> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/categories?slug=${slug}`, {
+    const response = await fetch(`${API_BASE_URL}/categories?slug=${encodeURIComponent(slug)}`, {
       headers: {
         'Content-Type': 'application/json',
       },
-      next: { revalidate: 300 },
+      next: { revalidate: WORDPRESS_REVALIDATE_SECONDS },
     });
 
     if (!response.ok) {

@@ -40,12 +40,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { mainCategory, category: categorySlug } = await params;
   if (isLegacyContentPath(`/${mainCategory}`)) notFound();
 
-  // try both: the slug may refer to a sub-category OR a post
-  const [cat, post, allCategories] = await Promise.all([
-    fetchCategoryBySlug(categorySlug),
-    fetchPostBySlug(categorySlug),
-    fetchCategories(),
-  ]);
+  // Resolve the taxonomy first so category pages do not probe posts by slug.
+  const allCategories = await fetchCategories();
+  const cat = allCategories.find((category) => category.slug === categorySlug)
+    ?? await fetchCategoryBySlug(categorySlug);
 
   // 1) Sub-category page metadata
   if (cat) {
@@ -77,6 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   // 2) Post detail fallback metadata
+  const post = await fetchPostBySlug(categorySlug);
   if (post) {
     const route = resolveRootPostRoute({
       mainCategorySlug: mainCategory,
@@ -141,12 +140,10 @@ export default async function SubCategoryPage({ params }: PageProps) {
   const { mainCategory: mainCategorySlug, category: categorySlug } = await params;
   if (isLegacyContentPath(`/${mainCategorySlug}`)) notFound();
 
-  // Parallel fetch: category, post, allCategories
-  const [category, post, allCategories] = await Promise.all([
-    fetchCategoryBySlug(categorySlug),
-    fetchPostBySlug(categorySlug),
-    fetchCategories(),
-  ]);
+  // Resolve the taxonomy first so category pages do not probe posts by slug.
+  const allCategories = await fetchCategories();
+  const category = allCategories.find((item) => item.slug === categorySlug)
+    ?? await fetchCategoryBySlug(categorySlug);
 
   const mainCategory = allCategories.find((c) => c.slug === mainCategorySlug) || null;
 
@@ -249,6 +246,7 @@ export default async function SubCategoryPage({ params }: PageProps) {
   }
 
   /* ────── CASE 2: Post detail (slug matched a post, not a category) ────── */
+  const post = await fetchPostBySlug(categorySlug);
   if (post) {
     const route = resolveRootPostRoute({
       mainCategorySlug,

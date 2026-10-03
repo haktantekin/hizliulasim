@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from './broken-redirects';
-import { isLegacyContentPath, resolveLegacyPostDestination } from './lib/legacyContentPaths';
+import {
+  hasLegacyContentSegment,
+  isLegacyContentPath,
+  resolveLegacyPostDestination,
+} from './lib/legacyContentPaths';
 import { getCanonicalRequestUrl } from './lib/canonicalRequestUrl';
 
 type RedirectRule = { source: string; destination: string };
@@ -21,14 +25,15 @@ async function fetchRedirect(pathname: string): Promise<RedirectRule | null> {
     const response = await fetch(endpoint, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(3000),
     });
 
     if (response.ok) {
       const redirects = await response.json() as RedirectRule[];
-      return redirects.find(rule => normalizeRedirectSource(rule.source) === pathname) ?? null;
+      return redirects.find((rule) => normalizeRedirectSource(rule.source) === pathname) ?? null;
     }
   } catch (error) {
-    console.error('Error fetching redirect:', error);
+    console.error('Error fetching legacy redirect:', error);
   }
 
   return null;
@@ -45,11 +50,12 @@ async function fetchLegacyPostDestination(pathname: string): Promise<string | nu
       const response = await fetch(endpoint, {
         cache: 'no-store',
         headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(3000),
       });
       if (!response.ok) return null;
 
       const posts = await response.json() as WordPressPostLink[];
-      return posts.find(post => post.slug.toLowerCase() === slug) ?? null;
+      return posts.find((post) => post.slug.toLowerCase() === slug) ?? null;
     });
   } catch (error) {
     console.error('Error resolving legacy post URL:', error);
@@ -58,15 +64,12 @@ async function fetchLegacyPostDestination(pathname: string): Promise<string | nu
 }
 
 export async function middleware(request: NextRequest) {
-  // Get the request headers
   const requestHeaders = new Headers(request.headers);
-  
-  // Check if the request is HTTP and not localhost
   const protocol = requestHeaders.get('x-forwarded-proto');
   const host = requestHeaders.get('host') || '';
   const pathname = request.nextUrl.pathname;
-  
-  // Normalize domain, protocol, trailing slash, and bus route slug in one redirect
+
+  // Normalize domain, protocol, trailing slash, and bus route slug in one redirect.
   const canonicalRequestUrl = getCanonicalRequestUrl({
     requestUrl: request.url,
     forwardedProtocol: protocol,
@@ -94,31 +97,36 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // Redirect broken durak/hat detail pages to /otobus-hatlari
+  // Redirect broken stop detail pages to the bus routes index.
   const durakMatch = pathname.match(/^\/otobus-duraklari\/([^/]+)$/);
   if (durakMatch && BROKEN_DURAK_SLUGS.has(durakMatch[1])) {
     return NextResponse.redirect(new URL('/otobus-hatlari', request.url), 301);
   }
 
-  const legacyPostDestination = await fetchLegacyPostDestination(pathname);
-  if (legacyPostDestination) {
-    const url = request.nextUrl.clone();
-    url.pathname = legacyPostDestination;
-    return NextResponse.redirect(url, 301);
-  }
+  // Only legacy paths keep runtime lookup semantics; all other CMS redirects are build-time rules.
+  const hasLegacySegment = hasLegacyContentSegment(pathname);
+  if (hasLegacySegment) {
+    const legacyPostDestination = await fetchLegacyPostDestination(pathname);
+    if (legacyPostDestination) {
+      const url = request.nextUrl.clone();
+      url.pathname = legacyPostDestination;
+      return NextResponse.redirect(url, 301);
+    }
 
-  // Removed content roots must reach the app's 404 boundary, even if an old CMS redirect exists.
-  if (!isLegacyContentPath(pathname)) {
-    const redirect = await fetchRedirect(pathname);
-    if (redirect) {
-      const dest = redirect.destination.startsWith('http') ? redirect.destination : new URL(redirect.destination, request.url).toString();
-      return NextResponse.redirect(dest, 301);
+    // Removed legacy roots must reach the app's 404 boundary.
+    if (!isLegacyContentPath(pathname)) {
+      const redirect = await fetchRedirect(pathname);
+      if (redirect) {
+        const destination = redirect.destination.startsWith('http')
+          ? redirect.destination
+          : new URL(redirect.destination, request.url).toString();
+        return NextResponse.redirect(destination, 301);
+      }
     }
   }
 
-  // Protected routes — require auth cookie
   const protectedPaths = ['/profil', '/u/', '/favoriler'];
-  const isProtected = protectedPaths.some(p => pathname.startsWith(p));
+  const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
   if (isProtected) {
     const authToken = request.cookies.get('auth_token')?.value;
     if (!authToken) {
@@ -133,16 +141,19 @@ export async function middleware(request: NextRequest) {
   });
 }
 
-// Configure which routes to run middleware on
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)',
+    '/profil/:path*',
+    '/favoriler/:path*',
+    '/u/:path*',
+    '/otobus-duraklari/:path*',
+    '/otobus-hatlari/:path*',
+    {
+      source: '/((?!api(?:/|$)|_next(?:/|$)|favicon.ico|robots.txt|sitemap.xml|sitemaps(?:/|$)|feed.xml|ads.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|css|js|map|txt|xml|json|woff|woff2|ttf|eot)$).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
   ],
 };

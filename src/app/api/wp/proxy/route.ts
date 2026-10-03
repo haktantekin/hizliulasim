@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 const WP_API_BASE =
   process.env.NEXT_PUBLIC_WP_API_URL ||
   "https://cms.hizliulasim.com/wp-json/wp/v2";
+const REVALIDATE_SECONDS = 3600;
+const EDGE_CACHE_SECONDS = 300;
+const EDGE_STALE_SECONDS = 3600;
 
 /**
  * Transparent proxy for WordPress REST API requests.
@@ -48,7 +51,7 @@ export async function GET(req: NextRequest) {
   try {
     const wpRes = await fetch(wpUrl.toString(), {
       headers: { "Content-Type": "application/json" },
-      next: { revalidate: 300 },
+      next: { revalidate: REVALIDATE_SECONDS },
     });
 
     if (!wpRes.ok) {
@@ -67,6 +70,10 @@ export async function GET(req: NextRequest) {
     const totalPages = wpRes.headers.get("X-WP-TotalPages");
     if (total) response.headers.set("X-WP-Total", total);
     if (totalPages) response.headers.set("X-WP-TotalPages", totalPages);
+    response.headers.set(
+      "Cache-Control",
+      `public, s-maxage=${EDGE_CACHE_SECONDS}, stale-while-revalidate=${EDGE_STALE_SECONDS}`
+    );
 
     return response;
   } catch (err) {

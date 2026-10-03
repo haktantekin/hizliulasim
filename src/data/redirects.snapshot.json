@@ -1,0 +1,498 @@
+[
+  {
+    "source": "/ulasim-rehberi/etkinlikler/esenler-otogarina-nasil-giderim",
+    "destination": "/ulasim-rehberi/otogarlar/esenler-otogarina-nasil-giderim"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/uskudar-devlet-hastanesi",
+    "destination": "/ulasim-rehberi/hastaneler/uskudar-devlet-hastanesi"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/sadi-konuk-hastanesi",
+    "destination": "/ulasim-rehberi/hastaneler/sadi-konuk-hastanesi"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/23-nisan-kaptanoglu-ilkokulu",
+    "destination": "/ulasim-rehberi/okullar"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/beyazit-meydani",
+    "destination": "/ulasim-rehberi/turistik-yerler/beyazit-meydani"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/pamukkale-sehir-ici-servis-saatleri",
+    "destination": "/saat-bilgileri/pamukkale-sehir-ici-servis-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/marmara-pendik-hastanesi",
+    "destination": "/ulasim-rehberi/hastaneler/marmara-pendik-hastanesi"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/aydin-incirliova-tren-saatleri",
+    "destination": "/saat-bilgileri/aydin-incirliova-tren-saatleri"
+  },
+  {
+    "source": "/deniz-ulasimi/deniz-ulasimi/ht20",
+    "destination": "/otobus-hatlari/ht20"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/hirka-i-serif-camii",
+    "destination": "/ulasim-rehberi/camiler/hirka-i-serif-camii"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/tire-basmane-tren-saatleri",
+    "destination": "/saat-bilgileri/tire-basmane-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/eminonu",
+    "destination": "/ulasim-rehberi/ilceler/eminonu"
+  },
+  {
+    "source": "/ulasim-rehberi/sogutlucesme-marmaray-istasyonu",
+    "destination": "/ulasim-rehberi/ulasim-yapilari/sogutlucesme-marmaray-istasyonu"
+  },
+  {
+    "source": "/ulasim-rehberi/polatli-sincan",
+    "destination": "/saat-bilgileri/polatli-sincan"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri",
+    "destination": "/saat-bilgileri"
+  },
+  {
+    "source": "/ulasim-rehberi/halic-koprusu",
+    "destination": "/ulasim-rehberi/ulasim-yapilari/halic-koprusu"
+  },
+  {
+    "source": "/ulasim-rehberi/15-temmuz-koprusu",
+    "destination": "/ulasim-rehberi/ulasim-yapilari/15-temmuz-koprusu"
+  },
+  {
+    "source": "/deniz-ulasimi/km11",
+    "destination": "/otobus-hatlari/km11"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/florya-ataturk-ormani",
+    "destination": "/ulasim-rehberi/korular/florya-ataturk-ormani"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/validebag-korusu",
+    "destination": "/ulasim-rehberi/korular/validebag-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/istanbul-ticaret-universitesi-servis-saatleri",
+    "destination": "/saat-bilgileri/istanbul-ticaret-universitesi-servis-saatleri"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/paket-servis-saat-kaca-kadar-acik",
+    "destination": "/saat-bilgileri/paket-servis-saat-kaca-kadar-acik"
+  },
+  {
+    "source": "/deniz-ulasimi/deniz-ulasimi/98g",
+    "destination": "/otobus-hatlari/98g"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/erzurum-havalimani-servis-saatleri",
+    "destination": "/saat-bilgileri/erzurum-havalimani-servis-saatleri"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/aydin-denizli-tren-saatleri",
+    "destination": "/saat-bilgileri/aydin-denizli-tren-saatleri"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/bodrum-havaalani-servis-saatleri",
+    "destination": "/saat-bilgileri/bodrum-havaalani-servis-saatleri"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/asti-servis-saatleri",
+    "destination": "/saat-bilgileri/asti-servis-saatleri"
+  },
+  {
+    "source": "/anasayfa",
+    "destination": "/"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/fethi-pasa-korusu",
+    "destination": "/ulasim-rehberi/korular/fethi-pasa-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/kucuk-camlica-korusu",
+    "destination": "/ulasim-rehberi/korular/kucuk-camlica-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/polatli-sincan",
+    "destination": "/ulasim-rehberi/polatli-sincan"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/harem-otogari",
+    "destination": "/ulasim-rehberi/otogarlar/harem-otogari"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/florya-ataturk-ormani",
+    "destination": "/ulasim-rehberi/korular/florya-ataturk-ormani"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/bayramoglu-kadinlar-plaji-nasil-gidilir",
+    "destination": "/ulasim-rehberi/plajlar/bayramoglu-kadinlar-plaji-nasil-gidilir"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/elmadag-kayak-merkezine-nasil-gidilir",
+    "destination": "/ulasim-rehberi/etkinlikler"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/4-levent",
+    "destination": "/ulasim-rehberi/ilceler/4-levent"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/buyukada",
+    "destination": "/ulasim-rehberi/ilceler/buyukada"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/mihrabat-korusu",
+    "destination": "/ulasim-rehberi/korular/mihrabat-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/buyuk-camlica-korusu",
+    "destination": "/ulasim-rehberi/korular/buyuk-camlica-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/cubuklu-korusu",
+    "destination": "/ulasim-rehberi/korular/cubuklu-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/1453-maslak",
+    "destination": "/ulasim-rehberi/ilceler/1453-maslak"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/adalar",
+    "destination": "/ulasim-rehberi/ilceler/adalar"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/dudullu-otogari",
+    "destination": "/ulasim-rehberi/otogarlar/dudullu-otogari"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/1-levent",
+    "destination": "/ulasim-rehberi/ilceler/1-levent"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/alibeykoy-cep-otogari",
+    "destination": "/ulasim-rehberi/otogarlar/alibeykoy-cep-otogari"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/beyoglu-sinemasi",
+    "destination": "/ulasim-rehberi/sinema-tiyatrolar/beyoglu-sinemasi"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/kadikoy-19-mayis-mahallesi",
+    "destination": "/ulasim-rehberi/ilceler/kadikoy-19-mayis-mahallesi"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/karlitepe-mesire-alani",
+    "destination": "/ulasim-rehberi/korular/karlitepe-mesire-alani"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/otagtepe-korusu",
+    "destination": "/ulasim-rehberi/korular/otagtepe-korusu"
+  },
+  {
+    "source": "/deniz-ulasimi/deniz-ulasimi/um13",
+    "destination": "/otobus-hatlari/um13"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/camlica-camiine-nasil-gidilir",
+    "destination": "/ulasim-rehberi/camiler/camlica-camiine-nasil-gidilir"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/emirgan-korusu",
+    "destination": "/ulasim-rehberi/korular/emirgan-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/fethi-pasa-korusu-sosyal-tesisleri",
+    "destination": "/ulasim-rehberi/korular/fethi-pasa-korusu-sosyal-tesisleri"
+  },
+  {
+    "source": "/ne-kadar-yakar/ne-kadar-yakar/1-5-dizel-clio-kmde-ne-kadar-yakar",
+    "destination": "/ne-kadar-yakar/1-5-dizel-clio-kmde-ne-kadar-yakar"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/espressolab-merter-nasil-gidilir",
+    "destination": "/ulasim-rehberi/mekanlar/espressolab-merter-nasil-gidilir"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/izmir-selcuk-tren-saatleri",
+    "destination": "/saat-bilgileri/izmir-selcuk-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/aydos-ormani",
+    "destination": "/ulasim-rehberi/korular/aydos-ormani"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/istinye-universitesi-servis-saatleri",
+    "destination": "/saat-bilgileri/istinye-universitesi-servis-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/florya-ataturk-ormani",
+    "destination": "/ulasim-rehberi/korular/florya-ataturk-ormani"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/sultanahmet-camii",
+    "destination": "/ulasim-rehberi/camiler/sultanahmet-camii"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/nazilli-izmir",
+    "destination": "/saat-bilgileri/nazilli-izmir"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/capacity-avm",
+    "destination": "/ulasim-rehberi/avmler/capacity-avm"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/buyuk-camlica-korusu",
+    "destination": "/ulasim-rehberi/korular/buyuk-camlica-korusu"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/viaport-asia-outlet",
+    "destination": "/ulasim-rehberi/avmler/viaport-asia-outlet"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/eskihisar-yol-tarifi-en-kolay-nasil-gidilir",
+    "destination": "/ulasim-rehberi/ilceler/eskihisar-yol-tarifi-en-kolay-nasil-gidilir"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/istanbul-gelisim-universitesi",
+    "destination": "/ulasim-rehberi/okullar/istanbul-gelisim-universitesi"
+  },
+  {
+    "source": "/ulasim-rehberi/okullar/kozyatagi-30-agustos-ilkogretim-okulu",
+    "destination": "/ulasim-rehberi/okullar"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/gobeklitepe",
+    "destination": "/ulasim-rehberi/ilceler/gobeklitepe"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/havas-servis-saatleri",
+    "destination": "/saat-bilgileri/havas-servis-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/galatasaray-stadi-ali-sami-yen",
+    "destination": "/ulasim-rehberi/etkinlik-dugun-balo-salonlari/galatasaray-stadi-ali-sami-yen"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/adnan-menderes-nazilli-tren-saatleri",
+    "destination": "/saat-bilgileri/adnan-menderes-nazilli-tren-saatleri"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/izmir-odemis-tren-saatleri",
+    "destination": "/saat-bilgileri/izmir-odemis-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/ozdilekpark-istanbul-avm",
+    "destination": "/ulasim-rehberi/avmler/ozdilekpark-istanbul-avm"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/fisekhane-nasil-gidilir-en-kolay-ulasim-rehberi",
+    "destination": "/ulasim-rehberi/avmler/fisekhane-nasil-gidilir-en-kolay-ulasim-rehberi"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/tepe-nautilus-avm",
+    "destination": "/ulasim-rehberi/avmler/tepe-nautilus-avm"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/nazilli-izmir",
+    "destination": "/saat-bilgileri/nazilli-izmir"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/nakkastepe-millet-bahcesi",
+    "destination": "/ulasim-rehberi/korular/nakkastepe-millet-bahcesi"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/galataport",
+    "destination": "/ulasim-rehberi/avmler/galataport"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/212-outlet-avmye-nasil-gidilir",
+    "destination": "/ulasim-rehberi/avmler/212-outlet-avmye-nasil-gidilir"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/15-temmuz-koprusu",
+    "destination": "/ulasim-rehberi/ulasim-yapilari/15-temmuz-koprusu"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/manisa-salihli",
+    "destination": "/saat-bilgileri/manisa-salihli"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/belgrad-ormani",
+    "destination": "/ulasim-rehberi/korular/belgrad-ormani"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/altinkoy-acik-hava-muzesi-nasil-gidilir",
+    "destination": "/ulasim-rehberi/muzeler/altinkoy-acik-hava-muzesi-nasil-gidilir"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/alibeykoy-cep-otogari",
+    "destination": "/ulasim-rehberi/otogarlar/alibeykoy-cep-otogari"
+  },
+  {
+    "source": "/ulasim-rehberi/plajlar/ekmeksiz-plaji-nasil-gidilir",
+    "destination": "/ulasim-rehberi/plajlar"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/kanyon-avm",
+    "destination": "/ulasim-rehberi/avmler/kanyon-avm"
+  },
+  {
+    "source": "/deniz-ulasimi/otobus-hatlari-18a",
+    "destination": "/otobus-hatlari"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/incirliova-torbali-tren-saatleri",
+    "destination": "/saat-bilgileri/incirliova-torbali-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/adnan-menderes-nazilli-tren-saatleri",
+    "destination": "/saat-bilgileri/adnan-menderes-nazilli-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/basmane-odemis",
+    "destination": "/saat-bilgileri/basmane-odemis"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/horsunlu-denizli-tren-saatleri",
+    "destination": "/saat-bilgileri/horsunlu-denizli-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/adalar",
+    "destination": "/ulasim-rehberi/ilceler/adalar"
+  },
+  {
+    "source": "/ulasim-rehberi/pendik-yht-gari",
+    "destination": "/ulasim-rehberi/ulasim-yapilari/pendik-yht-gari"
+  },
+  {
+    "source": "/taksi-ucretleri",
+    "destination": "/otobus-duraklari"
+  },
+  {
+    "source": "/deniz-ulasimi",
+    "destination": "/otobus-duraklari"
+  },
+  {
+    "source": "/ulasim-rehberi/altunizade-metrobus",
+    "destination": "/ulasim-rehberi/ulasim-yapilari/altunizade-metrobus"
+  },
+  {
+    "source": "/ulasim-rehberi/ayrilik-cesmesi-marmaray-istasyonu",
+    "destination": "/ulasim-rehberi/ulasim-yapilari/ayrilik-cesmesi-marmaray-istasyonu"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-yapilari/buyaka-avm-nasil-gidilir",
+    "destination": "/ulasim-rehberi/avmler/buyaka-avm-nasil-gidilir"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/viaport-asia-outlet",
+    "destination": "/ulasim-rehberi/avmler/viaport-asia-outlet"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/halkali-catalca-tren-saatleri",
+    "destination": "/saat-bilgileri/halkali-catalca-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/kiz-kulesi",
+    "destination": "/ulasim-rehberi/mekanlar/kiz-kulesi"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/bozuyuk-hizli-tren-dolmus-saatleri",
+    "destination": "/saat-bilgileri/bozuyuk-hizli-tren-dolmus-saatleri"
+  },
+  {
+    "source": "/deniz-ulasimi/deniz-ulasimi/tm16",
+    "destination": "/otobus-hatlari/tm16"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/abd-konsoloslugu-istanbul",
+    "destination": "/ulasim-rehberi/abd-konsoloslugu-istanbul"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/denizli-saraykoy-tren-saatleri",
+    "destination": "/saat-bilgileri/denizli-saraykoy-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/istanbul-ankara-hizli-tren-seferler-sure-ve-bilgiler",
+    "destination": "/saat-bilgileri/istanbul-ankara-hizli-tren-seferler-sure-ve-bilgiler"
+  },
+  {
+    "source": "/ulasim-rehberi/okullar/30-agustos-mesleki-ve-teknik-lisesi",
+    "destination": "/ulasim-rehberi"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/bozuyuk-hizli-tren-dolmus-saatleri",
+    "destination": "/saat-bilgileri/bozuyuk-hizli-tren-dolmus-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/gebze-adapazari-tren-saatleri",
+    "destination": "/saat-bilgileri/gebze-adapazari-tren-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/manisa-izmir",
+    "destination": "/saat-bilgileri/manisa-izmir"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/manisa-turgutlu",
+    "destination": "/saat-bilgileri/manisa-turgutlu"
+  },
+  {
+    "source": "/saat-bilgileri/saat-bilgileri/gebze-adapazari-tren-saatleri",
+    "destination": "/saat-bilgileri/gebze-adapazari-tren-saatleri"
+  },
+  {
+    "source": "/otobus-duraklari/kocatas-sokak",
+    "destination": "/otobus-duraklari"
+  },
+  {
+    "source": "/otobus-duraklari/uzunyayla",
+    "destination": "/otobus-duraklari"
+  },
+  {
+    "source": "/otobus-duraklari/safir-evleri",
+    "destination": "/otobus-duraklari"
+  },
+  {
+    "source": "/ulasim-rehberi/ulasim-rehberi/dudullu-otogari",
+    "destination": "/ulasim-rehberi/otogarlar/dudullu-otogari"
+  },
+  {
+    "source": "/ulasim-rehberi/goller/bolu-yedigoller",
+    "destination": "/ulasim-rehberi/goller"
+  },
+  {
+    "source": "/ulasim-rehberi/saat-bilgileri/kamil-koc-ucretsiz-servis-saatleri",
+    "destination": "/saat-bilgileri/kamil-koc-ucretsiz-servis-saatleri"
+  },
+  {
+    "source": "/ulasim-rehberi/sinema-tiyatrolar/cemil-topuzlu-acikhava-tiyatrosu-nasil-gidilir",
+    "destination": "/"
+  },
+  {
+    "source": "/ulasim-rehberi/havalimanlari/3-havalimani",
+    "destination": "/"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlik-dugun-balo-salonlari/cemal-resit-rey-konser-salonu-nasil-gidilir",
+    "destination": "/"
+  },
+  {
+    "source": "/ulasim-rehberi/etkinlikler/1453-panaroma-muzesi",
+    "destination": "/ulasim-rehberi/muzeler/1453-panaroma-muzesi"
+  },
+  {
+    "source": "/ulasim-rehberi/mekanlar/blackwell-sushi-station-nasil-gidilir",
+    "destination": "/"
+  },
+  {
+    "source": "/ulasim-rehberi/ilceler/camlicaya-nasil-gidilir",
+    "destination": "/ulasim-rehberi/korular/camlica-tepesine-nasil-gidilir"
+  }
+]

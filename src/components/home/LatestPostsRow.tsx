@@ -46,25 +46,13 @@ export default async function LatestPostsRow() {
       ...categories.filter(c => c.parentId === ulasimRehberi.id).map(c => c.id),
     ];
 
-    const postsByCategory = await Promise.all(
-      ulasimCategoryIds.map(categoryId =>
-        fetchPosts({
-          categoryId,
-          per_page: 10,
-          page: 1,
-          orderby: 'date',
-          order: 'desc',
-        })
-      )
-    );
-
-    const posts = Array.from(
-      new Map(postsByCategory.flat().map(post => [post.id, post])).values()
-    )
-      .sort(
-        (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-      )
-      .slice(0, 10);
+    const posts = await fetchPosts({
+      categoryIds: ulasimCategoryIds,
+      per_page: 10,
+      page: 1,
+      orderby: 'date',
+      order: 'desc',
+    });
 
     if (!posts.length) return null;
 
