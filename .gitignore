@@ -19,6 +19,7 @@
 **/*.test.tsx
 **/*.test.js
 **/*.test.mjs
+!src/components/home/HomeSearchBar.test.mjs
 **/*.spec.ts
 **/*.spec.tsx
 **/*.spec.js

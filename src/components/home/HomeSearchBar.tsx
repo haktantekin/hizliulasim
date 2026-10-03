@@ -1,35 +1,13 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Search as SearchIcon, X, Bus } from 'lucide-react';
 
 import { BUS_SEARCH_CATEGORY_SLUG } from '@/lib/searchPage';
 
-function normalizeSubmittedQuery(value: string): string {
-  return value.replace(/\s+/g, ' ').trim();
-}
-
 export default function HomeSearchBar() {
-  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [busCode, setBusCode] = useState('');
-
-  const onSubmitSearch = useCallback((event: React.FormEvent) => {
-    event.preventDefault();
-    const query = normalizeSubmittedQuery(searchTerm);
-    if (query.length < 2) return;
-    router.push(`/arama?q=${encodeURIComponent(query)}`);
-  }, [router, searchTerm]);
-
-  const onSubmitBusSearch = useCallback((event: React.FormEvent) => {
-    event.preventDefault();
-    const query = normalizeSubmittedQuery(busCode);
-    if (query.length < 2) return;
-    router.push(
-      `/arama?q=${encodeURIComponent(query)}&kategori=${BUS_SEARCH_CATEGORY_SLUG}`,
-    );
-  }, [busCode, router]);
 
   return (
     <div className="w-full mt-3">
@@ -38,7 +16,6 @@ export default function HomeSearchBar() {
           action="/arama"
           method="get"
           role="search"
-          onSubmit={onSubmitSearch}
           className="relative flex-1"
         >
           <input
@@ -75,7 +52,6 @@ export default function HomeSearchBar() {
           action="/arama"
           method="get"
           role="search"
-          onSubmit={onSubmitBusSearch}
           className="relative flex-1"
         >
           <input type="hidden" name="kategori" value={BUS_SEARCH_CATEGORY_SLUG} />
