@@ -6,6 +6,7 @@ type WordPressPostLink = {
 };
 
 type FindPostBySlug = (slug: string) => Promise<WordPressPostLink | null>;
+type FindRedirectBySource = (pathname: string) => Promise<string | null>;
 
 function getPathSegments(pathname: string): string[] {
   return pathname.toLowerCase().split('/').filter(Boolean);
@@ -23,6 +24,7 @@ export function hasLegacyContentSegment(pathname: string): boolean {
 export async function resolveLegacyPostDestination(
   pathname: string,
   findPostBySlug: FindPostBySlug,
+  findRedirectBySource?: FindRedirectBySource,
 ): Promise<string | null> {
   const segments = getPathSegments(pathname);
   const legacySegmentIndex = segments.findIndex(segment => LEGACY_CONTENT_ROOTS.has(segment));
@@ -32,16 +34,17 @@ export async function resolveLegacyPostDestination(
   if (!slug) return null;
 
   const post = await findPostBySlug(slug);
-  if (!post || post.slug.toLowerCase() !== slug) return null;
-
-  try {
-    const postUrl = new URL(post.link);
-    const destination = postUrl.pathname.replace(/\/+$/, '') || '/';
-    if (!['http:', 'https:'].includes(postUrl.protocol) || hasLegacyContentSegment(destination)) {
-      return null;
+  if (post && post.slug.toLowerCase() === slug) {
+    try {
+      const postUrl = new URL(post.link);
+      const destination = postUrl.pathname.replace(/\/+$/, '') || '/';
+      if (['http:', 'https:'].includes(postUrl.protocol) && !hasLegacyContentSegment(destination)) {
+        return destination;
+      }
+    } catch {
+      // Fall through to the explicit CMS redirect lookup.
     }
-    return destination;
-  } catch {
-    return null;
   }
+
+  return findRedirectBySource ? findRedirectBySource(pathname) : null;
 }

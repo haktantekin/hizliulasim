@@ -42,3 +42,18 @@ test('does not query WordPress for current URLs or redirect to another legacy UR
   assert.equal(legacyDestination, null);
   assert.equal(lookupCount, 0);
 });
+
+test('falls back to the CMS redirect when a removed blog post no longer exists', async () => {
+  const destination = await resolveLegacyPostDestination(
+    '/blog/nasil-giderim/camlicaya-nasil-gidilir',
+    async () => null,
+    async (pathname) => pathname === '/blog/nasil-giderim/camlicaya-nasil-gidilir'
+      ? '/ulasim-rehberi/korular/camlica-tepesine-nasil-gidilir'
+      : null,
+  );
+
+  assert.equal(
+    destination,
+    '/ulasim-rehberi/korular/camlica-tepesine-nasil-gidilir',
+  );
+});

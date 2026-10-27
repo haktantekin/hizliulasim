@@ -3,7 +3,6 @@ import type { NextRequest } from 'next/server';
 import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from './broken-redirects';
 import {
   hasLegacyContentSegment,
-  isLegacyContentPath,
   resolveLegacyPostDestination,
 } from './lib/legacyContentPaths';
 import { getCanonicalRequestUrl } from './lib/canonicalRequestUrl';
@@ -41,22 +40,26 @@ async function fetchRedirect(pathname: string): Promise<RedirectRule | null> {
 
 async function fetchLegacyPostDestination(pathname: string): Promise<string | null> {
   try {
-    return await resolveLegacyPostDestination(pathname, async (slug) => {
-      const endpoint = new URL(`${WP_API_URL}/posts`);
-      endpoint.searchParams.set('slug', slug);
-      endpoint.searchParams.set('per_page', '1');
-      endpoint.searchParams.set('_fields', 'slug,link');
+    return await resolveLegacyPostDestination(
+      pathname,
+      async (slug) => {
+        const endpoint = new URL(`${WP_API_URL}/posts`);
+        endpoint.searchParams.set('slug', slug);
+        endpoint.searchParams.set('per_page', '1');
+        endpoint.searchParams.set('_fields', 'slug,link');
 
-      const response = await fetch(endpoint, {
-        cache: 'no-store',
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(3000),
-      });
-      if (!response.ok) return null;
+        const response = await fetch(endpoint, {
+          cache: 'no-store',
+          headers: { Accept: 'application/json' },
+          signal: AbortSignal.timeout(3000),
+        });
+        if (!response.ok) return null;
 
-      const posts = await response.json() as WordPressPostLink[];
-      return posts.find((post) => post.slug.toLowerCase() === slug) ?? null;
-    });
+        const posts = await response.json() as WordPressPostLink[];
+        return posts.find((post) => post.slug.toLowerCase() === slug) ?? null;
+      },
+      async (source) => (await fetchRedirect(source))?.destination ?? null,
+    );
   } catch (error) {
     console.error('Error resolving legacy post URL:', error);
     return null;
@@ -113,16 +116,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url, 301);
     }
 
-    // Removed legacy roots must reach the app's 404 boundary.
-    if (!isLegacyContentPath(pathname)) {
-      const redirect = await fetchRedirect(pathname);
-      if (redirect) {
-        const destination = redirect.destination.startsWith('http')
-          ? redirect.destination
-          : new URL(redirect.destination, request.url).toString();
-        return NextResponse.redirect(destination, 301);
-      }
-    }
   }
 
   const protectedPaths = ['/profil', '/u/', '/favoriler'];
