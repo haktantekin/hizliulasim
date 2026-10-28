@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
+import {
+  getVerifiedDistricts,
+  resolveDistricts,
+  type DistrictCandidate,
+} from '@/lib/districts';
 
-// Returns list of districts (ilçeler) for a given city using Google Geocoding API.
-// Fallback: returns a static list for Istanbul when API fails or quota is exceeded.
+// Returns a verified district list where available, otherwise uses administrative
+// components from Google results. Place names are never treated as districts.
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const city = (searchParams.get('city') || 'İstanbul').trim();
     const country = (searchParams.get('country') || 'TR').trim();
+    const verifiedDistricts = getVerifiedDistricts(city);
+
+    if (verifiedDistricts) {
+      return NextResponse.json({
+        city: 'İstanbul',
+        districts: [...verifiedDistricts],
+        source: 'verified',
+      });
+    }
+
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_KEY;
 
     if (!apiKey) {
@@ -33,16 +48,14 @@ export async function GET(request: Request) {
     const normalizedCity = city.toLowerCase() === 'istanbul' ? 'İstanbul' : city;
 
     // Helper to page through Text Search results and run multiple query variants
-    type PlaceTextSearchItem = { place_id?: string; name?: string };
+    type PlaceTextSearchItem = { place_id?: string };
     const gatherCandidates = async (
       queries: Array<{ q: string; lang: string }>
-    ): Promise<{ ids: string[]; names: string[] }> => {
+    ): Promise<string[]> => {
       const ids = new Set<string>();
-      const names = new Set<string>();
       const addFrom = (items: PlaceTextSearchItem[]) => {
         for (const it of items || []) {
           if (it?.place_id) ids.add(String(it.place_id));
-          if (it?.name) names.add(String(it.name));
         }
       };
       const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -74,7 +87,7 @@ export async function GET(request: Request) {
           if (pageToken) await delay(1600); // next_page_token needs ~1.5s to activate
         } while (pageToken && page < 3);
       }
-      return { ids: Array.from(ids), names: Array.from(names) };
+      return Array.from(ids);
     };
 
     const queryVariants = [
@@ -85,66 +98,39 @@ export async function GET(request: Request) {
       { q: `${city} districts`, lang: 'en' },
     ];
 
-  const { ids: placeIds, names: candidateNames } = await gatherCandidates(queryVariants);
+    const placeIds = await gatherCandidates(queryVariants);
 
     // Limit to avoid quota spikes
-  const limitedIds = placeIds.slice(0, 30);
+    const limitedIds = placeIds.slice(0, 30);
 
     // Helper to fetch details and extract administrative_area_level_2 (district)
-    const fetchDetail = async (pid: string) => {
+    const fetchDetail = async (pid: string): Promise<DistrictCandidate> => {
       const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
       detailsUrl.searchParams.set('place_id', pid);
-  detailsUrl.searchParams.set('fields', 'name,address_components');
-  detailsUrl.searchParams.set('language', 'tr');
+      detailsUrl.searchParams.set('fields', 'name,address_components');
+      detailsUrl.searchParams.set('language', 'tr');
       detailsUrl.searchParams.set('key', apiKey);
       const r = await fetch(detailsUrl.toString(), { next: { revalidate: 86400 } });
       const j = await r.json();
       const comps: Array<{ long_name: string; short_name: string; types: string[] }> = j?.result?.address_components || [];
-      // Prefer admin_level_2, fallback to sublocality_level_1 if any
-      const admin2 = comps.find((c) => c.types?.includes('administrative_area_level_2'))?.long_name;
-      const subloc1 = comps.find((c) => c.types?.includes('sublocality_level_1'))?.long_name;
-      return admin2 || subloc1 || null;
+      return {
+        name: String(j?.result?.name || ''),
+        addressComponents: comps.map((component) => ({
+          longName: component.long_name,
+          types: component.types,
+        })),
+      };
     };
 
     // Concurrency limit of 5
-    const results: (string | null)[] = [];
+    const candidates: DistrictCandidate[] = [];
     for (let i = 0; i < limitedIds.length; i += 5) {
       const batch = limitedIds.slice(i, i + 5);
       const out = await Promise.all(batch.map((id) => fetchDetail(id)));
-      results.push(...out);
+      candidates.push(...out);
     }
 
-    const normalize = (s: string) =>
-      s
-        .normalize('NFD')
-        .replace(/\p{Diacritic}+/gu, '')
-        .toLowerCase();
-
-    const cityNorm = normalize(city);
-
-    let districts = Array.from(
-      new Set(
-        results
-          .filter((n): n is string => typeof n === 'string' && n.trim().length > 0)
-          .map((n) => n.trim())
-      )
-    );
-
-    // Remove items equal to the city (e.g., Istanbul)
-    districts = districts.filter((d) => normalize(d) !== cityNorm);
-
-    // Heuristic fallback: parse names like "Beşiktaş Belediyesi", "Kadıköy İlçesi" -> use first token as district
-    if (districts.length === 0 && candidateNames.length > 0) {
-      const guesses = candidateNames
-        .map((n) => n.replace(/\b(Belediyesi|İlçesi|Kaymakamlığı)\b/gi, '').trim())
-        .map((n) => n.split(/\s+/)[0])
-        .filter((s) => s && s.length > 2)
-        .filter((s) => normalize(s) !== cityNorm);
-      districts = Array.from(new Set(guesses));
-    }
-
-    // Sort alphabetically (locale-aware Turkish)
-    districts.sort((a, b) => a.localeCompare(b, 'tr'));
+    const districts = resolveDistricts(city, candidates);
 
     return NextResponse.json({ city, districts, source: 'google' });
   } catch {

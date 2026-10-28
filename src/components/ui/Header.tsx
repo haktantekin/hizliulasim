@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { ExternalLink, Menu, X, Home, Map, Bus, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility } from 'lucide-react';
+import { ExternalLink, Menu, X, Home, Map, Bus, BusFront, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility, TrainFront } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -11,17 +11,20 @@ import LogoIcon from '../icons/LogoIcon';
 import Link from 'next/link';
 import AuthModal from './AuthModal';
 import DrawerSearchForm from './DrawerSearchForm';
+import { headerDrawerItems } from '../../lib/siteNavigation';
 
-const drawerLinks = [
-  { href: '/', icon: Home, label: 'Ana Sayfa' },
-  { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
-  { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
-  { href: '/yol-tarifi', icon: Navigation, label: 'Yol Tarifi' },
-  { href: '/sarj-istasyonlari', icon: Zap, label: 'Şarj İstasyonları' },
-  { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
-  { href: '/engelsiz-erisim', icon: Accessibility, label: 'Engelsiz Erişim' },
-  { href: '/iletisim', icon: Mail, label: 'İletişim' },
-];
+const drawerIcons = {
+  home: Home,
+  map: Map,
+  bus: Bus,
+  minibus: BusFront,
+  navigation: Navigation,
+  train: TrainFront,
+  charging: Zap,
+  parking: ParkingCircle,
+  accessibility: Accessibility,
+  mail: Mail,
+} as const;
 
 const legalLinks = [
   { href: '/kunye', label: 'Künye' },
@@ -110,9 +113,9 @@ const Header = () => {
 
         {/* Links */}
         <div className="flex-1 overflow-y-auto py-2 flex flex-col">
-          {drawerLinks.map(item => {
+          {headerDrawerItems.map(item => {
             const isActive = pathname === item.href;
-            const Icon = item.icon;
+            const Icon = drawerIcons[item.icon];
             return (
               <Fragment key={item.href}>
                 {item.href === '/' && <DrawerSearchForm />}

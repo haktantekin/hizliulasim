@@ -20,6 +20,15 @@
 **/*.test.js
 **/*.test.mjs
 !src/components/home/HomeSearchBar.test.mjs
+!src/lib/districts.test.mjs
+!scripts/run-next.test.mjs
+!src/lib/minibusData.test.ts
+!src/lib/minibusDirectory.test.ts
+!src/lib/minibusDistrictGeometry.test.ts
+!src/lib/minibusFare.test.ts
+!src/lib/minibusOfficialClient.test.ts
+!src/lib/navigation.test.ts
+!src/lib/bottomBarNavigation.test.ts
 **/*.spec.ts
 **/*.spec.tsx
 **/*.spec.js
@@ -61,5 +70,13 @@ next-env.d.ts
 
 # local implementation notes
 /docs/superpowers/
+/.superpowers/
 /scripts/seo/README.md
 settings.json
+*.md
+*.ps1
+*.log
+*.test.ts
+*.test.mjs
+!scripts/run-next.test.mjs
+!src/lib/minibusDetailHeadings.test.ts

@@ -30,7 +30,7 @@ import SaatBilgileriRow from "../components/home/SaatBilgileriRow";
 import HomeSearchBar from "../components/home/HomeSearchBar";
 import TrafficIndex from "../components/home/TrafficIndex";
 import Link from "next/link";
-import { ParkingCircle, TrainFront, Zap, Navigation, Accessibility, MapPin } from "lucide-react";
+import { ParkingCircle, TrainFront, Zap, Navigation, Accessibility, MapPin, BookOpenText, BusFront } from "lucide-react";
 
 export default function Home() {
   return (
@@ -93,6 +93,32 @@ export default function Home() {
             <div>
               <div className="font-bold text-sm">Yol Tarifi</div>
               <div className="text-xs text-white/80">Toplu taşıma ile nereye, nasıl giderim?</div>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          href="/ulasim-rehberi"
+          className="block rounded-xl bg-gradient-to-r from-violet-600 to-indigo-700 p-4 text-white hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <BookOpenText className="w-7 h-7 flex-none" />
+            <div>
+              <div className="font-bold text-sm">Ulaşım Rehberi</div>
+              <div className="text-xs text-white/80">İstanbul ulaşım içerikleri</div>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          href="/minibus-hatlari"
+          className="block rounded-xl bg-gradient-to-r from-cyan-600 to-teal-700 p-4 text-white hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <BusFront className="w-7 h-7 flex-none" />
+            <div>
+              <div className="font-bold text-sm">Minibüs Hatları</div>
+              <div className="text-xs text-white/80">İl ve ilçelere göre hatlar</div>
             </div>
           </div>
         </Link>

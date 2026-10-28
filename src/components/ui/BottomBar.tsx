@@ -4,26 +4,28 @@ import { Fragment, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Search, Bus, Map, ParkingCircle, Menu, X, ExternalLink, UserPlus, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility } from 'lucide-react';
+import { Home, Bus, BusFront, Map, ParkingCircle, Menu, X, ExternalLink, UserPlus, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
 import LogoIcon from '../icons/LogoIcon';
 import AuthModal from './AuthModal';
 import DrawerSearchForm from './DrawerSearchForm';
-import { bottomBarItems, shouldFocusDrawerSearch } from '../../lib/bottomBarNavigation';
+import { bottomBarItems } from '../../lib/bottomBarNavigation';
+import { bottomDrawerItems } from '../../lib/siteNavigation';
 
-const drawerLinks = [
-  { href: '/', icon: Home, label: 'Ana Sayfa' },
-  { href: '/ulasim-rehberi', icon: Map, label: 'Ulaşım Rehberi' },
-  { href: '/otobus-hatlari', icon: Bus, label: 'Otobüs Hatları' },
-  { href: '/yol-tarifi', icon: Navigation, label: 'Yol Tarifi' },
-  { href: '/rayli-sistemler', icon: TrainFront, label: 'Raylı Sistemler' },
-    { href: '/sarj-istasyonlari', icon: Zap, label: 'Şarj İstasyonları' },
-  { href: '/otopark-ucretleri', icon: ParkingCircle, label: 'Otopark Ücretleri' },
-  { href: '/engelsiz-erisim', icon: Accessibility, label: 'Engelsiz Erişim' },
-  { href: '/iletisim', icon: Mail, label: 'İletişim' },
-];
+const drawerIcons = {
+  home: Home,
+  map: Map,
+  bus: Bus,
+  minibus: BusFront,
+  navigation: Navigation,
+  train: TrainFront,
+  charging: Zap,
+  parking: ParkingCircle,
+  accessibility: Accessibility,
+  mail: Mail,
+} as const;
 
 const legalLinks = [
   { href: '/kunye', label: 'Künye' },
@@ -37,7 +39,6 @@ const BottomBar = () => {
   const [mounted, setMounted] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
-  const [focusDrawerSearch, setFocusDrawerSearch] = useState(false);
 
   const { user, isAuthenticated } = useAppSelector((state) => state.user);
   const logoutMutation = useLogout();
@@ -46,10 +47,6 @@ const BottomBar = () => {
 
   // Close drawer on route change
   useEffect(() => { close(); }, [pathname, close]);
-
-  useEffect(() => {
-    if (!drawerOpen) setFocusDrawerSearch(false);
-  }, [drawerOpen]);
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -60,8 +57,8 @@ const BottomBar = () => {
   const bottomBarIcons = {
     map: Map,
     bus: Bus,
+    minibus: BusFront,
     home: Home,
-    search: Search,
     menu: Menu,
   } as const;
 
@@ -91,12 +88,12 @@ const BottomBar = () => {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto py-2 flex flex-col">
-          {drawerLinks.map(item => {
+          {bottomDrawerItems.map(item => {
             const isActive = pathname === item.href;
-            const Icon = item.icon;
+            const Icon = drawerIcons[item.icon];
             return (
               <Fragment key={item.href}>
-                {item.href === '/' && <DrawerSearchForm autoFocus={focusDrawerSearch} />}
+                {item.href === '/' && <DrawerSearchForm />}
                 <Link
                   href={item.href}
                   onClick={close}
@@ -202,7 +199,6 @@ const BottomBar = () => {
                 key={item.intent}
                 type="button"
                 onClick={() => {
-                  setFocusDrawerSearch(shouldFocusDrawerSearch(item.intent));
                   open();
                 }}
                 aria-label={item.label}

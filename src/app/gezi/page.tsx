@@ -3,6 +3,7 @@
 import { useReducer } from 'react';
 import Image from 'next/image';
 import { MapPin, Star, ExternalLink, Loader2 } from 'lucide-react';
+import { ISTANBUL_DISTRICTS } from '@/lib/districts';
 
 interface Attraction {
   id: string;
@@ -63,17 +64,6 @@ function geziReducer(state: GeziState, action: GeziAction): GeziState {
   }
 }
 
-// İstanbul districts list
-const istanbulDistricts = [
-  'Adalar', 'Arnavutköy', 'Ataşehir', 'Avcılar', 'Bağcılar', 'Bahçelievler',
-  'Bakırköy', 'Başakşehir', 'Bayrampaşa', 'Beşiktaş', 'Beykoz', 'Beylikdüzü',
-  'Beyoğlu', 'Büyükçekmece', 'Çatalca', 'Çekmeköy', 'Esenler', 'Esenyurt',
-  'Eyüpsultan', 'Fatih', 'Gaziosmanpaşa', 'Güngören', 'Kadıköy', 'Kağıthane',
-  'Kartal', 'Küçükçekmece', 'Maltepe', 'Pendik', 'Sancaktepe', 'Sarıyer',
-  'Silivri', 'Sultanbeyli', 'Sultangazi', 'Şile', 'Şişli', 'Tuzla',
-  'Ümraniye', 'Üsküdar', 'Zeytinburnu'
-];
-
 export default function GeziPage() {
   const [state, dispatch] = useReducer(geziReducer, {
     selectedDistrict: '',
@@ -132,7 +122,7 @@ export default function GeziPage() {
             className="flex-1 px-4 py-3 border border-brand-light-blue rounded-lg focus:ring-2 focus:ring-brand-soft-blue focus:border-transparent outline-none"
           >
             <option value="">İlçe seçin...</option>
-            {istanbulDistricts.map((district) => (
+            {ISTANBUL_DISTRICTS.map((district) => (
               <option key={district} value={district}>
                 {district}
               </option>
