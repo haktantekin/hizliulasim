@@ -205,6 +205,19 @@ export function parseMinibusLinesPayload(payload: unknown): MinibusLine[] {
   ));
 }
 
+export async function loadMinibusLinesWithFallback(
+  loadLive: () => Promise<MinibusLine[]>,
+  snapshotPayload: unknown,
+  onLiveError?: (error: unknown) => void,
+): Promise<MinibusLine[]> {
+  try {
+    return await loadLive();
+  } catch (error) {
+    onLiveError?.(error);
+    return parseMinibusLinesPayload(snapshotPayload);
+  }
+}
+
 function finiteNumber(value: unknown): number | undefined {
   const parsed = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
   return Number.isFinite(parsed) ? parsed : undefined;

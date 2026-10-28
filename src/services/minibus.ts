@@ -1,4 +1,5 @@
 import {
+  loadMinibusLinesWithFallback,
   MinibusDataError,
   parseMinibusDetailsPayload,
   parseMinibusLinesPayload,
@@ -28,6 +29,7 @@ import {
 } from '@/lib/minibusFare';
 import minibusDistrictSnapshot from '@/data/minibus-districts.snapshot.json';
 import minibusFareSnapshot from '@/data/minibus-fares.snapshot.json';
+import minibusLinesSnapshot from '@/data/minibus-lines.snapshot.json';
 
 const MINIBUS_SOURCE_URL = 'https://application2.ibb.gov.tr/tulasim/MinibusumNerede.aspx';
 const MINIBUS_FARE_SOURCE_URL = 'https://application2.ibb.gov.tr/tulasim/ucrettarife.aspx';
@@ -72,8 +74,16 @@ async function postOfficialEndpoint(
 }
 
 export async function fetchMinibusLines(fetchImpl: MinibusFetch = fetch): Promise<MinibusLine[]> {
-  const payload = await postOfficialEndpoint('FillDropdown', {}, fetchImpl);
-  return parseMinibusLinesPayload(payload);
+  return loadMinibusLinesWithFallback(
+    async () => {
+      const payload = await postOfficialEndpoint('FillDropdown', {}, fetchImpl);
+      return parseMinibusLinesPayload(payload);
+    },
+    minibusLinesSnapshot.payload,
+    (error) => {
+      console.warn('Resmî minibüs listesi kullanılamadı; doğrulanmış snapshot kullanılıyor.', error);
+    },
+  );
 }
 
 export async function fetchMinibusLineDetails(

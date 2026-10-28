@@ -1,0 +1,3808 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-28T13:35:09.000Z",
+  "sourceUrl": "https://application2.ibb.gov.tr/tulasim/MinibusumNerede.aspx/FillDropdown",
+  "sourceRecordCount": 422,
+  "payload": {
+    "d": [
+      {
+        "Text": "A01 - Bakırköy İncirli Metrobüs – Bakırköy Meydan ",
+        "Value": "{B04E0AFD-0261-4958-965D-2CB8FCFB8533}",
+        "Object_ID": "277488",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Bakırköy İncirli Metrobüs ? Bakırköy Meydan ",
+        "TUBS_KOD": "1-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A01 - Bakırköy-Adliye-Metro",
+        "Value": "{2BB48A1D-4611-4DAD-BE00-FB2E8CBF4879}",
+        "Object_ID": "277481",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Bakırköy-Adliye-Metro",
+        "TUBS_KOD": "1-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A02 - Yenibosna- Şirinevler-Ormantepe",
+        "Value": "{9DB98BAD-E8CB-4C60-B2D4-ABA5B9023850}",
+        "Object_ID": "258220",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Yenibosna- Şirinevler-Ormantepe",
+        "TUBS_KOD": "2-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A03 -  Bakırköy-Bağcılar-Kemalpaşa",
+        "Value": "{7C3D1BF2-655D-481D-9C6D-C01443C2C0B6}",
+        "Object_ID": "258426",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah: Bakırköy-Bağcılar-Kemalpaşa Güzergahı 2",
+        "TUBS_KOD": "3-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A03 -  Bakırköy-Soğanlı-Bakırköy",
+        "Value": "{800BF06E-AC26-48AA-9F8D-92B4B8F87FF3}",
+        "Object_ID": "258433",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5.Güzergah: Bakırköy-Soğanlı-Bakırköy",
+        "TUBS_KOD": "3-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A03 -  Bakırköy-Şirinevler",
+        "Value": "{63E4A52B-C225-4608-A590-F47C11847D2C}",
+        "Object_ID": "258439",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergah: Bakırköy-Şirinevler",
+        "TUBS_KOD": "3-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A03 - Bakırköy Meydan-Bağcılar Meydan",
+        "Value": "{A1A2873F-B850-4B1B-9BA5-DE0CE2A2261C}",
+        "Object_ID": "273634",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Bakırköy Meydan-Bağcılar Meydan",
+        "TUBS_KOD": "3-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A03 - Bakırköy-Bağcılar-Kemalpaşa",
+        "Value": "{B57BFF0B-EC0A-4B78-92A9-ECCF57823451}",
+        "Object_ID": "258428",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: Bakırköy-Bağcılar-Kemalpaşa Güzergahı 1",
+        "TUBS_KOD": "3-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A07 - Şirinevler-Kuleli-Yenibosna-Kuyumcukent",
+        "Value": "{02116118-2364-4CE8-A04C-C3A7311DC0A4}",
+        "Object_ID": "258445",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şirinevler-Kuleli-Yenibosna-Kuyumcukent",
+        "TUBS_KOD": "6-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A08 -  Cennet-Tepeüstü-Kanarya-Gümrük Son Durak",
+        "Value": "{D34C6470-911F-4F32-9225-B802CCC8D60C}",
+        "Object_ID": "258519",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Cennet-Tepeüstü-Kanarya-Gümrük Son Durak",
+        "TUBS_KOD": "7-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A08 -  Sefaköy-Küçükçekmece Adliye",
+        "Value": "{731EA98A-0ECD-4FF3-9644-9B987258122E}",
+        "Object_ID": "272683",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Sefaköy-Küçükçekmece Adliye (Ortak)",
+        "TUBS_KOD": "7-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A08 - Sefaköy-Kanarya-Kanuni S.S. Hastanesi-Başakşehir Çam ve Sakura Hastanesi",
+        "Value": "{6C7DF23C-6DE7-4C01-B73C-0CF1AAF2F428}",
+        "Object_ID": "257651",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergah:Sefaköy-Kanarya-Mehmet Akif Ersoy E.A.H-Halkalı ",
+        "TUBS_KOD": "7-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A10 -  Merter - Zeytinburnu - Cevizlibağ",
+        "Value": "{961851B6-DAD0-4F0D-A9F4-E5F4E9523FE4}",
+        "Object_ID": "257656",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergâh; Merter - Zeytinburnu - Cevizlibağ (30 araç)",
+        "TUBS_KOD": "8-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A10 -  Merter-Kazlıçeşme Marmaray",
+        "Value": "{A4566DCA-2494-4CE7-9C33-B298B8A37FEB}",
+        "Object_ID": "270753",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5.Güzergâh; Merter-Kazlıçeşme Marmaray (14 araç)",
+        "TUBS_KOD": "8-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A10 -  Yenimahalle - Merter - Yedikule",
+        "Value": "{10623E15-65B8-4B7A-8921-09047BB9C8BF}",
+        "Object_ID": "257655",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh; Yenimahalle - Merter - Yedikule (30 araç) ",
+        "TUBS_KOD": "8-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A10 -  Yenimahalle - Zeytinburnu - Cevizlibağ",
+        "Value": "{DB7A189F-637D-434B-B28A-895B1EC28567}",
+        "Object_ID": "258041",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh; Yenimahalle - Zeytinburnu - Cevizlibağ (30 araç)",
+        "TUBS_KOD": "8-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A10 -  Yenimahalle - Zeytinburnu – Topkapı - Cevizlibağ",
+        "Value": "{3116418E-9A14-4926-BC2C-558A49147B00}",
+        "Object_ID": "258077",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergâh; Yenimahalle - Zeytinburnu ? Topkapı - Cevizlibağ (45 araç)",
+        "TUBS_KOD": "8-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A11 -  Cevatpaşa-Eyüp",
+        "Value": "{39D8EEC0-5C54-4B56-8A0D-3E0DF71D5949}",
+        "Object_ID": "257680",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergah: Cevatpaşa-Eyüp",
+        "TUBS_KOD": "9-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A11 -  Fabrikalar-Cevatpaşa-Kocatepe-Edirnekapı",
+        "Value": "{91A26BBF-FF06-4EE5-A6BC-031F1C11295F}",
+        "Object_ID": "259233",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah: Fabrikalar-Cevatpaşa-Kocatepe-Edirnekapı",
+        "TUBS_KOD": "9-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A11 -  Silahtarağa Cad.-GOP-Otogar",
+        "Value": "{66645339-CF33-4CED-BD62-9B3D12AA7165}",
+        "Object_ID": "276193",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergâh: Silahtarağa Cad.-GOP-Otogar",
+        "TUBS_KOD": "9-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A11 - Cebeci Mah-Topkapı",
+        "Value": "{E1E4ADB4-AAA1-468F-A24F-D4A24FC5B954}",
+        "Object_ID": "257684",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "6. Güzergah:Cebeci Mah-Topkapı",
+        "TUBS_KOD": "9-9-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A11 - Cevatpaşa-Bayrampaşa-Edirnekapı",
+        "Value": "{1EC8FF14-605A-4CAF-AB74-98DB7070FA3B}",
+        "Object_ID": "257679",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah:Cevatpaşa-Bayrampaşa-Edirnekapı",
+        "TUBS_KOD": "9-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A11 - Gazi Mh.-Topkapı",
+        "Value": "{E2661F69-EB84-4577-A0DD-0F095A787686}",
+        "Object_ID": "257677",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "7. Güzergah:Gazi Mh.-Topkapı",
+        "TUBS_KOD": "9-7-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A11 - Otogar-Bayrampaşa-Küçükköy-Yunus Emre Mah.",
+        "Value": "{D7F797F2-A2BD-42FB-BF47-63681F55AD2A}",
+        "Object_ID": "258285",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergah:Otogar-Bayrampaşa-Küçükköy-Yunus Emre Mah.",
+        "TUBS_KOD": "9-11-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A16 - Cebeci Mah-Topkapı",
+        "Value": "{E884BCCD-8988-431F-9322-17165347315F}",
+        "Object_ID": "257700",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergah Adı: Cebeci Mah.-Edirnekapı",
+        "TUBS_KOD": "11-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A16 - Gazi Mh.-Topkapı",
+        "Value": "{950E4F0D-53C2-4AD3-AADD-70DE728134BC}",
+        "Object_ID": "257701",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah Adı: Gazi Mah.- Edirnekapı",
+        "TUBS_KOD": "11-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A16 - Otogar-Bayrampaşa-Küçükköy-Yunus Emre Mah.",
+        "Value": "{FEE607D5-E63F-43EF-9911-B161834E74D8}",
+        "Object_ID": "257665",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah: Otogar-Bayrampaşa-Küçükköy-Yunus Emre Mah 1",
+        "TUBS_KOD": "11-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A17 - Eyüp-Gaziosmanpaşa-Bayrampaşa",
+        "Value": "{E320B839-481E-4000-B527-AAB18E5FB69E}",
+        "Object_ID": "257703",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Eyüp-Gaziosmanpaşa-Bayrampaşa",
+        "TUBS_KOD": "12-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A18 - Bakırköy-Şirinevler-Güneşli-Mahmutbey",
+        "Value": "{FF81C07F-71CD-4FDD-AC37-358E1DCFDA58}",
+        "Object_ID": "258466",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Bakırköy-Şirinevler-Güneşli-Mahmutbey",
+        "TUBS_KOD": "13-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A19 - Bakırköy-Hastane-Esenler-Atışalanı",
+        "Value": "{DEFAD4A5-6011-4447-AC4A-C5D8C6A640B2}",
+        "Object_ID": "257692",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Adı: Bakırköy-Hastane-Esenler-Atışalanı",
+        "TUBS_KOD": "14-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A19 - Bakırköy-Yenimahalle-Otogar",
+        "Value": "{CDE6B0ED-BB9D-4DBC-9F86-0A850C0EC825}",
+        "Object_ID": "257686",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Bakırköy-Yenimahalle-Otogar",
+        "TUBS_KOD": "14-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A208 - Şirinevler-Kuleli-Yenidoğan-Atakent ",
+        "Value": "{9FDB4CA5-94B5-494B-A3F3-0EACA813D512}",
+        "Object_ID": "257796",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şirinevler-Kuleli-Yenidoğan-Atakent ",
+        "TUBS_KOD": "44-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A213 -  Küçükçekmece-Sefaköy-Tevfikbey Mahallesi",
+        "Value": "{4E428351-538A-43CE-86A5-DF53ED7C6E31}",
+        "Object_ID": "257852",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Küçükçekmece-Sefaköy-Tevfikbey Mahallesi",
+        "TUBS_KOD": "45-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A213 -  Sefaköy-Küçükçekmece Adliye",
+        "Value": "{8AA218CC-D567-474B-8A50-E938040D6519}",
+        "Object_ID": "273001",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Sefaköy-Küçükçekmece Adliye (Ortak)",
+        "TUBS_KOD": "45-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A215 -  Sefaköy-Küçükçekmece Adliye",
+        "Value": "{AB6856C8-91F4-443B-8B8F-E2F081F4602A}",
+        "Object_ID": "272993",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Sefaköy-Küçükçekmece Adliye (Ortak)",
+        "TUBS_KOD": "46-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A215 -  Sefaköy-Mehmet Akif-İkitelli Org.San.",
+        "Value": "{CD9A893A-A5F7-4DEC-847E-C8E08C89AE8B}",
+        "Object_ID": "257853",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Sefaköy-Mehmet Akif-İkitelli Org.San.",
+        "TUBS_KOD": "46-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A215 - Adliye-Sefaköy-Halkalı-Atakent",
+        "Value": "{1CDF6DBD-4217-463A-A66C-AAFE1293DBCA}",
+        "Object_ID": "278115",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah :Adliye-Sefaköy-Halkalı-Atakent (Ortak)",
+        "TUBS_KOD": "46-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A216 - Adliye-Sefaköy-Halkalı-Atakent",
+        "Value": "{D12E840A-8606-4C1D-BD29-8D80DA68ACD3}",
+        "Object_ID": "278117",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah :Adliye-Sefaköy-Halkalı-Atakent (Ortak)",
+        "TUBS_KOD": "47-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A216 - Sefaköy-K.Sultan Süleyman Has.-Başakşehir Çam ve Sakura Şehir Hastanesi-Kayaşehir",
+        "Value": "{4C68E93E-0018-42E8-9FDF-B72F9AF2AE4E}",
+        "Object_ID": "257848",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergah :Sefaköy-K.Sultan Süleyman Has.-Başakşehir Çam ve Sakura Şehir Hastanesi-Kayaşehir",
+        "TUBS_KOD": "47-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A216 - Sefaköy-K.Sultan Süleyman Has.-Boğazköy",
+        "Value": "{28CA577E-16E6-4988-8545-548B57839482}",
+        "Object_ID": "257844",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah :Sefaköy-K.Sultan Süleyman Has.-Boğazköy",
+        "TUBS_KOD": "47-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A216 - Sefaköy-Küçükçekmece Adliye ",
+        "Value": "{03F0B5A6-7A98-493C-9C0F-96314705342E}",
+        "Object_ID": "273005",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah :Sefaköy-Küçükçekmece Adliye ",
+        "TUBS_KOD": "47-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A239 -  Küçükçekmece-Avcılar-Ambarlı-İNSA Sitesi",
+        "Value": "{184D9737-A3EF-4D16-BAF0-00F49D819839}",
+        "Object_ID": "258420",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Küçükçekmece-Avcılar-Ambarlı-İNSA Sitesi",
+        "TUBS_KOD": "28-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A239 -  Küçükçekmece-Avcılar-Cihangir Mh. ",
+        "Value": "{4B8012E6-1DD4-4548-8F34-E07BCF72AEC9}",
+        "Object_ID": "258432",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah: Küçükçekmece-Avcılar-Cihangir Mh. ",
+        "TUBS_KOD": "28-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A24 - Topkapı-Ayazma-Bağcılar",
+        "Value": "{490ABC8F-1C60-4C49-B908-1C7EFCC46743}",
+        "Object_ID": "257688",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergah: Topkapı-Ayazma-Bağcılar",
+        "TUBS_KOD": "15-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A24 - Topkapı-Esenler-Atışalanı-Tepe",
+        "Value": "{764871D7-EA54-4792-8E73-80F094E3EE76}",
+        "Object_ID": "258244",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah: Topkapı-Esenler-Atışalanı-Tepe",
+        "TUBS_KOD": "15-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A24 - Topkapı-Esenler-Atışalanı-Yüzyıl-Giyimkent",
+        "Value": "{383B30D3-4E16-4B22-B2B2-3F6AE758F487}",
+        "Object_ID": "258223",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah:Topkapı - Esenler- Atışalanı - Yüzyıl-Giyimkent",
+        "TUBS_KOD": "15-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A24 - Topkapı-Esenler-Karabayır Mh.",
+        "Value": "{76A32960-9ED8-49FD-B9F3-3F72C86D02F0}",
+        "Object_ID": "258224",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah: Topkapı-Esenler-Karabayır Mh.",
+        "TUBS_KOD": "15-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A24 - Topkapı-Esenler-Tabya",
+        "Value": "{7CE58489-7D8E-4428-B69B-5CE6EA10C817}",
+        "Object_ID": "258235",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah: Topkapı-Esenler-Tabya",
+        "TUBS_KOD": "15-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A26 -  Bahçelievler Metro İst.- Kale İş M.- Bağcılar",
+        "Value": "{877C970F-69F5-46F7-8F5F-22A1D1BCD014}",
+        "Object_ID": "257710",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Adı: Bahçelievler Metro İst.- Kale İş M.- Bağcılar  (Ortak Güzergah) ",
+        "TUBS_KOD": "16-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A26 -  Topkapı-Güngören-Bağcılar- Hastane-Giyimkent",
+        "Value": "{B9C69D42-EB8E-4778-A08A-636BD58EF2CB}",
+        "Object_ID": "257689",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Topkapı-Güngören-Bağcılar- Hastane-Giyimkent",
+        "TUBS_KOD": "16-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A27 -  Pazariçi - GOP - Topkapı",
+        "Value": "{147CB072-64B4-4DC1-888A-7C34A15422E6}",
+        "Object_ID": "257965",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh Adı: Pazariçi - GOP - Topkapı",
+        "TUBS_KOD": "17-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A27 -  Silahtarağa Cad.-GOP-Otogar ",
+        "Value": "{45005F4F-8E19-46B4-893E-586254E5C387}",
+        "Object_ID": "257957",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh Adı: Silahtarağa Cad.-GOP-Otogar ",
+        "TUBS_KOD": "17-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A27 -  Yıldıztabya -GOP -Topkapı",
+        "Value": "{5B07E15C-5372-4723-8D72-124C7DE9309E}",
+        "Object_ID": "257986",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh Adı: Yıldıztabya -GOP -Topkapı",
+        "TUBS_KOD": "17-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A27 - 4. Güzergâh: 5. Levent ? Yıldıztabya ? Rami ",
+        "Value": "{1FD54DF9-519E-4427-A959-70C957526AF3}",
+        "Object_ID": "284199",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergâh: 5. Levent ? Yıldıztabya ? Rami ",
+        "TUBS_KOD": "17-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A28 -  Bahçelievler Metro İst.- Basın Sitesi-Çavuşpaşa-Oto Sanayi- Radar",
+        "Value": "{B9A354C7-8871-49A8-A476-4FCC5DFD5239}",
+        "Object_ID": "260513",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah Adı: Bahçelievler Metro İst.- Basın Sitesi-Çavuşpaşa-Oto Sanayi- Radar",
+        "TUBS_KOD": "18-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A28 -  Bahçelievler Metro İst.- Kale İş M.- Bağcılar",
+        "Value": "{5AA7D29C-1B0E-4E86-884D-ED47012A2DDC}",
+        "Object_ID": "258378",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergah Adı: Bahçelievler Metro İst.- Kale İş M.- Bağcılar (Ortak Güzergah)   ",
+        "TUBS_KOD": "18-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A28 -  Topkapı-Basın Sitesi-Radar",
+        "Value": "{1CE427C4-F777-4657-92BB-3077C73A8544}",
+        "Object_ID": "257713",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Topkapı-Basın Sitesi-Radar",
+        "TUBS_KOD": "18-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A28 -  Topkapı-Yayla-Çavuşpaşa",
+        "Value": "{E6E18DEB-7720-40A6-8718-39603CE38123}",
+        "Object_ID": "257712",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Adı: Topkapı-Yayla-Çavuşpaşa",
+        "TUBS_KOD": "18-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A29 -  İncirli -Bağcılar Meydan- Evren Mah.",
+        "Value": "{5CE885EF-5BD9-44D1-B68D-1A2C8DC171DB}",
+        "Object_ID": "257726",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: İncirli-Bağcılar Meydan-Bağlar Mah.",
+        "TUBS_KOD": "19-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A29 -  İncirli-Bağcılar Meydan-Barbaros Mahallesi ",
+        "Value": "{6CC1027B-BC93-4697-B25C-E1FF44B35CDA}",
+        "Object_ID": "278114",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah Adı: İncirli-Bağcılar Meydan-Barbaros Mahallesi ",
+        "TUBS_KOD": "19-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A29 -  İncirli-Bağcılar Meydan-Evren Mahallesi-Mahmutbey",
+        "Value": "{756E18DB-E510-4072-AD59-9613B6737438}",
+        "Object_ID": "257708",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: İncirli-Bağcılar Meydan-Evren Mahallesi-Mahmutbey",
+        "TUBS_KOD": "19-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A29 -  Mahmutbey-Evren Mah.-Bağcılar Meydan -Bağcılar E.A.H.",
+        "Value": "{656C5E6B-3E46-47C8-B304-DDA798C6FABD}",
+        "Object_ID": "273963",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah Adı: Mahmutbey-Evren Mah.-Bağcılar Meydan -Bağcılar E.A.H.",
+        "TUBS_KOD": "19-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A30 -  Bağcılar -Otocenter-MOİ ",
+        "Value": "{079928AB-0527-4E3C-A313-7AC8C77BD775}",
+        "Object_ID": "260833",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5.Güzergah: Bağcılar -Otocenter-MOİ ",
+        "TUBS_KOD": "20-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A30 -  İstoç-Göztepe-Fatih-Bağcılar EAH ",
+        "Value": "{00CB89CE-82B3-435A-B556-BA83DF2BCDFE}",
+        "Object_ID": "257951",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: İstoç-Göztepe-Fatih-Bağcılar EAH ",
+        "TUBS_KOD": "20-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A30 -  OSB-İstoç-Göztepe-Fatih-Topkapı",
+        "Value": "{2D4F8E9B-61C6-4BF9-A3C2-E05205C85451}",
+        "Object_ID": "257968",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: OSB-İstoç-Göztepe-Fatih-Topkapı",
+        "TUBS_KOD": "20-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A30 -  Topkapı-Ateştuğla-Evren Mh. ",
+        "Value": "{B6917AC3-C1DA-4930-8176-5CEDF2D96087}",
+        "Object_ID": "257966",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah: Topkapı-Ateştuğla-Evren Mh. ",
+        "TUBS_KOD": "20-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A30 - 4.Güzergah: Evren Mah.-Bağcılar Eğt. Ve Araş. Hastanesi",
+        "Value": "{B507368B-DD1B-4767-B81F-12B959409D46}",
+        "Object_ID": "279714",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergah: Evren Mah.-Bağcılar Eğt. Ve Araş. Hastanesi",
+        "TUBS_KOD": "20-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A31 -  Bakırköy-Şirinevler-Evren Mah.-İSTOÇ-İkitelli",
+        "Value": "{7F8C2B19-0BD0-4F31-B70C-A77FED12F7A2}",
+        "Object_ID": "258451",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah Adı: Bakırköy-Şirinevler-Evren Mah.-İSTOÇ-İkitelli",
+        "TUBS_KOD": "21-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A31 -  Bakırköy-Şirinevler-Fatih Mahallesi",
+        "Value": "{9EA8653B-7E1B-4983-B500-BC8C8F78AD2A}",
+        "Object_ID": "258458",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Bakırköy-Şirinevler-Fatih Mahallesi",
+        "TUBS_KOD": "21-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A31 -  Bakırköy-Şirinevler-İstoç-İkitelli",
+        "Value": "{CC0C1C2F-9D75-4B95-8BAA-974E5D893717}",
+        "Object_ID": "258457",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergâh: Bakırköy-Şirinevler-İstoç-İkitelli",
+        "TUBS_KOD": "21-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A31 -  Şirinevler- Mahmutbey-İkitelli Köyiçi-Başakşehir Çam ve Sakura Şehir Hastanesi",
+        "Value": "{A146932C-0BCD-430E-9B6E-D38D56A724EC}",
+        "Object_ID": "258459",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergâh: Şirinevler- Mahmutbey-İkitelli Köyiçi-Başakşehir Çam ve Sakura Şehir Hastanesi",
+        "TUBS_KOD": "21-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A31 - 1.Güzergâh: Bakırköy-Şirinevler-Polis Lojmanları",
+        "Value": "{BBC92C24-0FF1-4236-AFAA-2D44DA9E57F3}",
+        "Object_ID": "279717",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Bakırköy-Şirinevler-Polis Lojmanları",
+        "TUBS_KOD": "21-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A31 - 6. Güzergah Adı: Sultangazi-Mahmutbey-Güneşli-Bağlar Mah.",
+        "Value": "{CBAF64CD-BF30-45CB-860B-47EA11E4C28D}",
+        "Object_ID": "279722",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "6. Güzergah Adı: Sultangazi-Mahmutbey-Güneşli-Bağlar Mah.",
+        "TUBS_KOD": "21-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A32 -  Denizköşkler-Avcılar-Firüzköy-Gölevler ",
+        "Value": "{AF709038-B57E-4B07-928F-C2124AC8A46E}",
+        "Object_ID": "260835",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Denizköşkler-Avcılar-Firüzköy-Gölevler ",
+        "TUBS_KOD": "22-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A32 -  Küçükçekmece-Avcılar-Firüzköy-Yeşilkent ",
+        "Value": "{8A0CB371-9EA6-4665-A0B0-548622643FD8}",
+        "Object_ID": "257725",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Küçükçekmece-Avcılar-Firüzköy-Yeşilkent ",
+        "TUBS_KOD": "22-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A34 - 2. Güzergâh: Zübeyde Hanım Mh-Gaziosmanpaşa",
+        "Value": "{4EB6FFA5-0D3D-41B2-B159-07F08EC6750F}",
+        "Object_ID": "280357",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Zübeyde Hanım Mh-Gaziosmanpaşa",
+        "TUBS_KOD": "23-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A34 - 4. Güzergah: Zübeydehanım-Karayolları Taksim Gaziosmanpaşa Eğitim Araştırma Hastanesi",
+        "Value": "{14462F60-D249-4CAC-8307-1FB49D684E94}",
+        "Object_ID": "280673",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah: Zübeydehanım-Karayolları Taksim Gaziosmanpaşa Eğitim Araştırma Hastanesi",
+        "TUBS_KOD": "23-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A34 - 5. Güzergâh: Cebeci ? GOP ? 5. Levent ",
+        "Value": "{2A269E49-C7D1-4575-952F-07088F9767CD}",
+        "Object_ID": "284203",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergâh: Cebeci ? GOP ? 5. Levent ",
+        "TUBS_KOD": "23-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A34 - Cebeci-Gaziosmanpaşa",
+        "Value": "{8B95FCBE-4393-4DA9-ADA4-6075A5A461FA}",
+        "Object_ID": "257736",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah: Cebeci-Gaziosmanpaşa",
+        "TUBS_KOD": "23-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A34 - Cebeci-Küçükköy-Eyüp",
+        "Value": "{29B70FEE-1B1F-48BB-A00E-85448DC76B98}",
+        "Object_ID": "257742",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergâh: Cebeci -Küçükköy - Eyüpsultan Belediyesi Güzergâhı",
+        "TUBS_KOD": "23-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A35 - Küçükçekmece-İkitelli-Mehmet Akif-Aymakop ",
+        "Value": "{9D44EDB2-D2D4-43A0-8091-054CA1234136}",
+        "Object_ID": "257744",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Küçükçekmece-İkitelli-Mehmet Akif-Aymakop ",
+        "TUBS_KOD": "24-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A36 -  Bahçeşehir 1.KısımŞehit Polis Gaffar Okkan Caddesi-Deliklikaya Hadımköy Kiptaş ",
+        "Value": "{31D13831-811E-4C35-8F92-089CE0DC81A9}",
+        "Object_ID": "260836",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergah: Bahçeşehir 1.KısımŞehit Polis Gaffar Okkan Caddesi-Deliklikaya Hadımköy Kiptaş \r\n3.Etap Cami Ring Güzergahı\r\n",
+        "TUBS_KOD": "25-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A36 -  Küçükçekmece-K.S.Süleyman Hastanesi-Tahtakale-Ispartakule-Vaditepe-Belediye ",
+        "Value": "{BEDA034A-915A-45EC-8A13-B00ABB388697}",
+        "Object_ID": "257762",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Küçükçekmece-K.S.Süleyman Hastanesi-Tahtakale-Ispartakule-Vaditepe-Belediye ",
+        "TUBS_KOD": "25-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A36 -  Küçükçekmece-Kanarya-Kanuni S.S.Hast.-Başakşehir Çam ve Sakura Şehir Hastanesi",
+        "Value": "{531B625D-158F-4462-84F8-1F617B347E8D}",
+        "Object_ID": "257765",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah: Küçükçekmece-Kanarya-Kanuni S.S.Hast.-Başakşehir Çam ve Sakura Şehir Hastanesi",
+        "TUBS_KOD": "25-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A36 -  Küçükçekmece-Ortamahalle-Güvercintepe-Kayaşehir ",
+        "Value": "{016073C0-82FA-495D-99AF-69505414B90C}",
+        "Object_ID": "257731",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Küçükçekmece-Ortamahalle-Güvercintepe-Kayaşehir ",
+        "TUBS_KOD": "25-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A37 - Esentepe Mah.-Küçükköy-Gaziosmanpaşa",
+        "Value": "{0B9924D7-900F-4D8A-8D26-CFFC1F0F567B}",
+        "Object_ID": "257755",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Esentepe Mah.-Küçükköy-Gaziosmanpaşa",
+        "TUBS_KOD": "26-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A38 -  Gaziosmanpaşa-Yeşilpınar- İmar Blokları",
+        "Value": "{621BA82C-B3EF-4526-830A-21B65CD184C9}",
+        "Object_ID": "258271",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Gaziosmanpaşa-Yeşilpınar- İmar Blokları-Alibeyköy",
+        "TUBS_KOD": "27-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A38 -  GOP-Kazım Karabekir Mahallesi- Fizik Tedavi Hastanesi ",
+        "Value": "{B724ECCD-6E4A-47F5-B968-1AA815BB601F}",
+        "Object_ID": "257772",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: GOP-Kazım Karabekir Mahallesi- Fizik Tedavi Hastanesi ",
+        "TUBS_KOD": "27-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A38 - 3. Güzergâh: 5. Levent ? Yeşilpınar ? Yunus Emre (Yeni Güzergah)",
+        "Value": "{70215B32-91B8-456C-AFC9-442476327227}",
+        "Object_ID": "281317",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergâh: 5. Levent ? Yeşilpınar ? Yunus Emre (Yeni Güzergah)",
+        "TUBS_KOD": "27-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A41 -  Bağcılar - Paşaçayırı - GOP Taksim EAH",
+        "Value": "{A6D03052-99E9-48CC-9B9A-5E3535A2F0E9}",
+        "Object_ID": "258453",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh Adı: Bağcılar - Paşaçayırı - GOP Taksim EAH",
+        "TUBS_KOD": "30-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A41 -  Bağcılar-Habipler",
+        "Value": "{8BE08B13-8D4D-43C0-94D9-E630A3CE98BD}",
+        "Object_ID": "258421",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh Adı: Bağcılar-Habipler",
+        "TUBS_KOD": "30-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A42 - Beşyol-Florya",
+        "Value": "{54E70D24-69C0-4ABA-8FCA-0C01B06CA71A}",
+        "Object_ID": "257790",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Sefaköy-Florya-Yeşilköy ",
+        "TUBS_KOD": "31-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - 12.güzergah",
+        "Value": "{AA1B61BA-3C15-4955-A9F7-4200E07EA2FE}",
+        "Object_ID": "258531",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "12.güzergah",
+        "TUBS_KOD": "32-12-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Bağlarçeşme",
+        "Value": "{B69BACAC-0033-43B4-B90F-DF5A3908EBF3}",
+        "Object_ID": "258529",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Bağlarçeşme",
+        "TUBS_KOD": "32-8-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Balıkyolu",
+        "Value": "{A5F5DEAF-0DE6-4979-B1DE-845B7286EA1A}",
+        "Object_ID": "258914",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Balıkyolu",
+        "TUBS_KOD": "32-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Boğazköy",
+        "Value": "{49386895-E4CD-496C-83B0-120B3AC0F21F}",
+        "Object_ID": "258144",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Boğazköy",
+        "TUBS_KOD": "32-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Deliklikaya",
+        "Value": "{1076C908-7E34-4726-A2B6-9451D0208F6B}",
+        "Object_ID": "258135",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Deliklikaya",
+        "TUBS_KOD": "32-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Esenyurt-Hadımköy",
+        "Value": "{6A3BE6E0-41CA-4740-83CF-B498590A615B}",
+        "Object_ID": "258514",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Esenyurt-Hadımköy",
+        "TUBS_KOD": "32-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Haramidere",
+        "Value": "{076959AA-CE95-4564-9CC0-EC7B3838ADC4}",
+        "Object_ID": "258915",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Haramidere",
+        "TUBS_KOD": "32-10-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Karaağaç",
+        "Value": "{42F1774B-66B2-4124-84C4-20DCFA35945F}",
+        "Object_ID": "257791",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Karaağaç",
+        "TUBS_KOD": "32-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Kıraç",
+        "Value": "{C65B1553-68BD-4E3B-94F3-17EDFE4F0073}",
+        "Object_ID": "257775",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Kıraç",
+        "TUBS_KOD": "32-11-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Kıraç-2",
+        "Value": "{70BDF1AA-BEE5-4BB3-BFB0-7F0F52FF93A7}",
+        "Object_ID": "258594",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Kıraç-2",
+        "TUBS_KOD": "32-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Saadetdere",
+        "Value": "{84808F64-B7F2-4B8B-B5F9-029BADEEE211}",
+        "Object_ID": "257792",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Saadetdere",
+        "TUBS_KOD": "32-7-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Avcılar-Tokat Mh",
+        "Value": "{4C46F335-4CC0-4D5E-A23F-65762780E31F}",
+        "Object_ID": "258528",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Avcılar-Tokat Mh",
+        "TUBS_KOD": "32-9-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Hürriyet Mah.-Cumhuriyet Metrobüs",
+        "Value": "{55852F9E-A61D-40CB-BC50-1420CBD245C0}",
+        "Object_ID": "269159",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Hürriyet Mah.-Cumhuriyet Metrobüs",
+        "TUBS_KOD": "32-14-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A43 - Necip Fazıl Kısakürek Mah.-Beylikdüzü Metrobüs ",
+        "Value": "{3D7BD59E-F4D0-4326-829A-3D50EE3E78B5}",
+        "Object_ID": "269155",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Necip Fazıl Kısakürek Mah.-Beylikdüzü Metrobüs ",
+        "TUBS_KOD": "32-13-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A45 - Bakırköy-Osmaniye",
+        "Value": "{969785AD-8A33-461C-9761-F1E5DC30A0FE}",
+        "Object_ID": "257776",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Bakırköy-Osmaniye",
+        "TUBS_KOD": "33-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A46 - Şirinevler-Kuleli-Halkalı-Başakşehir",
+        "Value": "{47F0D236-158B-4040-8BDD-2EFF022154F7}",
+        "Object_ID": "258505",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şirinevler-Kuleli-Halkalı-Başakşehir",
+        "TUBS_KOD": "34-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A47 - Halkalı-Fenertepe-Başakşehir ÇSŞH",
+        "Value": "{FC6F1FB6-B365-424F-9395-FE64DEECB76E}",
+        "Object_ID": "274597",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Halkalı-Fenertepe-Başakşehir ÇSŞH",
+        "TUBS_KOD": "35-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A47 - Halkalı-Masko-Onurkent-Kayaşehir",
+        "Value": "{A8E66909-EFEC-4F9B-83D2-BE3E38244D86}",
+        "Object_ID": "274609",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Halkalı-Masko-Onurkent-Kayaşehir ",
+        "TUBS_KOD": "35-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A48 - Başakşehir 1 ve 2.Etaplar- İkitelli-Otogar(DEPAR)",
+        "Value": "{90654057-F214-4B59-B293-56A9E69546DB}",
+        "Object_ID": "273013",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: Başakşehir 1 ve 2.Etaplar- İkitelli-Otogar(DEPAR)",
+        "TUBS_KOD": "36-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A48 - İkitelli Org.San.-Mehmet Akif Mah.Göztepe Mah.-Topkapı",
+        "Value": "{AF193E4C-972F-4138-B466-254CB99D6B34}",
+        "Object_ID": "258356",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: İkitelli Org.San.-Mehmet Akif Mah.Göztepe Mah.-Topkapı",
+        "TUBS_KOD": "36-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A49 - Kuleli-Halkalı-K.S.S Hastanesi-Kayaşehir-Başakşehir ÇSŞH ",
+        "Value": "{C45C2DF5-F7D8-4078-8B1E-80ADD56ADEAC}",
+        "Object_ID": "257809",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kuleli-Halkalı-K.S.S Hastanesi-Kayaşehir-Başakşehir ÇSŞH ",
+        "TUBS_KOD": "37-7-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A49 - Kuleli-Halkalı-Orta Mahalle-Kayaşehir-Başakşehir Çam ve Sakura Hastanesi ",
+        "Value": "{BC8F8001-AFFC-4398-8561-42844FBCD7AD}",
+        "Object_ID": "257817",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kuleli-Halkalı-Orta Mahalle-Kayaşehir-Başakşehir Çam ve Sakura Hastanesi ",
+        "TUBS_KOD": "37-11-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A49 - Kuleli-KSS-Şahintepe",
+        "Value": "{D882C5AD-A853-49C9-A7DB-EB3C0BC94E20}",
+        "Object_ID": "257803",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kuleli-KSS-Şahintepe",
+        "TUBS_KOD": "37-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A71 - Ataköy-Şirinevler Metro-Ataköy Plus AVM",
+        "Value": "{E3CF2842-276D-4C34-B1BA-A02D1F51F176}",
+        "Object_ID": "258258",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ataköy-Şirinevler Metro-Ataköy Plus AVM Ring ",
+        "TUBS_KOD": "38-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A71 - Bakırköy-Ataköy-Y.Bosna Metro",
+        "Value": "{94BA60DF-8933-497F-B38F-38C68F5564EC}",
+        "Object_ID": "257823",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Bakırköy-Ataköy-Y.Bosna Metro",
+        "TUBS_KOD": "38-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A72 - Merter-Çinçin Deresi-Karabayır-Giyimkent",
+        "Value": "{DD948EA9-E324-4F46-97E5-64D6FC5FFE6E}",
+        "Object_ID": "257825",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Merter-Çinçin Deresi-Karabayır-Giyimkent",
+        "TUBS_KOD": "39-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A73 - Şirinevler-Tavukçu Deresi-42 Evler",
+        "Value": "{7E4B757A-B6CC-4C07-AD1A-8E63B2DCC067}",
+        "Object_ID": "258066",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şirinevler-Tavukçu Deresi-42 Evler",
+        "TUBS_KOD": "40-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A74 -  Gaziosmanpaşa - Seçkinler - Habipler",
+        "Value": "{CBC5C059-6C76-4246-8EA7-ED98B8F92E91}",
+        "Object_ID": "268515",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Gaziosmanpaşa - Seçkinler - Habipler (Çöp Yolu)",
+        "TUBS_KOD": "41-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "A74 -  Gaziosmanpaşa - Sultangazi - Yayla Güzergâhı",
+        "Value": "{77F9B65E-EB57-4674-8602-2ED50BF16A98}",
+        "Object_ID": "268198",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergâh: Gaziosmanpaşa - Sultangazi - Yayla Güzergâhı",
+        "TUBS_KOD": "41-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ARN12 - HARAÇÇI-ARNAVUTKÖY DEVLET HASTANESİ\r\n",
+        "Value": "{50FCD857-4DAE-4047-845E-861ED9E61952}",
+        "Object_ID": "283879",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "HARAÇÇI-ARNAVUTKÖY DEVLET HASTANESİ\r\n",
+        "TUBS_KOD": "194-12-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ARN2 - Boğazköy ? İstiklal Mah-Arnavutköy",
+        "Value": "{2E95AD7A-6475-495E-84DA-E0FA0A7962CA}",
+        "Object_ID": "282596",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Boğazköy ? İstiklal Mah-Arnavutköy",
+        "TUBS_KOD": "194-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ARN4 - Bolluca-Arnavutköy",
+        "Value": "{A8987337-2FAF-459D-96EE-41DF7C44DB27}",
+        "Object_ID": "282913",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Bolluca-Arnavutköy",
+        "TUBS_KOD": "194-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ARN5 - Bolluca/İmrahor-Arnavutköy",
+        "Value": "{56E78DAD-AEB6-4329-8740-72D3E73E63D2}",
+        "Object_ID": "282915",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Bolluca/İmrahor-Arnavutköy",
+        "TUBS_KOD": "194-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ARN6 - Taşoluk-Suatlar-Arnavutköy",
+        "Value": "{AEC1D547-B139-4B39-B2DF-99F97BFF69D7}",
+        "Object_ID": "282919",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Taşoluk-Suatlar-Arnavutköy",
+        "TUBS_KOD": "194-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ARN7 - İmrahor-Arnavutköy",
+        "Value": "{E1626007-5CA7-4153-BF35-33630C184FA9}",
+        "Object_ID": "283236",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "İmrahor-Arnavutköy",
+        "TUBS_KOD": "194-7-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ARN9 - Sefa Camii-Taşoluk Mah-Arnavutköy",
+        "Value": "{7DF5C2C5-6D41-465A-AFED-703B4098AEFC}",
+        "Object_ID": "282927",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Sefa Camii-Taşoluk Mah-Arnavutköy",
+        "TUBS_KOD": "194-9-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B33 -  Şişli-Galata Deresi ",
+        "Value": "{59B50DD5-6FDE-4DC3-ABBE-5A403AAE2843}",
+        "Object_ID": "257948",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah: Şişli-Galata Deresi ",
+        "TUBS_KOD": "50-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B33 -  Şişli-Yahya Kemal",
+        "Value": "{49CE6EA3-E2A3-4055-9E66-C0639DEBB7F8}",
+        "Object_ID": "258093",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergah: Şişli-Yahya Kemal",
+        "TUBS_KOD": "50-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B33 -  Yahya Kemal-Dere Caddesi -Nobel İlaç Fabrikası",
+        "Value": "{9CC5EF32-EFCC-4E10-A7F2-CC217CF4A68F}",
+        "Object_ID": "258408",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergah: Yahya Kemal-Dere Caddesi -Nobel İlaç Fabrikası",
+        "TUBS_KOD": "50-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B33 -  Yahya Kemal-Gültepe-Levent Metro",
+        "Value": "{9E584E77-83A1-4C72-87F1-553BF4C52932}",
+        "Object_ID": "257949",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah: Yahya Kemal-Gültepe-Levent Metro",
+        "TUBS_KOD": "50-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B34 - Şişhane-Okmeydanı-Şişli",
+        "Value": "{7A813D16-8C2A-4F64-A213-129B551FE186}",
+        "Object_ID": "258076",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Şişhane-Okmeydanı-Şişli (Geçici Güzergâh) (20 Araç)",
+        "TUBS_KOD": "51-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B34 - Şişhane-Piyalepaşa Bulvarı-Şişli",
+        "Value": "{0C76B77D-F165-4301-B081-6B93BEE2ABE7}",
+        "Object_ID": "258086",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şişhane-Piyalepaşa Bulvarı-Şişli",
+        "TUBS_KOD": "51-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B43 -  Şişli - Kağıthane- Güzeltepe",
+        "Value": "{C6323C3C-BD3A-4649-BE72-6BC710AF85DB}",
+        "Object_ID": "257975",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergah: Şişli - Kağıthane- Güzeltepe",
+        "TUBS_KOD": "54-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B43 -  Şişli-Kağıthane-Abdurrahman Mh-Başak Konutları",
+        "Value": "{8E14DDDD-168A-41C8-B343-FBAA89E99E4B}",
+        "Object_ID": "257857",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah: Şişli-Kağıthane-Abdurrahman Mh-Başak Konutları",
+        "TUBS_KOD": "54-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B46 - 2. Güzergâh: İstinye Üniversitesi-Kağıthane Metro-Prof.Dr. Cemil Taşcıoğlu Şehir Hastanesi",
+        "Value": "{2AFC1A1C-F52C-401D-83DB-B1E9CCC974B2}",
+        "Object_ID": "282277",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: İstinye Üniversitesi-Kağıthane Metro-Prof.Dr. Cemil Taşcıoğlu Şehir Hastanesi",
+        "TUBS_KOD": "48-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B46 - 3.Güzergâh: 4.Levent-Vadi İstanbul",
+        "Value": "{9E044621-F152-40CE-BC31-CE96C7A06C59}",
+        "Object_ID": "282276",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: 4.Levent-Vadi İstanbul",
+        "TUBS_KOD": "48-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "B46 - Topkapı-Oyak Sitesi-Seyrantepe",
+        "Value": "{CEA85B08-8128-4946-976A-2C941AC4A98A}",
+        "Object_ID": "258270",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Halıcıoğlu Metrobüs-Seyrantepe",
+        "TUBS_KOD": "48-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL100 - Büyükçekmece-Beykent",
+        "Value": "{A5F7E1F8-090F-4E7E-A546-6DAD8EFED454}",
+        "Object_ID": "258125",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Beykent",
+        "TUBS_KOD": "127-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL100 - Büyükçekmece-Karaağaç",
+        "Value": "{DF21D14E-0AE8-429C-BA84-46669FD337BB}",
+        "Object_ID": "258130",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Karaağaç",
+        "TUBS_KOD": "127-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL101 - Büyükçekmece-Doğan Araslı-Mimsan",
+        "Value": "{5B289111-00E8-4457-B4E8-026FD7AE5968}",
+        "Object_ID": "258132",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Doğan Araslı-Mimsan",
+        "TUBS_KOD": "128-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL101 - Büyükçekmece-Esenyurt Devlet Hastanesi ",
+        "Value": "{9C62CB9A-9D76-46F2-B409-F994D67544A9}",
+        "Object_ID": "258151",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Esenyurt Devlet Hastanesi ",
+        "TUBS_KOD": "128-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL101 - Büyükçekmece-Örnek Mah.-Mimsan ",
+        "Value": "{DB83EC35-D05E-4FF4-8DD2-3D3A981DBA66}",
+        "Object_ID": "258150",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Örnek Mah.-Mimsan ",
+        "TUBS_KOD": "128-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL101 - Büyükçekmece-Zafer Mah",
+        "Value": "{632074F7-C3DA-485F-B1EA-1A38E61022C3}",
+        "Object_ID": "258141",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Zafer Mah",
+        "TUBS_KOD": "128-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL101 - Hürriyet Mah.-Cumhuriyet Metrobüs",
+        "Value": "{C02B644C-5F9C-4008-979D-12FDCF9359BA}",
+        "Object_ID": "269475",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Hürriyet Mah.-Cumhuriyet Metrobüs",
+        "TUBS_KOD": "128-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL101 - Necip Fazıl Kısakürek Mah.-Beylikdüzü Metrobüs ",
+        "Value": "{E1B3B3F8-AA8C-4D74-B8E1-4A4A0851A361}",
+        "Object_ID": "269473",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Necip Fazıl Kısakürek Mah.-Beylikdüzü Metrobüs ",
+        "TUBS_KOD": "128-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL109 - 5.Güzergâh: Dereağzı Mah.-Beylikdüzü Metrobüs-Marmara Mah.-Marina",
+        "Value": "{38A66311-425C-4280-BC19-F43453543814}",
+        "Object_ID": "279400",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5.Güzergâh: Dereağzı Mah.-Beylikdüzü Metrobüs-Marmara Mah.-Marina",
+        "TUBS_KOD": "134-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL109 - 6.Güzergâh: Kavaklı-Yakuplu-Torium AVM",
+        "Value": "{F85C30BD-1614-4B76-B990-2CB7DC6B418A}",
+        "Object_ID": "279405",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "6.Güzergâh: Kavaklı-Yakuplu-Torium AVM",
+        "TUBS_KOD": "134-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL109 - Büyükçekmece Atirus AVM-Beylikdüzü Belediyesi",
+        "Value": "{E48A7673-F299-47C6-A08F-6AC74C94CF9A}",
+        "Object_ID": "258191",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Büyükçekmece Atirus AVM-Beylikdüzü Belediyesi",
+        "TUBS_KOD": "134-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL109 - Büyükçekmece-Tüyap- Yakuplu Mahallesi",
+        "Value": "{041F47D7-FAAC-4E5D-8696-9A5020A1326A}",
+        "Object_ID": "258177",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Büyükçekmece-Atirus-Beylikdüzü Metrobüs-Marmara Mah.-Yakuplu Mah.",
+        "TUBS_KOD": "134-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL109 - Dereağzı Mahallesi-Beylikdüzü Diş Hastanesi",
+        "Value": "{13C5C19A-B33C-406A-9782-7EF37366C13D}",
+        "Object_ID": "258162",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergâh: Dereağzı Mahallesi-Beylikdüzü Diş Hastanesi",
+        "TUBS_KOD": "134-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL109 - Kavaklı Mahallesi-Büyükçekmece",
+        "Value": "{03A7E2CA-3B90-4F57-982C-61A1651D963C}",
+        "Object_ID": "258190",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Kavaklı Sahil Mahallesi-Büyükçekmece-Atirus",
+        "TUBS_KOD": "134-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL110 - 3. Güzergah: Arel Üniversitesi-TÜYAP (Ortak Güzergah)",
+        "Value": "{E1BD149B-D6A9-4E71-97EC-AF5D7E7EFC67}",
+        "Object_ID": "285475",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah: Arel Üniversitesi-TÜYAP (Ortak Güzergah)",
+        "TUBS_KOD": "132-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL110 - Büyükçekmece-Tepecik-Türkoba",
+        "Value": "{8C1FF922-494D-40B7-9561-BDC25C8A6C19}",
+        "Object_ID": "258389",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Tepecik-Türkoba Ring Güzergahı",
+        "TUBS_KOD": "132-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL110 - Büyükçekmece-Tepekent B Kapısı",
+        "Value": "{A4B2D069-7732-4299-A482-D6B22BA6F3BA}",
+        "Object_ID": "262754",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Büyükçekmece-Tepekent B Kapısı Ring Güzergahı",
+        "TUBS_KOD": "132-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL145 - 1.Güzergah Adı: Celaliye ? Güzelce ? Büyükçekmece - TÜYAP",
+        "Value": "{21750678-4F04-4F3F-B7BF-DB4DC023D395}",
+        "Object_ID": "284848",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Celaliye ? Güzelce ? Büyükçekmece - TÜYAP",
+        "TUBS_KOD": "130-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL145 - 2.Güzergah",
+        "Value": "{B77FC66A-2AE4-48AE-999D-DD1C4B9A351B}",
+        "Object_ID": "258259",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Adı: Celaliye ? D100 ? Büyükçekmece - TÜYAP",
+        "TUBS_KOD": "130-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL145 - 5. Güzergah Adı: Arel Üniversitesi - TÜYAP",
+        "Value": "{1AE67B50-FBD4-4DC1-B400-C033E099845F}",
+        "Object_ID": "285473",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergah Adı: Arel Üniversitesi - TÜYAP",
+        "TUBS_KOD": "131-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL145 - Büyükçekmece-Mimaroba",
+        "Value": "{C8DA2C61-4EB6-49C0-967D-341E7A3FCA4E}",
+        "Object_ID": "258374",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah Adı: Mimaroba ? Güzelce ? Büyükçekmece - TÜYAP",
+        "TUBS_KOD": "131-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL145 - Büyükçekmece-Muratçeşme",
+        "Value": "{CF7BA5DE-15B9-4023-B501-98FEA09F5679}",
+        "Object_ID": "261153",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah Adı: Muratçeşme - Büyükçekmece - TÜYAP",
+        "TUBS_KOD": "131-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL200 - Çatalca Devlet Hastanesi-Yazlık Köyü ",
+        "Value": "{88A80BE4-C7CC-4479-A4C2-7417A98B6A7B}",
+        "Object_ID": "258267",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca Devlet Hastanesi-Yazlık Köyü ",
+        "TUBS_KOD": "165-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL202 - Çatalca Devlet Hastanesi-Kalfa Köyü ",
+        "Value": "{3467798A-4457-4EAC-AC3E-1151AF46FFF2}",
+        "Object_ID": "258275",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca Devlet Hastanesi-Kalfa Köyü ",
+        "TUBS_KOD": "167-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL300 - 2.Güzergah(Kamiloba-Celaliye-Selimpaşa-Silivri)(ring)",
+        "Value": "{B256A87D-747A-4510-930D-976BAA204034}",
+        "Object_ID": "284836",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah(Kamiloba-Celaliye-Selimpaşa-Silivri)(ring)",
+        "TUBS_KOD": "135-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL300 - Güzergah 1",
+        "Value": "{9A81A709-07AD-45C4-82A1-398B902FF12C}",
+        "Object_ID": "258183",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh (Klasis-Bizimköy-Araptepe-Selimpaşa-Fuat Sezgin FL)",
+        "TUBS_KOD": "135-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL300 - Güzergah 3",
+        "Value": "{DD6D5459-8275-4918-BF20-249A31ECC732}",
+        "Object_ID": "271393",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh (Silivri Devlet Hastanesi - Pazariçi - Selimpaşa Okullar Bölgesi)",
+        "TUBS_KOD": "135-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL301 - 1.Güzergah: Festival Alanı-Otogar-Kiptaş 1-2 Konutları ",
+        "Value": "{90EC171A-31DE-4430-A7CC-0975DB7C780B}",
+        "Object_ID": "284193",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Festival Alanı-Otogar-Kiptaş 1-2 Konutları ",
+        "TUBS_KOD": "138-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL301 - 2.Güzergah",
+        "Value": "{6F7003A5-371F-4BCE-A6A5-FBE83C620E05}",
+        "Object_ID": "258296",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: Festival Alanı-Otogar-Kiptaş 2 Konutları-Yenimahalle ",
+        "TUBS_KOD": "136-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL302 - Silivri-Festival Alanı-Mimarsinan Mahallesi-Alipaşa Toki Konutları  ",
+        "Value": "{1B768BC0-968A-4E97-89EB-1B1DAD3557F5}",
+        "Object_ID": "258299",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Festival Alanı-Mimarsinan Mahallesi-Alipaşa Toki Konutları  ",
+        "TUBS_KOD": "137-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL306 - Silivri-Akören-Bekirli",
+        "Value": "{9D6E1690-7031-4211-BD5D-778D1F0DD9BD}",
+        "Object_ID": "258209",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Akören-Bekirli",
+        "TUBS_KOD": "141-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL307 - Silivri-Büyükçavuşlu",
+        "Value": "{34256EFA-1F25-40EB-966A-02BACB45EC99}",
+        "Object_ID": "258226",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Beyciler-Büyükçavuşlu-Silivri",
+        "TUBS_KOD": "142-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL309 - Silivri-Büyüksinekli-Danamandıra-Gümüşpınar Köyü ",
+        "Value": "{28DAEACA-ED71-403C-9D9F-D898A0D1C9EF}",
+        "Object_ID": "258104",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Büyüksinekli-Danamandıra-Gümüşpınar Köyü ",
+        "TUBS_KOD": "144-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL311 - Silivri-Alipaşa-Fenerköy-Kurfallı ",
+        "Value": "{D8D6ADE9-1DB7-4EF3-8FF3-46CA9402D22C}",
+        "Object_ID": "258390",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Alipaşa-Fenerköy-Kurfallı ",
+        "TUBS_KOD": "146-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL313 - Silivri-Çayırdere Hallaçlı ",
+        "Value": "{6C382286-B33F-4327-83A5-BCE67EDDA54A}",
+        "Object_ID": "272359",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Çayırdere Hallaçlı ",
+        "TUBS_KOD": "148-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL313 - Silivri-Çayırdere-Sayalar-Aydınlar-Binkılıç ",
+        "Value": "{F43D00AD-B003-4ACA-ADD2-973AD80362CD}",
+        "Object_ID": "258105",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Çayırdere-Sayalar-Aydınlar-Binkılıç ",
+        "TUBS_KOD": "148-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL314 - Silivri-Seymenköy",
+        "Value": "{6E15B01A-8C17-4F83-9AA8-9F3B1396342C}",
+        "Object_ID": "258309",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Seymenköy",
+        "TUBS_KOD": "149-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL318 - Silivri-Çanta",
+        "Value": "{7F89A06A-4B19-42CC-A508-BBB08F691D8F}",
+        "Object_ID": "258490",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Çanta",
+        "TUBS_KOD": "153-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL318 - Silivri-Semizkumlar-Çanta",
+        "Value": "{CBB31E27-7768-44D7-B50F-B3B6E2B87F27}",
+        "Object_ID": "258489",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Semizkumlar-Çanta",
+        "TUBS_KOD": "153-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL320 - Silivri-Çeltik-Yolçatı ",
+        "Value": "{C9E1F771-643C-4728-A751-F68AD96F822D}",
+        "Object_ID": "258492",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Çeltik-Yolçatı ",
+        "TUBS_KOD": "155-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL320 - Silivri-Semizkumlar-Çeltik-Yolçatı ",
+        "Value": "{F8B740E0-4F94-45A2-8303-11FF82EDF9D8}",
+        "Object_ID": "258487",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Semizkumlar-Çeltik-Yolçatı ",
+        "TUBS_KOD": "155-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL322 - Ortaköy-Kavaklı-Silivri",
+        "Value": "{C81F8B12-8AA9-4B34-83B1-C96E44064E25}",
+        "Object_ID": "275562",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah (Ortaköy-Kavaklı-Silivri)",
+        "TUBS_KOD": "157-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL322 - Selimpaşa TOKİ-Silivri",
+        "Value": "{BFD2A866-3018-4B5B-9709-F72E896D27DE}",
+        "Object_ID": "271076",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Selimpaşa TOKİ-Silivri",
+        "TUBS_KOD": "157-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL322 - Selimpaşa-Ortaköy-Kadıköy",
+        "Value": "{AB5CECBB-4E3D-4EAD-97B8-E34AF2DEB8AA}",
+        "Object_ID": "258344",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah Selimpaşa-Ortaköy-Kadıköy",
+        "TUBS_KOD": "157-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL323 - Silivri-Gümüşyaka",
+        "Value": "{751FCC51-E811-473D-8A58-F525EC7F8FE1}",
+        "Object_ID": "258510",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Gümüşyaka",
+        "TUBS_KOD": "158-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL323 - Silivri-Semizkumlar-Gümüşyaka",
+        "Value": "{C8A7163A-9819-4A1A-8CB8-5340FDFE60FF}",
+        "Object_ID": "258509",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Semizkumlar-Gümüşyaka",
+        "TUBS_KOD": "158-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL324 - Selimpaşa-Ortaköy-Kadıköy",
+        "Value": "{2DE04F90-5961-481D-B58C-37A9C26FC2A5}",
+        "Object_ID": "258350",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Selimpaşa-Ortaköy-Kadıköy 2",
+        "TUBS_KOD": "159-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL324 - Silivri-Kadıköy",
+        "Value": "{A6A962BE-9E01-49EB-9552-63385E0B1472}",
+        "Object_ID": "258154",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Kadıköy",
+        "TUBS_KOD": "159-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL325 - Silivri-Değirmenköy",
+        "Value": "{9A6865E2-FD47-4777-9444-634F253D5244}",
+        "Object_ID": "258496",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Değirmenköy 2",
+        "TUBS_KOD": "160-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL325 - Silivri-Semizkumlar-Değirmenköy",
+        "Value": "{D7BEFD26-382C-4BBA-9F9E-1F6A3FD66D04}",
+        "Object_ID": "258501",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Semizkumlar-Değirmenköy",
+        "TUBS_KOD": "160-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL326 - Silivri-Gazitepe Mh",
+        "Value": "{3190161D-05CD-49A5-AF32-9DFE0CF7C67B}",
+        "Object_ID": "258328",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri-Gazitepe Mh",
+        "TUBS_KOD": "161-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL329 - Silivri (Otogar)- Şehiriçi - Silivri Cezaevi",
+        "Value": "{60FFD5A3-A1E3-4A8B-AA6B-21F26AB9E5FA}",
+        "Object_ID": "258312",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri (Otogar)- Şehiriçi - Silivri Cezaevi",
+        "TUBS_KOD": "164-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL329 - Silivri Terminal-KİPTAŞ 3/4",
+        "Value": "{8DC86E4F-7616-4DB4-AD85-2AA0C0EECA5E}",
+        "Object_ID": "271394",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri Terminal-KİPTAŞ 3/4",
+        "TUBS_KOD": "164-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL329 - Silivri Terminal-Şehiriçi-Cezaevi",
+        "Value": "{48B185BB-E5C5-4388-9886-A8E07C8AF719}",
+        "Object_ID": "258166",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Silivri Terminal-Şehiriçi-Cezaevi",
+        "TUBS_KOD": "164-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL400 - Sultanbeyli – Sultanbeyli Devlet Hastanesi - Yenidoğan ",
+        "Value": "{2517A632-F0F1-4941-9F06-DA92CB7DB8E3}",
+        "Object_ID": "258102",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Sultanbeyli - Sultanbeyli Devlet Hastanesi - Yenidoğan",
+        "TUBS_KOD": "120-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL400 - Sultanbeyli – Yenidoğan ",
+        "Value": "{71EE4E2D-2845-43AB-B196-F15C87444958}",
+        "Object_ID": "258103",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Sultanbeyli-Yenidoğan",
+        "TUBS_KOD": "120-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL400 - Sultanbeyli Devlet Hastanesi-Sultanbeyli-Kurtköy",
+        "Value": "{E635764D-1494-4E99-99B5-85EFBBF974DE}",
+        "Object_ID": "258112",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Sultanbeyli Devlet Hastanesi-Sultanbeyli-Kurtköy ",
+        "TUBS_KOD": "120-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL400 - Sultanbeyli-Aydos",
+        "Value": "{A1E576A8-E6D3-483F-A38C-E89D08EF09B0}",
+        "Object_ID": "258111",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergâh:Sultanbeyli-Aydos",
+        "TUBS_KOD": "120-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL400 - Sultanbeyli-Çamlık Mahallesi",
+        "Value": "{9298DB73-3FF0-4FF9-B342-C3096D1A3E59}",
+        "Object_ID": "258045",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5.Güzergâh:Sultanbeyli-Çamlık Mahallesi",
+        "TUBS_KOD": "120-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL401 - Sultanbeyli-Ferhatpaşa (Yeditepe Üniversitesi)",
+        "Value": "{627D1CF3-B502-4B2C-BB78-9AAF4A0137DF}",
+        "Object_ID": "257961",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Sultanbeyli-Ferhatpaşa (Yeditepe Üniversitesi)",
+        "TUBS_KOD": "121-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL401 - Viaport-Mecidiye Mah.-Ahmet Yesevi Mah.- Sultanbeyli Devlet Hastanesi",
+        "Value": "{7352033E-336F-420D-8E91-02B1F43DBA71}",
+        "Object_ID": "266914",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Viaport-Mecidiye Mah-Ahmet Yesevi Mah-Sultanbeyli Devlet Hastanesi",
+        "TUBS_KOD": "121-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BL401 - Via-port-Sultanbeyli-Dudullu",
+        "Value": "{255D4270-00FC-4366-9FE1-E74FCC9BF7A2}",
+        "Object_ID": "258061",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Sultanbeyli-Sarıgazi-Dudullu ",
+        "TUBS_KOD": "121-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "BŞK1 - BEŞİKTAŞ - HARBİYE - Alternatif Güzergâh ",
+        "Value": "{807830A0-E3F0-4ACA-BD84-9D41AD6EB1C5}",
+        "Object_ID": "54122",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "24-51-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK1 - BEŞİKTAŞ - HARBİYE - Alternatif Güzergâh ",
+        "Value": "{61435A9D-34E1-458D-86B9-5DC0369DDE1A}",
+        "Object_ID": "49953",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "24-51-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK1 - BEŞİKTAŞ - HARBİYE - Mevcut Güzergâh",
+        "Value": "{A98C2634-BAF9-4513-87E4-D7CDFEF602B7}",
+        "Object_ID": "54124",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "24-51-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK1 - BEŞİKTAŞ - HARBİYE - Mevcut Güzergâh",
+        "Value": "{65B3C10D-E43C-4F2E-8F01-983C16B0DCEE}",
+        "Object_ID": "54125",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "24-51-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK2 - BEŞİKTAŞ - HARBİYE - Alternatif Güzergâh ",
+        "Value": "{B5C62DA1-1A9E-4BBF-8BAC-AF5CBC65F530}",
+        "Object_ID": "48764",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "25-52-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK2 - BEŞİKTAŞ - HARBİYE - Alternatif Güzergâh ",
+        "Value": "{EB853895-767D-4F7F-AFBF-A187D75002BE}",
+        "Object_ID": "49354",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "25-52-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK2 - BEŞİKTAŞ - HARBİYE - Mevcut Güzergâh",
+        "Value": "{62A7AD5E-AC03-45D0-A5CB-13759078F265}",
+        "Object_ID": "48762",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "25-52-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK2 - BEŞİKTAŞ - HARBİYE - Mevcut Güzergâh",
+        "Value": "{D5C84346-1E8F-468F-AE6C-DF989BFEC54D}",
+        "Object_ID": "49351",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "25-52-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK3 - BEŞİKTAŞ-KURUÇEŞME-BEBEK-BEBEK YOKUŞU-ETİLER METRO - Mevcut Güzergâh",
+        "Value": "{BDC56F2B-486B-4D94-BD11-02C256CC4EBE}",
+        "Object_ID": "52836",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "41-65-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "BŞK3 - BEŞİKTAŞ-KURUÇEŞME-BEBEK-BEBEK YOKUŞU-ETİLER METRO - Mevcut Güzergâh",
+        "Value": "{C6F58F8F-4BA0-4FED-9842-EC228B99B722}",
+        "Object_ID": "52835",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "41-65-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "C109 - Şifa Mahallesi-Viaport Marina-Aydınlı Mahallesi ",
+        "Value": "{CC9BCA48-F148-487E-9666-583607529923}",
+        "Object_ID": "287724",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şifa Mahallesi-Viaport Marina-Aydınlı Mahallesi ",
+        "TUBS_KOD": "61-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C115 - Ümraniye (Santral)-Talimhane-Rasathane ",
+        "Value": "{EDDD5573-BB19-450B-9B86-D99544C10916}",
+        "Object_ID": "272363",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ümraniye (Santral)-Talimhane-Rasathane ",
+        "TUBS_KOD": "62-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C115 - Ümraniye Belediyesi-Ümraniye (Santral)-Talimhane-Çengelköy",
+        "Value": "{485D6E7D-D53F-4362-AA48-A01211A832CE}",
+        "Object_ID": "258051",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ümraniye Belediyesi-Ümraniye (Santral)-Talimhane-Çengelköy",
+        "TUBS_KOD": "62-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C115 - Üsküdar-Çengelköy-Talimhane-Rasathane",
+        "Value": "{BE533E25-B9DD-49E7-B943-61F7E2E26D33}",
+        "Object_ID": "258064",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Üsküdar-Çengelköy-Talimhane-Rasathane",
+        "TUBS_KOD": "62-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C116 -  Uzunçayır- Ataşehir (Palladium)-Ferhatpaşa",
+        "Value": "{755B5F6B-3EA9-41FC-AD7F-F9EF1A549047}",
+        "Object_ID": "277801",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Üsküdar-Ataşehir -Ferhatpaşa Güzergâhı ",
+        "TUBS_KOD": "63-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C116 - 2.Güzergâh: Üsküdar- Ataşehir (Palladium)-Ferhatpaşa Güzergâhı ",
+        "Value": "{153C5F52-0EC3-47EB-85FD-4D7CC88B4F4A}",
+        "Object_ID": "281956",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Üsküdar- Ataşehir (Palladium)-Ferhatpaşa Güzergâhı ",
+        "TUBS_KOD": "63-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C116 - 3.Güzergah : Ataşehir-Küçükbakkalköy-Atatürk Mah.-Yenişehir Mah. Güzergâhı ",
+        "Value": "{004B9EAA-EE7D-4B39-B3DA-E5B8700E350A}",
+        "Object_ID": "281958",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah : Ataşehir-Küçükbakkalköy-Atatürk Mah.-Yenişehir Mah. Güzergâhı ",
+        "TUBS_KOD": "63-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C117 - Üsküdar-Koşuyolu-Acıbadem",
+        "Value": "{31E9674F-9C7B-4C95-866D-57F094A2B4CD}",
+        "Object_ID": "258073",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Üsküdar-Koşuyolu-Acıbadem",
+        "TUBS_KOD": "64-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C118 - Üsküdar-Kirazlıtepe Mah.-Ferah Mah.-Tantavi Mah.-Elmalıkent Mah",
+        "Value": "{D0B7C154-22AB-4074-92F1-5D3ED0E13AC8}",
+        "Object_ID": "258071",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Üsküdar-Kirazlıtepe Mah.-Ferah Mah.-Tantavi Mah.-Elmalıkent Mah",
+        "TUBS_KOD": "65-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C124 - 2.Güzergah: İçmeler Marmaray-Aydınlı Toplu Konutları Bölgesi-BİRMES Sanayi Sitesi ",
+        "Value": "{BC786541-13A5-4206-8C0A-09C1865FE9E9}",
+        "Object_ID": "286768",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: İçmeler Marmaray-Aydınlı Toplu Konutları Bölgesi-BİRMES Sanayi Sitesi ",
+        "TUBS_KOD": "66-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C124 - 2.Güzergah: İçmeler Marmaray-Aydınlı Toplu Konutları Bölgesi-BİRMES Sanayi Sitesi (anternatif)",
+        "Value": "{5C495769-D5B0-482E-82C7-6A1E23964909}",
+        "Object_ID": "287074",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: İçmeler Marmaray-Aydınlı Toplu Konutları Bölgesi-BİRMES Sanayi Sitesi (anternatif)",
+        "TUBS_KOD": "66-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C124 - 3. Güzergah: Şifa Mahallesi-Viaport Marina-Aydınlı Mahallesi ",
+        "Value": "{3692A96B-008B-4BBA-A7C6-0DF0D2C41108}",
+        "Object_ID": "288047",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergah: Şifa Mahallesi-Viaport Marina-Aydınlı Mahallesi ",
+        "TUBS_KOD": "66-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C124 - Tersaneler-İçmeler-Aydınlı-Orhanlı(Orta Mah)",
+        "Value": "{BFB9DDBB-AA87-42EF-BDFF-EAB7FD1E9431}",
+        "Object_ID": "257989",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergah:Tersaneler(Li.Bşk) - İçmeler ? Aydınlı-Orhanlı (TOKİ Konutları-Orta Mah)",
+        "TUBS_KOD": "66-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C125 - Pendik-Gözdağı",
+        "Value": "{AADBF447-853F-435F-A223-DB43A58E6BBD}",
+        "Object_ID": "257891",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Gözdağı",
+        "TUBS_KOD": "67-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C125 - Pendik-Gözdağı (alternatif)",
+        "Value": "{7FBB1779-67F7-415E-8CC5-6A71F387E84B}",
+        "Object_ID": "287714",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Gözdağı (alternatif)",
+        "TUBS_KOD": "67-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C127 - Kartal-Soğanlık-Yakacık-Uğur Mumcu-Ortadağ",
+        "Value": "{690449ED-483C-411E-8D1E-4332D1C3DD5A}",
+        "Object_ID": "258324",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Adı: Kartal-Soğanlık-Yakacık-Uğur Mumcu-Ortadağ",
+        "TUBS_KOD": "187-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C127 - Kartal-Yakacık-Uğur-Mumcu (içi)-Ortadağ-AkpınarMah. Samandıra-Yenidoğan",
+        "Value": "{FF36C83F-9EBD-4981-9AC4-043C85ED5C8C}",
+        "Object_ID": "258325",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Kartal-Yakacık-Uğur-Mumcu-Ortadağ-AkpınarMah. Samandıra-Yenidoğan",
+        "TUBS_KOD": "187-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C307 - Dudullu-Huzur Mah.(Şahintepe) ",
+        "Value": "{5A858070-CA3C-4AB7-A583-D7DCFFBE9014}",
+        "Object_ID": "264043",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Dudullu-Huzur Mah.(Şahintepe)",
+        "TUBS_KOD": "73-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C307 - Ümraniye Eğt. ve Arşt. Hast.-Cemil Meriç Mah.-Adem Yavuz Mah.",
+        "Value": "{1ECA07E6-8B37-455B-99E7-621F3524DB77}",
+        "Object_ID": "258008",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Ümraniye Eğt. ve Arşt. Hast.-Cemil Meriç Mah.-Adem Yavuz Mah.",
+        "TUBS_KOD": "73-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C308 - Küçükyalı-Aydınevler-Fındıklı",
+        "Value": "{E0929257-CC1E-4D8D-80EA-075A2B966B37}",
+        "Object_ID": "257901",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Küçükyalı-Aydınevler-Fındıklı",
+        "TUBS_KOD": "74-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C309 - Ahmet Yesevi Mah.-Esenyalı",
+        "Value": "{3C0CD445-DD01-47BA-9070-8A36FF548EF0}",
+        "Object_ID": "257903",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ahmet Yesevi Mah.-Esenyalı",
+        "TUBS_KOD": "75-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C310 - Pendik-Aydos-Hilal Konutları",
+        "Value": "{3AFDC0A6-55D4-4F0E-805B-4E43994A7088}",
+        "Object_ID": "258128",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Aydos-Hilal Konutları",
+        "TUBS_KOD": "76-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C310 - Pendik-Aydos-Hilal Konutları (alternatif)",
+        "Value": "{8AF6FEB3-0B51-4EEE-9702-3C721A2AC519}",
+        "Object_ID": "287715",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Aydos-Hilal Konutları (alternatif)",
+        "TUBS_KOD": "76-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C311 -  Dudullu - Esenşehir- Yenidoğan – Abdurrahmangazi",
+        "Value": "{3986CCB1-120A-4253-A62D-5CD4DBB70702}",
+        "Object_ID": "264038",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergâh: Dudullu - Esenşehir- Yenidoğan ? Abdurrahmangazi",
+        "TUBS_KOD": "77-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C311 -  Dudullu –Sarıgazi – Yunus Emre Mah. -Abdurrahmangazi",
+        "Value": "{40B13700-6EE2-44A5-85AB-D82569718956}",
+        "Object_ID": "258354",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Dudullu ?Sarıgazi ? Yunus Emre Mah. -Abdurrahmangazi",
+        "TUBS_KOD": "77-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C311 -  Dudullu -Sarıgazi-Yenidoğan -Abdurrahmangazi",
+        "Value": "{26E12713-E9A2-4846-9223-AF30E4BED9A5}",
+        "Object_ID": "258001",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5.Güzergâh: Dudullu -Sarıgazi-Yenidoğan -Abdurrahmangazi",
+        "TUBS_KOD": "77-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C311 -  Dudullu-Sarıgazi Mahallesi-Yenidoğan Mahallesi-Hilal Mahallesi",
+        "Value": "{33FA00C0-1977-4F49-B285-D793FCBB13EB}",
+        "Object_ID": "264040",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Dudullu-Sarıgazi Mahallesi-Yenidoğan Mahallesi-Hilal Mahallesi",
+        "TUBS_KOD": "71-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C311 -  Dudullu-Taşdelen Mh.-Yunus Emre Mh.-Abdurrahmangazi Mh.",
+        "Value": "{3ED78C59-0B7B-4490-9C59-BB8F4CFC37FD}",
+        "Object_ID": "257908",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Dudullu-Taşdelen Mh.-Yunus Emre Mh.-Abdurrahmangazi Mh.",
+        "TUBS_KOD": "77-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C311 -  Sarıgazi-Yenidoğan-Abdurrahmangazi-Osmangazi Mahallesi ",
+        "Value": "{480D1BA3-BA2F-4C3C-A272-0A0F2C8CA4CD}",
+        "Object_ID": "277798",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "6.Güzergâh: İlhan Varank EAH.-Sarıgazi-Abdurrahmangazi- Paşaköy Mah.",
+        "TUBS_KOD": "77-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C312 - Ümraniye Hekimbaşı-Göksu Mah",
+        "Value": "{087F51AA-5722-45A2-BFA6-FD978FE5A2FA}",
+        "Object_ID": "257910",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ümraniye Hekimbaşı-Göksu Mah",
+        "TUBS_KOD": "78-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C313 - Ümraniye-İnkılap Mah.- Kazım Karabekir Mah.-Topağacı Mah. ",
+        "Value": "{33D68EA6-8766-40F4-B54A-2AD601AE65B1}",
+        "Object_ID": "258029",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ümraniye-İnkılap Mah.- Kazım Karabekir Mah.-Topağacı Mah. ",
+        "TUBS_KOD": "79-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C314 - 2. Güzergah: Ümraniye-Yeni Kaymakamlık-Elmalı-Dumlupınar-Göksu Mah.",
+        "Value": "{09734F8C-E5C9-4888-AE28-577D8AB38047}",
+        "Object_ID": "281633",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah: Ümraniye-Yeni Kaymakamlık-Elmalı-Dumlupınar-Göksu Mah.",
+        "TUBS_KOD": "80-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C314 - Ümraniye-Elmalı-Dumlupınar-Göksu Mah.",
+        "Value": "{01A9FDD8-5508-43F7-9279-08E51CA96413}",
+        "Object_ID": "258047",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergah: Ümraniye-Elmalı-Dumlupınar-Göksu Mah.",
+        "TUBS_KOD": "80-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C317 - Çakmak-Doğu Ataşehir",
+        "Value": "{E8D636E4-2B43-4C08-BDA0-F0C2416CEB30}",
+        "Object_ID": "257881",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çakmak-Doğu Ataşehir",
+        "TUBS_KOD": "82-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C319 - Küçükyalı-Gebze ",
+        "Value": "{A6D8D731-6451-45B4-BB64-C9662024C14F}",
+        "Object_ID": "258056",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Küçükyalı-Gebze ",
+        "TUBS_KOD": "83-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C351 - Pendik-450 Konutlar-Kartal Cezaevi",
+        "Value": "{E4445EAB-056D-402C-86A9-D56A50082AB7}",
+        "Object_ID": "258108",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-450 Konutlar-Kartal Cezaevi",
+        "TUBS_KOD": "84-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C351 - Pendik-450 Konutlar-Kartal Cezaevi (alternatif)",
+        "Value": "{43C3EA86-1AEC-423B-B13A-0EFF22ECD1B7}",
+        "Object_ID": "287717",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-450 Konutlar-Kartal Cezaevi (alternatif)",
+        "TUBS_KOD": "84-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C354 - Santral(Ümraniye)-Yavuztürk",
+        "Value": "{3891DB00-8F23-4701-B6A0-0D98687F95B1}",
+        "Object_ID": "258049",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Santral(Ümraniye)-Yavuztürk",
+        "TUBS_KOD": "85-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C367 -  Harmantepe-Beykoz-Dereseki",
+        "Value": "{9243F92E-E278-4403-88FC-C90488333026}",
+        "Object_ID": "278756",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergâh:Harmantepe-Beykoz-Dereseki",
+        "TUBS_KOD": "98-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C367 -  Ortaçeşme-Beykoz-Paşabahçe-A.Hisarı-Kavacık-Rüzgarlıbahçe ",
+        "Value": "{71F206F1-ACE6-43C0-A02F-78351406BB11}",
+        "Object_ID": "258099",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh:Ortaçeşme-Beykoz-Paşabahçe-A.Hisarı-Kavacık-Rüzgarlıbahçe - Gölbaşı",
+        "TUBS_KOD": "72-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C367 -  Paşabahçe-Soğuksu-Acarkent-Çengeldere",
+        "Value": "{EE4CED55-6A68-45C9-973F-E4C2DA553A93}",
+        "Object_ID": "257940",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergâh:Paşabahçe-Soğuksu-Acarkent-Çengeldere",
+        "TUBS_KOD": "98-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C367 - 4. Güzergâh: Paşabahçe-Soğuksu-Kavacık",
+        "Value": "{D0E04BC5-25F5-4B09-A4E8-9E0793AF954D}",
+        "Object_ID": "279397",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergâh: Paşabahçe-Soğuksu-Kavacık",
+        "TUBS_KOD": "72-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C367 - Hekimbaşı-Anadolu Hisarı-Kavacık-Çavuşbaşı",
+        "Value": "{1A72F956-AB22-4CBB-9070-C07B82A6C3FF}",
+        "Object_ID": "257893",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergâh:Hekimbaşı A.Hisarı-Kavacık-Rüzgarlıbahçe-Çavuşbaşı",
+        "TUBS_KOD": "68-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C50 - Pendik-Kadıköy",
+        "Value": "{187F9301-AC1B-4F24-BEEE-080711CF6C70}",
+        "Object_ID": "258544",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Kadıköy",
+        "TUBS_KOD": "86-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C51 - Aydınevler -Yakacık - Uğur Mumcu Mah.",
+        "Value": "{4F89F8DC-A119-47AC-A015-DD422DBF4492}",
+        "Object_ID": "257885",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Aydınevler -Yakacık - Uğur Mumcu Mah.",
+        "TUBS_KOD": "88-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C55 - Kadıköy-Yenisahra-Batı Ataşehir-Tepeüstü Metro-Ihlamurkuyu Mah.",
+        "Value": "{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}",
+        "Object_ID": "258478",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kadıköy-Yenisahra-Batı Ataşehir-Tepeüstü Metro-Ihlamurkuyu Mah.",
+        "TUBS_KOD": "91-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C55 - Yenisahra-Çamlık-Şerifali Mah",
+        "Value": "{654FD8DE-7903-4130-80FF-AFAD70D669F8}",
+        "Object_ID": "258010",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Yenisahra-Çamlık-Şerifali Mah",
+        "TUBS_KOD": "91-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C56 -  Ümraniye-Reşadiye",
+        "Value": "{B1C3D49E-B7EC-4026-A9D3-9A423DE68885}",
+        "Object_ID": "263715",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Ümraniye (Yeni Kaymakamlık)-Reşadiye",
+        "TUBS_KOD": "92-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C56 -  Üsküdar-Burhaniye Mah. ",
+        "Value": "{E6C70E79-D6F0-4891-AE26-199C6954D2F2}",
+        "Object_ID": "277157",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Üsküdar-Burhaniye Mah. ",
+        "TUBS_KOD": "92-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C56 -  Üsküdar-Ümraniye-Alemdağ",
+        "Value": "{54D08485-F058-4BA3-98B5-9077C4A822AC}",
+        "Object_ID": "257955",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Üsküdar-Ümraniye-Alemdağ",
+        "TUBS_KOD": "92-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C56 - 1.Güzergâh: Üsküdar-Ümraniye-Alemdağ",
+        "Value": "{42C1FA61-A43E-4BBA-9A7E-EA01FB55858B}",
+        "Object_ID": "288051",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Üsküdar-Ümraniye-Alemdağ",
+        "TUBS_KOD": "92-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C56 - 3.Güzergâh: Üsküdar-Burhaniye Mah. ",
+        "Value": "{E91B3F33-1679-4E89-AB2A-1A57F4A99E5B}",
+        "Object_ID": "288052",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Üsküdar-Burhaniye Mah. ",
+        "TUBS_KOD": "92-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C56 - 4. Güzergah: Çakmak-Doğu Ataşehir",
+        "Value": "{F0DB4E68-7002-4BB8-800E-1C871DA5B0A4}",
+        "Object_ID": "279407",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergah: Çakmak-Doğu Ataşehir",
+        "TUBS_KOD": "82-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C57 - Kadıköy-Koşuyolu-Ümraniye-Atakent",
+        "Value": "{1ED22B3B-35D4-4654-B2EF-B9CAEA4CEEDE}",
+        "Object_ID": "258009",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kadıköy-Koşuyolu-Ümraniye-Atakent",
+        "TUBS_KOD": "93-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C58 - Maltepe-Gülensu",
+        "Value": "{7BCDB176-38E2-4597-9DB1-65F9F8A5FA83}",
+        "Object_ID": "258468",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Gülensu",
+        "TUBS_KOD": "94-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C58 - Maltepe-Gülsuyu-Gülensu",
+        "Value": "{B4DDF001-1500-4027-B8EF-BAF253BBBDAB}",
+        "Object_ID": "258240",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Gülsuyu-Gülensu",
+        "TUBS_KOD": "94-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C64 - Maltepe-Başıbüyük",
+        "Value": "{4B401C3A-3192-496B-ACBE-7EBADB9B1653}",
+        "Object_ID": "257920",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Başıbüyük",
+        "TUBS_KOD": "95-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C64 - Maltepe-Büyükbakkalköy",
+        "Value": "{4A3554EA-CC4E-4853-90E8-541801B7BA3D}",
+        "Object_ID": "257913",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Büyükbakkalköy",
+        "TUBS_KOD": "95-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C64 - Maltepe-Fındıklı Mahallesi",
+        "Value": "{9CF5B27C-A11B-4809-90A9-830F74EE02B3}",
+        "Object_ID": "257922",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Fındıklı Mahallesi",
+        "TUBS_KOD": "95-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C65 - Kadıköy-Örnek Mah-Esatpaşa-Ümraniye",
+        "Value": "{0349FED8-A723-4940-9A03-95E0A90076E4}",
+        "Object_ID": "257938",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Kadıköy-Örnek Mah.-Esatpaşa-Eyüboğlu-Ümraniye Güzergâhı ",
+        "TUBS_KOD": "96-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C65 - Kadıköy-Örnek Mah-M.Kemal Mah.-Atakent Mah.-Çakmak Metro",
+        "Value": "{73AE6858-E700-4228-BF45-AE51F3352BDD}",
+        "Object_ID": "257936",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Kadıköy-Örnek Mah.-M. Kemal Mah. Güzergâhı",
+        "TUBS_KOD": "96-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C66 - Üsküdar-Bağlarbaşı-Kısıklı-Örnek Mah.-Esatpaşa Mah.",
+        "Value": "{CE3B8FFD-EB81-424D-9E61-469A6DAA0C4A}",
+        "Object_ID": "258082",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Üsküdar-Bağlarbaşı-Kısıklı-Örnek Mah.-Esatpaşa Mah.",
+        "TUBS_KOD": "97-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C70 -  Bostancı-İçerenköy-Şerifali Çiftliği-Dudullu",
+        "Value": "{AD3E9C0D-C441-4B8A-AA9E-F5D419B396D1}",
+        "Object_ID": "257923",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah : 19 Mayıs Mah.-Bostancı-İçerenköy-Mevlana Mah. Güzergâhı",
+        "TUBS_KOD": "99-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C70 -  Bostancı-K.Bakkalköy-Kayışdağı-Dudullu",
+        "Value": "{895A642C-622A-470C-99B1-BCA352ABE630}",
+        "Object_ID": "257930",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergâh: Bostancı-K.Bakkalköy-Kayışdağı-Dudullu",
+        "TUBS_KOD": "99-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C70 -  Bostancı-Kayışdağı-Ferhatpaşa-Dudullu OSB-Dudullu",
+        "Value": "{CE9FAFB3-F007-47A3-8E83-DD4C5CDC49EE}",
+        "Object_ID": "258415",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergâh: Bostancı-Kayışdağı-Ferhatpaşa-Dudullu OSB-Dudullu",
+        "TUBS_KOD": "99-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C70 -  Bostancı-Mehmet Akif Mah.-Tavukçu Yolu-Dudullu Güzergâhı",
+        "Value": "{D5C1BBDF-4AFE-4573-988A-5867CE1EA716}",
+        "Object_ID": "257931",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Bostancı-Mehmet Akif Mah.-Tavukçu Yolu-Dudullu Güzergâhı",
+        "TUBS_KOD": "99-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C71 - Kadıköy-Acıbadem-K.Çamlıca-Bulgurlu",
+        "Value": "{446D0A32-A75B-4E95-8885-4F58438BD2C8}",
+        "Object_ID": "257932",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergâh: Kadıköy ? Acıbadem ? K.Çamlıca ? Bulgurlu",
+        "TUBS_KOD": "100-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C71 - Uzunçayır-Ünalan-Bulgurlu ",
+        "Value": "{F018F6E8-8A86-48AE-A3B7-E553AC61F16B}",
+        "Object_ID": "257942",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergâh: Uzunçayır ? Ünalan ? Bulgurlu Güzergâhı",
+        "TUBS_KOD": "100-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C72 - 1.Güzergah Adı: Pendik-Tuzla",
+        "Value": "{383E93A8-B949-4B0D-A95C-34F7BA8E9B90}",
+        "Object_ID": "286119",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Pendik-Tuzla",
+        "TUBS_KOD": "101-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C72 - 1.Güzergah Adı: Pendik-Tuzla (alternatif)",
+        "Value": "{38466311-FEA3-4F7D-8B4C-6780AB4DEA45}",
+        "Object_ID": "287726",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Pendik-Tuzla (alternatif)",
+        "TUBS_KOD": "101-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C72 - 2. Güzergah: Şifa Mahallesi-Viaport Marina-Aydınlı Mahallesi ",
+        "Value": "{80DB216C-3770-4CF3-A6CD-51E0F4A333FD}",
+        "Object_ID": "288050",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergah: Şifa Mahallesi-Viaport Marina-Aydınlı Mahallesi ",
+        "TUBS_KOD": "61-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C74 - Site Mah.-Ümraniye Devlet Hastanesi-Kazım Karabekir Mah",
+        "Value": "{6816DF9E-33A2-45B5-8EF8-F1E89ABE761D}",
+        "Object_ID": "257926",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Site Mah.-Ümraniye Devlet Hastanesi-Kazım Karabekir Mah",
+        "TUBS_KOD": "102-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C75 - Ümraniye-Esatpaşa-Örnek Mah.-Göztepe E.A.H.",
+        "Value": "{524E6BAB-2CC8-4E72-BB50-94ED54FCAB77}",
+        "Object_ID": "258038",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ümraniye-Esatpaşa-Örnek Mah.-Göztepe E.A.H.",
+        "TUBS_KOD": "103-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C75 - Ümraniye-N.Kemal-M.Kml-Örn.Mh-Göz.Eğ.Ar.H.",
+        "Value": "{DEA5F361-5F86-492A-8BB9-42F00C26AD5E}",
+        "Object_ID": "258031",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ümraniye-N.Kemal-M.Kml-Örn.Mh-Göz.Eğ.Ar.H.",
+        "TUBS_KOD": "103-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C76 - Kadıköy-Polis Hastanesi - Çengelköy ",
+        "Value": "{DB71F188-DA5B-469A-9AAF-60B64CD71E15}",
+        "Object_ID": "258168",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kadıköy-Polis Hastanesi - Çengelköy ",
+        "TUBS_KOD": "104-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C77 - Ümraniye-Çakmak-Dudullu-Çekmeköy",
+        "Value": "{C0F8D757-522F-4482-B258-1B289036BE8E}",
+        "Object_ID": "258015",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh: Ümraniye-Çakmak-Dudullu ? Çekmeköy Güzergâhı ",
+        "TUBS_KOD": "105-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C77 - Ümraniye--Dudullu-Çekmeköy-Hamidiye(Şahinbey)",
+        "Value": "{E9195935-5C53-420D-8BB3-869069F8738B}",
+        "Object_ID": "258017",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergâh: Ümraniye - Dudullu - Çekmeköy- Hamidiye (Sahinbey) Güzergâhı ",
+        "TUBS_KOD": "105-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C78 - Kartal-Topselvi-Sapanbağları",
+        "Value": "{EB39C4E8-5EF4-45C0-85DF-2F3750CC2E4E}",
+        "Object_ID": "258179",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kartal-Topselvi-Sapanbağları",
+        "TUBS_KOD": "106-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C79 - KARTA-KARLIKTEPE MH.LÜTFİ KIRDAR-EĞT.VE ARAŞT.HAS.",
+        "Value": "{7BA8E5B1-2E5E-4FB1-9DD0-3DF01BD66113}",
+        "Object_ID": "258181",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "KARTA-KARLIKTEPE MH.LÜTFİ KIRDAR-EĞT.VE ARAŞT.HAS.",
+        "TUBS_KOD": "107-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C81 - Kartal-Esentepe-Devlet Hastanesi-Soğanlık-Yeni Mh",
+        "Value": "{727A1D5A-66A0-4BB2-9E0D-0C1F92FCB558}",
+        "Object_ID": "258182",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kartal-Esentepe- Soğanlık-Gümüşpınar-Maltepe Atışokulu Toki Konutları ",
+        "TUBS_KOD": "109-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C82 - Pendik-Topselvi",
+        "Value": "{A0469DA1-2AFB-46BD-BD2C-72A56620261A}",
+        "Object_ID": "258027",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Topselvi",
+        "TUBS_KOD": "110-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C83 - Pendik-Hürriyet Mahallesi-Yakacık",
+        "Value": "{0E416744-2A80-4902-929C-98580216D2D1}",
+        "Object_ID": "258137",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Hürriyet Mahallesi-Yakacık",
+        "TUBS_KOD": "111-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C83 - Pendik-Hürriyet Mahallesi-Yakacık (alternatif)",
+        "Value": "{445B716E-D8FF-42FD-AE04-9B325CC26DF4}",
+        "Object_ID": "287727",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Pendik-Hürriyet Mahallesi-Yakacık (alternatif)",
+        "TUBS_KOD": "111-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C84 - 1.Güzergah: Pendik-Aydınlı Mahallesi-Deri Sanayi-Mermerciler-Kimyacılar-Vernikçiler-OSB (alternatif) ",
+        "Value": "{4DFE4EAF-9260-4B5A-86B7-A14DB021537A}",
+        "Object_ID": "287394",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Pendik-Aydınlı Mahallesi-Deri Sanayi-Mermerciler-Kimyacılar-Vernikçiler-OSB (alternatif) ",
+        "TUBS_KOD": "112-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C84 - 2.Güzergah: Pendik-Aydınlı Köyü-Deri Sanayi (alternatif)",
+        "Value": "{B7030922-8653-431E-BDE1-17A32B5DD95A}",
+        "Object_ID": "287395",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: Pendik-Aydınlı Köyü-Deri Sanayi (alternatif)",
+        "TUBS_KOD": "112-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C84 - Pendik-Aydınlı Köyü-Deri Sanayi",
+        "Value": "{890F7790-BE2D-42A2-A1B3-CE0875879005}",
+        "Object_ID": "258110",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah: Pendik-Aydınlı Köyü-Deri Sanayi",
+        "TUBS_KOD": "112-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C84 - Pendik-Aydınlı Köyü-Deri Sanayi-Mermerciler-Kimya*",
+        "Value": "{A2A6D796-8406-4E42-AF5F-06B82B67A288}",
+        "Object_ID": "258474",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah: Pendik-Aydınlı Mahallesi-Deri Sanayi-Mermerciler-Kimyacılar-Vernikçiler-OSB ",
+        "TUBS_KOD": "112-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C86 - Kartal-Yakacık-Samandıra-S.beyli-Yenişehir Viaport",
+        "Value": "{0F70AAE9-57E2-4D5F-A274-7E13815E9E92}",
+        "Object_ID": "258522",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kartal-Yakacık-Samandıra-S.beyli-Yenişehir Viaport",
+        "TUBS_KOD": "113-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C87 - Maltepe-Esenkent",
+        "Value": "{1636ED1F-81AC-48D0-8F2F-B22415DBBA29}",
+        "Object_ID": "258206",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Esenkent",
+        "TUBS_KOD": "114-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 -  Pendik-Güllübağlar-Hastane (Ring)",
+        "Value": "{FFC96369-EDEF-4234-A8CA-5CBB5A001875}",
+        "Object_ID": "275266",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh Adı : Pendik-Güllübağlar-Hastane (Ring)",
+        "TUBS_KOD": "115-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 -  Pendik-Güllübağlar-Hastane (Ring)",
+        "Value": "{20BBCACF-6AB8-4366-89ED-AC7792B5FBA4}",
+        "Object_ID": "275268",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh Adı : Pendik-Güllübağlar-Hastane (Ring)",
+        "TUBS_KOD": "115-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 -  Pendik–Harmandere",
+        "Value": "{525E8ED7-C8BC-43D6-82A2-D6298D283F13}",
+        "Object_ID": "258014",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergâh Adı: Pendik?Harmandere",
+        "TUBS_KOD": "115-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 -  Pendik-Harmandere-Okan Üniversitesi (Ring)",
+        "Value": "{3DDF7A1C-7288-40CF-B8F2-2321E19DD0C5}",
+        "Object_ID": "274927",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergâh Adı : Pendik-Harmandere-Okan Üniversitesi (Ring)",
+        "TUBS_KOD": "115-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 -  Pendik-Hilal Konutları-Kurtköy/Emsey Hospital",
+        "Value": "{2F9D80CA-A698-4393-AC3C-D17898905B3C}",
+        "Object_ID": "258213",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergâh Adı : Pendik-Hilal Konutları-Kurtköy/Emsey Hospital",
+        "TUBS_KOD": "115-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 -  Pendik–Kiptaş Konutları",
+        "Value": "{CB3A6761-C1E6-492A-B155-CB25FEC47C20}",
+        "Object_ID": "257976",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergâh Adı : Pendik?Kiptaş Konutları",
+        "TUBS_KOD": "115-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 -  Pendik–Orhanlı",
+        "Value": "{09B9DEAC-6973-46B7-8710-A50B012FC999}",
+        "Object_ID": "257981",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "6. Güzergâh: Pendik?Orhanlı TOKİ Konutları ",
+        "TUBS_KOD": "115-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 - 1. Güzergâh Adı : Pendik?Kiptaş Konutları (alternatif)",
+        "Value": "{0D093C95-5996-4C43-BA73-198DD44759CE}",
+        "Object_ID": "287730",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1. Güzergâh Adı : Pendik?Kiptaş Konutları (alternatif)",
+        "TUBS_KOD": "115-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 - 2. Güzergâh Adı : Pendik-Güllübağlar-Hastane (Ring) (alternatif)",
+        "Value": "{B2EF970C-71E1-4F25-B91A-9CE609590EA9}",
+        "Object_ID": "288039",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh Adı : Pendik-Güllübağlar-Hastane (Ring) (alternatif)",
+        "TUBS_KOD": "115-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 - 2. Güzergâh Adı : Pendik-Güllübağlar-Hastane (Ring) (alternatif)",
+        "Value": "{CB44820E-7BA3-4A06-A26B-0F8FE3CD1E67}",
+        "Object_ID": "288041",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2. Güzergâh Adı : Pendik-Güllübağlar-Hastane (Ring) (alternatif)",
+        "TUBS_KOD": "115-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 - 3. Güzergâh Adı : Pendik-Hilal Konutları-Kurtköy/Emsey Hospital (alternatif)",
+        "Value": "{D93C5C94-936B-4B17-8BFC-EAD08EDBD331}",
+        "Object_ID": "288044",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3. Güzergâh Adı : Pendik-Hilal Konutları-Kurtköy/Emsey Hospital (alternatif)",
+        "TUBS_KOD": "115-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 - 4. Güzergâh Adı: Pendik?Harmandere (alternatif)",
+        "Value": "{85C9450E-0587-4569-A711-51790ABF1D9F}",
+        "Object_ID": "287733",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4. Güzergâh Adı: Pendik?Harmandere (alternatif)",
+        "TUBS_KOD": "115-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 - 5. Güzergâh Adı : Pendik-Harmandere-Okan Üniversitesi (Ring) (alternatif)",
+        "Value": "{CC8C6041-6F96-4643-89FD-1336DF362026}",
+        "Object_ID": "288042",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "5. Güzergâh Adı : Pendik-Harmandere-Okan Üniversitesi (Ring) (alternatif)",
+        "TUBS_KOD": "115-5-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C88 - 6. Güzergâh: Pendik?Orhanlı TOKİ Konutları (alternatif)",
+        "Value": "{035431B2-38FB-45F3-9FFE-A8A910923BB8}",
+        "Object_ID": "287729",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "6. Güzergâh: Pendik?Orhanlı TOKİ Konutları (alternatif)",
+        "TUBS_KOD": "115-6-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - 1.Güzergah Adı: Pendik-Esenler Mahallesi (alternatif)",
+        "Value": "{F8CED4B1-C426-4C44-AAB5-16A50D25B8D8}",
+        "Object_ID": "286753",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Pendik-Esenler Mahallesi (alternatif)",
+        "TUBS_KOD": "116-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - 2.Güzergah Adı: Pendik-Esenyalı Mahallesi-Ahmet Yesevi Mahallesi (alternatif)",
+        "Value": "{341A6D88-C54E-40F3-9ABF-E6024001BC77}",
+        "Object_ID": "286755",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Adı: Pendik-Esenyalı Mahallesi-Ahmet Yesevi Mahallesi (alternatif)",
+        "TUBS_KOD": "116-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - 3.Güzergah Adı: Pendik-Kavakpınar Mahallesi  (alternatif)",
+        "Value": "{BC821676-C16B-4D72-BA69-F1F519494C2F}",
+        "Object_ID": "286758",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah Adı: Pendik-Kavakpınar Mahallesi  (alternatif)",
+        "TUBS_KOD": "116-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - 4.Güzergah Adı: Pendik-Ramazanoğlu Mahallesi (alternatif)",
+        "Value": "{555F366D-6C17-438B-B40F-582C50F44E37}",
+        "Object_ID": "286760",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergah Adı: Pendik-Ramazanoğlu Mahallesi (alternatif)",
+        "TUBS_KOD": "116-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - Pendik-Esenler Mahallesi",
+        "Value": "{12E29F28-F6ED-4A68-9D47-3888A7BA6CC8}",
+        "Object_ID": "258138",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "1.Güzergah Adı: Pendik-Esenler Mahallesi",
+        "TUBS_KOD": "116-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - Pendik-Esenyalı Mah.",
+        "Value": "{66E82046-37F6-4561-B3C3-7825D23EC586}",
+        "Object_ID": "258121",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "2.Güzergah Adı: Pendik-Esenyalı Mahallesi-Ahmet Yesevi Mahallesi ",
+        "TUBS_KOD": "116-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - Pendik-Kavakpınar Mah.",
+        "Value": "{953AB827-B2E2-42D1-BAB2-1CAA1FA06691}",
+        "Object_ID": "258091",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "3.Güzergah Adı: Pendik-Kavakpınar Mahallesi",
+        "TUBS_KOD": "116-4-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C89 - Pendik-Ramazanoğlu Mah.",
+        "Value": "{A3E7CE5B-BFC1-40AE-90AE-C7A03593BC36}",
+        "Object_ID": "258148",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "4.Güzergah Adı: Pendik-Ramazanoğlu Mahallesi",
+        "TUBS_KOD": "116-3-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C90 - Kartal-Gülsuyu Köprülü Kavşağı-Esenkent",
+        "Value": "{BCA93C52-5DBA-4C44-97A8-C34AB8F8C424}",
+        "Object_ID": "260839",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kartal-Gülsuyu Köprülü Kavşağı-Esenkent",
+        "TUBS_KOD": "117-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C91 - Maltepe-Zümrütevler-Narcity-Kiptaş",
+        "Value": "{1DBCB143-E5E8-44AC-882C-2936CA2CF9E2}",
+        "Object_ID": "258382",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Zümrütevler-Narcity-Kiptaş",
+        "TUBS_KOD": "118-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C91 - Maltepe-Zümrütevler-Narlıdere",
+        "Value": "{EF357020-BA8C-49F9-9316-AC1991E1873B}",
+        "Object_ID": "258241",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Maltepe-Zümrütevler-Narlıdere",
+        "TUBS_KOD": "118-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C93 - Kartal-Hürriyet Mahallesi",
+        "Value": "{5E032005-A07C-414B-8CFB-68985646471C}",
+        "Object_ID": "258215",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kartal-Hürriyet Mahallesi",
+        "TUBS_KOD": "119-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "C93 - Kartal-Kartal Cezaevi-Yayalar Mahallesi",
+        "Value": "{FE365F57-14AE-4BC3-AB16-E86F1C4A67DE}",
+        "Object_ID": "258225",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Kartal-Kartal Cezaevi-Yayalar Mahallesi",
+        "TUBS_KOD": "119-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC01 - Çatalca-İhsaniye",
+        "Value": "{4CFE6173-3565-4B58-A9DB-D5482ECDC7E6}",
+        "Object_ID": "258175",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-İhsaniye",
+        "TUBS_KOD": "172-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC02 - Çatalca-Ovayenice-Ortaköy",
+        "Value": "{D5911818-C655-4245-B72B-CCAFF25F33DF}",
+        "Object_ID": "258187",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-Ovayenice-Ortaköy",
+        "TUBS_KOD": "174-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC03 - Çatalca-Hadımköy-Karaburun",
+        "Value": "{E42F3D68-9F01-49C1-BCEF-7DC972DFA090}",
+        "Object_ID": "258200",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-Hadımköy-Karaburun",
+        "TUBS_KOD": "175-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC04 - Çatalca-Durusu-Karaburun",
+        "Value": "{927DDE69-6296-4779-9943-AD3609B6D97E}",
+        "Object_ID": "258316",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-Durusu-Karaburun",
+        "TUBS_KOD": "176-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC05 - Çatalca-Muratbey-Gümrük",
+        "Value": "{EA3B1D35-BDBC-4655-926C-41D5E1580A0E}",
+        "Object_ID": "258203",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-Muratbey-Gümrük",
+        "TUBS_KOD": "177-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC06 - Çatalca-Nakkaş",
+        "Value": "{9E180BFA-993D-4344-BEF1-5B662318A43B}",
+        "Object_ID": "258211",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-Nakkaş",
+        "TUBS_KOD": "178-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC07 - Çatalca-Şehir Merkezi-Serbest Bölge",
+        "Value": "{9D551231-2C9F-4C12-90E3-00A307507BDC}",
+        "Object_ID": "258331",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-Şehir Merkezi-Serbest Bölge",
+        "TUBS_KOD": "179-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC08 - Çatalca-Şehir Merkezi-Konutlar Bölgesi",
+        "Value": "{EA1902BD-4B02-48B2-B151-F0ACDAC1F6F7}",
+        "Object_ID": "258217",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Çatalca-Şehir Merkezi-Konutlar Bölgesi",
+        "TUBS_KOD": "180-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ÇTC09 - KİPTAŞ KONUTLARI-ŞEHİR MERKEZİ-OKULLAR BÖLGESİ",
+        "Value": "{27B881C7-45F1-4005-9AAE-D9F922B54B23}",
+        "Object_ID": "265955",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "KİPTAŞ KONUTLARI-ŞEHİR MERKEZİ-OKULLAR BÖLGESİ",
+        "TUBS_KOD": "180-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "D11 - BAKIRKÖY - TAK SİM - Mevcut Güzergâh",
+        "Value": "{FBA254C5-D5E2-4BAD-A330-4664E36C0F2C}",
+        "Object_ID": "50129",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "1-11-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D11 - BAKIRKÖY - TAKSİM - Alternatif Güzergâh ",
+        "Value": "{6A5D8F4C-EBE1-4236-8F10-C493FF9411A5}",
+        "Object_ID": "48673",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "1-11-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D11 - BAKIRKÖY - TAKSİM - Alternatif Güzergâh ",
+        "Value": "{EA77994B-4334-4838-9DA5-1E04CD7E9939}",
+        "Object_ID": "48674",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "1-11-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D11 - BAKIRKÖY - TAKSİM - Mevcut Güzergâh",
+        "Value": "{8F5AFA1E-A793-49EB-9865-891E58A6ADF8}",
+        "Object_ID": "48675",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "1-11-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D15 - YENİBOSNA - TAKSİM - Alternatif Güzergâh ",
+        "Value": "{B1BCDDA4-850C-4645-A78A-D303DB9D08A1}",
+        "Object_ID": "50622",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "5-15-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D15 - YENİBOSNA - TAKSİM - Alternatif Güzergâh ",
+        "Value": "{1C0E9A67-9A31-4861-832C-249161ECE495}",
+        "Object_ID": "48689",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "5-15-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D15 - YENİBOSNA - TAKSİM - Mevcut Güzergâh",
+        "Value": "{A592FD91-3259-47CC-9156-35BAFB21F9EF}",
+        "Object_ID": "50538",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "5-15-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D15 - YENİBOSNA - TAKSİM - Mevcut Güzergâh",
+        "Value": "{38D733B9-4B80-46DB-898B-B3B9287B0CC7}",
+        "Object_ID": "50532",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "5-15-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D21 - ÜSKÜDAR - KADIKÖY - Alternatif Güzergâh ",
+        "Value": "{29FEBC82-3186-4C76-8EB3-1A5E28D395BB}",
+        "Object_ID": "50549",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "6-21-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D21 - ÜSKÜDAR - KADIKÖY - Alternatif Güzergâh ",
+        "Value": "{6F9EA8BD-05AE-4580-A168-A815430D703D}",
+        "Object_ID": "48695",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "6-21-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D21 - ÜSKÜDAR - KADIKÖY - Mevcut Güzergâh",
+        "Value": "{2531D1E3-1678-4882-95C3-46A86A5738EA}",
+        "Object_ID": "50541",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "6-21-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D21 - ÜSKÜDAR - KADIKÖY - Mevcut Güzergâh",
+        "Value": "{3085F57F-DDEC-4791-9E0A-42FC4B2D7D59}",
+        "Object_ID": "50545",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "6-21-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D22 - ÜSKÜDAR-BAĞLARBAŞI-KADIKÖY - Alternatif Güzergâh ",
+        "Value": "{97196262-FF5B-4506-BFEF-F7E58BA94079}",
+        "Object_ID": "48698",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "7-22-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D22 - ÜSKÜDAR-BAĞLARBAŞI-KADIKÖY - Alternatif Güzergâh ",
+        "Value": "{8BDC26F2-F304-473D-9D96-BBBD9169C49B}",
+        "Object_ID": "50562",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "7-22-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D22 - ÜSKÜDAR-BAĞLARBAŞI-KADIKÖY - Mevcut Güzergâh",
+        "Value": "{E8624370-7B61-4322-99DF-066FE5139EC3}",
+        "Object_ID": "48696",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "7-22-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D22 - ÜSKÜDAR-BAĞLARBAŞI-KADIKÖY - Mevcut Güzergâh",
+        "Value": "{420477E7-C73E-493A-8F48-6753BFDF5F6F}",
+        "Object_ID": "50550",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "7-22-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D25 - ÜSKÜDAR - BAĞLARBAŞI - KÜLTÜR M. - Mevcut Güzergâh",
+        "Value": "{A080EB4B-C67B-479C-A36A-A4608F7F2205}",
+        "Object_ID": "49963",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "10-25-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D25 - ÜSKÜDAR - BAĞLARBAŞI - KÜLTÜR M. - Mevcut Güzergâh",
+        "Value": "{223A7EAC-CB8D-491E-96C1-1502523E78F0}",
+        "Object_ID": "53490",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "10-25-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D28 - KADIKÖY-ÇEKMEKÖY - Alternatif Güzergâh ",
+        "Value": "{4842A78C-B88B-4BED-8A75-CCE60F9F39CE}",
+        "Object_ID": "50012",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "12-28-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D28 - KADIKÖY-ÇEKMEKÖY - Alternatif Güzergâh ",
+        "Value": "{8D5498E6-4591-43B5-8CFF-AAD85B528C5F}",
+        "Object_ID": "50049",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "12-28-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D28 - KADIKÖY-ÇEKMEKÖY - Depolama",
+        "Value": "{0CB054DB-F1DB-485F-8F45-2D71F4499234}",
+        "Object_ID": "55077",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Depolama",
+        "TUBS_KOD": "12-28-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D28 - KADIKÖY-ÇEKMEKÖY - Mevcut Güzergâh",
+        "Value": "{0871E16D-EBD6-4F28-8F29-C281ABC33C75}",
+        "Object_ID": "50106",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "12-28-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D28 - KADIKÖY-ÇEKMEKÖY - Mevcut Güzergâh",
+        "Value": "{C540D385-3A19-4163-A873-E9D95BC42346}",
+        "Object_ID": "50110",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "12-28-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D30 - ÜSKÜDAR - EMNİYET MAHALLESİ - Mevcut Güzergâh",
+        "Value": "{410571C2-A62A-4AF4-BF04-E882A663A301}",
+        "Object_ID": "50935",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "33-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D30 - ÜSKÜDAR - EMNİYET MAHALLESİ - Mevcut Güzergâh",
+        "Value": "{7CED7BB2-6438-4439-9689-532CECBE2F3F}",
+        "Object_ID": "50934",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "33-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D31 - KADIKÖY - TAKSİM - Alternatif Güzergâh ",
+        "Value": "{0FCA3EA1-706A-4FCE-AB5C-95E519C03D79}",
+        "Object_ID": "50344",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "27-31-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D31 - KADIKÖY - TAKSİM - Alternatif Güzergâh ",
+        "Value": "{10FB211E-D435-43ED-ABC2-F53EF4D5B17B}",
+        "Object_ID": "50340",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "27-31-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D31 - KADIKÖY - TAKSİM - Mevcut Güzergâh",
+        "Value": "{CF47BD2B-5E22-448B-BBF7-3F02BD28D1DB}",
+        "Object_ID": "50280",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "27-31-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D31 - KADIKÖY - TAKSİM - Mevcut Güzergâh",
+        "Value": "{8416AE2F-C918-490E-9FAD-4362F18188E5}",
+        "Object_ID": "50255",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "27-31-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D34 - KADIKÖY - BOSTANCI - Alternatif Güzergâh ",
+        "Value": "{D92D8CEC-BC70-40FC-B230-DD992AEF3AF5}",
+        "Object_ID": "50460",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "14-34-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D34 - KADIKÖY - BOSTANCI - Alternatif Güzergâh ",
+        "Value": "{92E62126-2440-415B-977D-54B8BA813961}",
+        "Object_ID": "50499",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "14-34-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D34 - KADIKÖY - BOSTANCI - Mevcut Güzergâh",
+        "Value": "{F934F404-796D-4EBD-AE63-F76C638C1C2D}",
+        "Object_ID": "48722",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "14-34-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D34 - KADIKÖY - BOSTANCI - Mevcut Güzergâh",
+        "Value": "{3EBB5758-F955-4D54-B065-B84D05E7BDF4}",
+        "Object_ID": "48723",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "14-34-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Alternatif 2",
+        "Value": "{4EECE7CF-BD22-4D9D-88D5-8EC60DC60263}",
+        "Object_ID": "54434",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif 2",
+        "TUBS_KOD": "16-38-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Alternatif 2",
+        "Value": "{FD0E2B2F-AC0A-44AF-AE8C-994D01DF3D05}",
+        "Object_ID": "54435",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif 2",
+        "TUBS_KOD": "16-38-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Alternatif Güzergâh ",
+        "Value": "{406E8D1F-EF76-4B79-B3AC-BE7B2C7606A2}",
+        "Object_ID": "50392",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "16-38-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Alternatif Güzergâh ",
+        "Value": "{FB296DA9-F11A-4265-81F4-31F9A5C0A393}",
+        "Object_ID": "50387",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "16-38-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Mevcut Güzergâh",
+        "Value": "{E94BAE4C-0438-4141-894B-6A6E955A33CD}",
+        "Object_ID": "50385",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "16-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Mevcut Güzergâh",
+        "Value": "{1452E401-2578-498D-B288-C82F26F44621}",
+        "Object_ID": "50517",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "16-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Mevcut Güzergâh 2",
+        "Value": "{9A964E97-658C-4994-A875-63163A71016D}",
+        "Object_ID": "55074",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh 2",
+        "TUBS_KOD": "16-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D38 - SÖĞÜTLÜÇEŞME METROBÜ  - BOSTANCI - Mevcut Güzergâh 2",
+        "Value": "{5062D77E-29B7-4654-B66E-6359E8C30CB2}",
+        "Object_ID": "55073",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh 2",
+        "TUBS_KOD": "16-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D41 - CEVİZLİBAĞ -TOPKAPI- TAKSİM - Alternatif Güzergâh ",
+        "Value": "{AB130758-B8AC-4C78-8DAF-076AE3BB0724}",
+        "Object_ID": "48736",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "18-41-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D41 - CEVİZLİBAĞ -TOPKAPI- TAKSİM - Alternatif Güzergâh ",
+        "Value": "{6B5DCE4A-8BC0-43CA-A614-3C5EF3F1BAA3}",
+        "Object_ID": "50426",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "18-41-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D41 - CEVİZLİBAĞ -TOPKAPI- TAKSİM - Mevcut Güzergâh",
+        "Value": "{097130C8-8AAF-4434-ACF3-22D4D7581EDE}",
+        "Object_ID": "48734",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "18-41-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D41 - CEVİZLİBAĞ -TOPKAPI- TAKSİM - Mevcut Güzergâh",
+        "Value": "{6887C527-28C9-47CC-97FC-C1918AB95647}",
+        "Object_ID": "48735",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "18-41-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D44 - KOCAMUSTAFAPAŞA-AKSARAY-TAKSİM - Alternatif Güzergâh ",
+        "Value": "{11C3BF3D-9CD4-4E29-8A6D-4D4DA8D0EDE3}",
+        "Object_ID": "48748",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "21-44-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D44 - KOCAMUSTAFAPAŞA-AKSARAY-TAKSİM - Alternatif Güzergâh ",
+        "Value": "{DBB4F401-E1D6-4D3E-9345-42F9C970566E}",
+        "Object_ID": "48749",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Alternatif Güzergâh ",
+        "TUBS_KOD": "21-44-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D44 - KOCAMUSTAFAPAŞA-AKSARAY-TAKSİM - Mevcut Güzergâh",
+        "Value": "{D7E71785-B507-4508-A2A3-FA107EC3286E}",
+        "Object_ID": "48746",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "21-44-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D44 - KOCAMUSTAFAPAŞA-AKSARAY-TAKSİM - Mevcut Güzergâh",
+        "Value": "{93B86179-449E-458C-88BD-917D8B23A35E}",
+        "Object_ID": "49956",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "21-44-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D46 - EMİNÖNÜ - NİŞANTAŞI - Mevcut Güzergâh",
+        "Value": "{3BFA7CBD-42E2-4945-8296-4E69379E8A4E}",
+        "Object_ID": "50451",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "23-46-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D46 - EMİNÖNÜ - NİŞANTAŞI - Mevcut Güzergâh",
+        "Value": "{25EFAEFF-C541-4939-8137-693888A78D57}",
+        "Object_ID": "50455",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "23-46-1",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D58 - MİMAR SİNAN-MAH. ÇEKMEKÖY METRO - Mevcut Güzergâh",
+        "Value": "{2BFD4E08-72E3-4AD4-97C6-924AE0623614}",
+        "Object_ID": "54763",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "33-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D58 - MİMAR SİNAN-MAH. ÇEKMEKÖY METRO - Mevcut Güzergâh",
+        "Value": "{7A2CC307-F549-479B-86FE-C5685031E609}",
+        "Object_ID": "54761",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "33-38-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D61 - ATAŞEHİR - TAKSİM - Mevcut Güzergâh",
+        "Value": "{B7655297-B731-4A65-A9C2-3BC3C3963506}",
+        "Object_ID": "50938",
+        "Gidis_Donus": "2",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "35-40-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "D61 - ATAŞEHİR - TAKSİM - Mevcut Güzergâh",
+        "Value": "{D3A813AE-91D8-44C2-8293-B6812F73CE7E}",
+        "Object_ID": "50940",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Mevcut Güzergâh",
+        "TUBS_KOD": "35-40-0",
+        "Status": "TAKSİ DOLMUŞ"
+      },
+      {
+        "Text": "SRY - Balta Limanı – Reşit Paşa – 4.Levent Metro",
+        "Value": "{5A6800B3-6E65-4671-8683-A80A079C115B}",
+        "Object_ID": "258300",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/05 Balta Limanı ? Reşit Paşa ? 4.Levent Metro ",
+        "TUBS_KOD": "49-11-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Baltalimanı – 4.Levent",
+        "Value": "{70EE2AAA-356C-4565-9E3B-17C3BDDCC863}",
+        "Object_ID": "257860",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/02 Baltalimanı ? 4.Levent ",
+        "TUBS_KOD": "49-7-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Baltalimanı-Etiler-Nispetiye-Mecidiyeköy",
+        "Value": "{054D6523-4A21-49FD-ACC9-4D4D21E3B5BA}",
+        "Object_ID": "271078",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/10 Baltalimanı-Etiler-Nispetiye-Mecidiyeköy (Ring) ",
+        "TUBS_KOD": "49-21-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Koçünv.-Sarıyer–H.Osmanmetro – Kaymakamlık",
+        "Value": "{4D0F4405-5D7F-4EEB-9B09-A42C50D7F86D}",
+        "Object_ID": "271073",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/11 Koç Üniversitesi -Sarıyer-Hacıosman Metro - Tarabya Meydan ",
+        "TUBS_KOD": "49-20-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Pınar Mah. – İstinye Bayırı – Zincirlikuyu Metrobüs (Ring)",
+        "Value": "{CF4B7E3E-41E2-4F7C-8F31-C58109F9B9EE}",
+        "Object_ID": "258287",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/04 Pınar Mah. ? İstinye Bayırı ? Zincirlikuyu Metrobüs (Ring) ",
+        "TUBS_KOD": "49-10-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Sarıyer – Hacı Osman Bayırı – Beşiktaş",
+        "Value": "{9B0E9C2A-ABE5-447D-A38B-F538B99A8E5D}",
+        "Object_ID": "257837",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/08 Sarıyer ? Hacı Osman Bayırı ? Beşiktaş",
+        "TUBS_KOD": "49-17-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - SRY/06 Sarıyer ? H.Osman ? Kaymakamlık - Pınar Mh. ? Maslak ? Ayazağa",
+        "Value": "{9211B055-9FA0-4F6E-A8F2-DC4EF6D3B5BD}",
+        "Object_ID": "286764",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/06 Sarıyer ? H.Osman ? Kaymakamlık - Pınar Mh. ? Maslak ? Ayazağa",
+        "TUBS_KOD": "49-14-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - SRY/12 Zekeriyaköy- Sarıyer - Hamidiye Etfal Hastanesi - Sarıyer Belediye - İstinye Park AVM (Ring)",
+        "Value": "{56E5FDDF-F979-45D8-A0F7-71BFE1846655}",
+        "Object_ID": "286767",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/12 Zekeriyaköy- Sarıyer - Hamidiye Etfal Hastanesi - Sarıyer Belediye - İstinye Park AVM (Ring)",
+        "TUBS_KOD": "49-12-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Tarabya – İstinye Bayırı – Beşiktaş",
+        "Value": "{C67F170E-CF84-4FF6-AA45-E5D8CB6FC196}",
+        "Object_ID": "257833",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/07 Tarabya ? İstinye Bayırı ? Beşiktaş ",
+        "TUBS_KOD": "49-15-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Tarabyaüstü – İstinye",
+        "Value": "{1F187F26-1968-4EB9-A875-1600A4D26464}",
+        "Object_ID": "257836",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/01 Tarabyaüstü ? İstinye ",
+        "TUBS_KOD": "49-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Vadi İstanbul-Türk Telekom Arena-Seyrantepe-Ayazağa-Maslak1453-İTÜ Ayazağa",
+        "Value": "{3361D1E5-9960-4D68-B9EF-16B6A517FFEB}",
+        "Object_ID": "265634",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/09 Vadi İstanbul-Türk Telekom Arena-Seyrantepe-Ayazağa-Maslak1453-İTÜ Ayazağa ",
+        "TUBS_KOD": "49-19-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "SRY - Yeşiltepe-Ayazağa Köyü-4. Levent-Zincirlikuyu",
+        "Value": "{EEFFDC59-5156-4817-977D-1B20E2077419}",
+        "Object_ID": "257864",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "SRY/03 Yeşiltepe-Ayazağa Köyü-4. Levent- 4. Levent (Ring)",
+        "TUBS_KOD": "49-9-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL01 - Ağva-Değirmençayırı",
+        "Value": "{D8006DCF-A2EF-415C-8F4A-C71BBA58B47A}",
+        "Object_ID": "258019",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ağva-Değirmençayırı",
+        "TUBS_KOD": "122-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL02 - Şile Merkez-Çayırbaşı Köyü",
+        "Value": "{000B9CED-03C5-4CC5-B323-FBF31A4D6F2A}",
+        "Object_ID": "257970",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile Merkez-Çayırbaşı Köyü",
+        "TUBS_KOD": "123-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL03 - Şile-Kumbaba-Meşrutiyet Köyü-Ahmetli Toki",
+        "Value": "{5155E0AF-BBE4-44EE-8925-ABEA41E3C26E}",
+        "Object_ID": "257962",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Kumbaba-Meşrutiyet Köyü-Ahmetli Toki",
+        "TUBS_KOD": "124-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL04 - Şile Merkez Ring",
+        "Value": "{693CDD34-D8F2-4AEB-809A-A07B149B47FA}",
+        "Object_ID": "258123",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile Merkez Ring",
+        "TUBS_KOD": "125-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL04 - Şile Merkez-Plaj",
+        "Value": "{E75EA5E4-2027-482C-93C6-C4493613FD9A}",
+        "Object_ID": "258124",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile Merkez-Plaj",
+        "TUBS_KOD": "125-2-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL05 - Şile Dere Köyleri-Üsküdar",
+        "Value": "{060026D8-2780-48AE-8C80-E0D30534E2C3}",
+        "Object_ID": "258080",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile Dere Köyleri-Üsküdar",
+        "TUBS_KOD": "126-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL06 - Şile-Kızılcaköy",
+        "Value": "{12B9E0F7-C63D-4479-88EA-1AEB0FD92878}",
+        "Object_ID": "258361",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Kızılcaköy",
+        "TUBS_KOD": "42-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL07 - Şile-Karamandere-İmrendere-Ovacık",
+        "Value": "{1D8D349B-75C8-4AD7-BDB7-6430E4032F66}",
+        "Object_ID": "258360",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Karamandere-İmrendere-Ovacık",
+        "TUBS_KOD": "181-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL08 - Ağva-Bucaklı-Çelebiköy",
+        "Value": "{6FA1077F-209E-400A-9E83-557F4B80EC2A}",
+        "Object_ID": "258369",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ağva-Bucaklı-Çelebiköy",
+        "TUBS_KOD": "182-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL09 - Ağva-Göçe-Geredeli-Kalemköy",
+        "Value": "{46469D62-E811-4637-A277-067D7790D66F}",
+        "Object_ID": "258371",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Ağva-Göçe-Geredeli-Kalemköy",
+        "TUBS_KOD": "183-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL10 - Şile-Değirmençayırı",
+        "Value": "{46FC1E68-6F77-4A5E-B6C4-91A2A2BCEAD4}",
+        "Object_ID": "258383",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Değirmençayırı",
+        "TUBS_KOD": "184-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL11 - Şile-Yeşilvadi-Üvezli-Ulupelit",
+        "Value": "{0AFA1C74-C9B2-43C7-B1F3-748C6C77F094}",
+        "Object_ID": "258256",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Yeşilvadi-Üvezli-Ulupelit",
+        "TUBS_KOD": "185-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL12 - ŞİLE-AHMETLİ TOKİ-KIZILCAKÖY",
+        "Value": "{37ADBBAA-2F41-4991-8B42-27660F95254C}",
+        "Object_ID": "264994",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "ŞİLE-AHMETLİ TOKİ-KIZILCAKÖY",
+        "TUBS_KOD": "189-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL13 - Şile-Karakiraz",
+        "Value": "{07BCC4F6-D44C-4DC6-9D2C-C5DDA9F0EFF1}",
+        "Object_ID": "264696",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Karakiraz",
+        "TUBS_KOD": "190-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL14 - Şile-Yazımanayır-Hacıllı-Ağva",
+        "Value": "{0E4E985D-3CD4-4693-BFEC-AF975A88881B}",
+        "Object_ID": "265313",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Yazımanayır-Hacıllı-Ağva",
+        "TUBS_KOD": "188-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL15 - Şile Merkez –Ağva ",
+        "Value": "{61F9A847-5F36-47A5-8A98-4702C13E38DD}",
+        "Object_ID": "271729",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile Merkez ?Ağva ",
+        "TUBS_KOD": "192-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL16 - Şile Merkez-Ümraniye Metro Garden AVM",
+        "Value": "{2724993C-0EB7-4520-94B1-BF9E89F49085}",
+        "Object_ID": "272037",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile Merkez-Ümraniye Metro Garden AVM",
+        "TUBS_KOD": "191-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL17 - Şile-Sanayi ",
+        "Value": "{CCE74494-AE15-4861-8195-4F004FD4131B}",
+        "Object_ID": "277805",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile-Sanayi ",
+        "TUBS_KOD": "193-1-0",
+        "Status": "MİNİBÜS"
+      },
+      {
+        "Text": "ŞL18 - Şile –Karabeyli-Ağva",
+        "Value": "{3D016950-CC5C-422A-ABC0-A729F8924F35}",
+        "Object_ID": "278433",
+        "Gidis_Donus": "1",
+        "Guzergah_Adi": "Şile ?Karabeyli-Ağva",
+        "TUBS_KOD": "188-1-0",
+        "Status": "MİNİBÜS"
+      }
+    ]
+  }
+}

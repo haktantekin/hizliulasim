@@ -81,3 +81,4 @@ settings.json
 !scripts/run-next.test.mjs
 !src/lib/minibusDetailHeadings.test.ts
 !src/lib/minibusDirectory.test.ts
+!src/lib/minibusLinesFallback.test.ts
