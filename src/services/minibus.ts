@@ -1,25 +1,17 @@
 import {
   loadMinibusLinesWithFallback,
   MinibusDataError,
-  parseMinibusDetailsPayload,
-  parseMinibusLinesPayload,
+  type MinibusCachedData,
   type MinibusLine,
-  type MinibusLineDetails,
-  type MinibusRoutePoint,
-  type MinibusSchedule,
-  type MinibusStop,
 } from '@/lib/minibusData';
-import {
-  fetchOfficialMinibusRouteDirection,
-  fetchOfficialMinibusSchedule,
-  fetchVerifiedOfficialMinibusStops,
-  type MinibusOfficialCarStatus,
-} from '@/lib/minibusOfficialClient';
+import { loadMinibusDetailWithFallback } from '@/lib/minibusDetailFallback';
 import {
   mergeMinibusDistrictCatalogs,
   parseMinibusCategoryInfoPayload,
+  parseMinibusCachedLinePayload,
   parseMinibusEditorialLinesPayload,
   parseMinibusDirectoryPayload,
+  toMinibusLineCatalog,
   type MinibusDistrict,
   type MinibusEditorialLine,
 } from '@/lib/minibusDirectory';
@@ -27,6 +19,14 @@ import {
   findMinibusFareTariffByCode,
   type MinibusFareTariff,
 } from '@/lib/minibusFare';
+import { loadOfficialMinibusLineData } from '@/lib/minibusOfficialFallback';
+import {
+  fetchOfficialMinibusDetails,
+  fetchOfficialMinibusRouteDirection,
+  fetchOfficialMinibusSchedule,
+  fetchVerifiedOfficialMinibusStops,
+  type MinibusOfficialCarStatus,
+} from '@/lib/minibusOfficialClient';
 import minibusDistrictSnapshot from '@/data/minibus-districts.snapshot.json';
 import minibusFareSnapshot from '@/data/minibus-fares.snapshot.json';
 import minibusLinesSnapshot from '@/data/minibus-lines.snapshot.json';
@@ -38,6 +38,7 @@ const MINIBUS_DIRECTORY_VERIFIED_AT = minibusDistrictSnapshot.generatedAt;
 const REVALIDATE_SECONDS = 3600;
 const WORDPRESS_API_BASE_URL = process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2';
 const MINIBUS_DIRECTORY_URL = `${WORDPRESS_API_BASE_URL.replace(/\/wp\/v2\/?$/, '')}/hizliulasim/v1/minibus-directory`;
+const MINIBUS_LINE_URL = `${WORDPRESS_API_BASE_URL.replace(/\/wp\/v2\/?$/, '')}/hizliulasim/v1/minibus-line`;
 const WORDPRESS_CATEGORY_URL = `${WORDPRESS_API_BASE_URL.replace(/\/$/, '')}/categories`;
 
 type MinibusFetch = (
@@ -45,91 +46,33 @@ type MinibusFetch = (
   init?: RequestInit & { next?: { revalidate: number } },
 ) => Promise<Response>;
 
-async function postOfficialEndpoint(
-  method: string,
-  body: Record<string, string>,
-  fetchImpl: MinibusFetch,
-): Promise<unknown> {
-  let response: Response;
-  try {
-    response = await fetchImpl(`${MINIBUS_SOURCE_URL}/${method}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify(body),
-      next: { revalidate: REVALIDATE_SECONDS },
-    });
-  } catch (error) {
-    throw new MinibusDataError('Resmî minibüs kaynağına ulaşılamadı.', { cause: error });
-  }
-
-  if (!response.ok) {
-    throw new MinibusDataError(`Resmî minibüs kaynağı HTTP ${response.status} döndürdü.`);
-  }
-
-  try {
-    return await response.json() as unknown;
-  } catch (error) {
-    throw new MinibusDataError('Resmî minibüs kaynağı geçersiz JSON döndürdü.', { cause: error });
-  }
+function withMinibusCacheVersion(url: string): string {
+  const bucket = Math.floor(Date.now() / (REVALIDATE_SECONDS * 1000));
+  return `${url}${url.includes('?') ? '&' : '?'}v=${bucket}`;
 }
 
 export async function fetchMinibusLines(fetchImpl: MinibusFetch = fetch): Promise<MinibusLine[]> {
   return loadMinibusLinesWithFallback(
     async () => {
-      const payload = await postOfficialEndpoint('FillDropdown', {}, fetchImpl);
-      return parseMinibusLinesPayload(payload);
+      const response = await fetchImpl(withMinibusCacheVersion(MINIBUS_DIRECTORY_URL), {
+        headers: { Accept: 'application/json' },
+        next: { revalidate: REVALIDATE_SECONDS },
+      });
+      if (!response.ok) {
+        throw new MinibusDataError(`WordPress minibüs kataloğu HTTP ${response.status} döndürdü.`);
+      }
+      const lines = toMinibusLineCatalog(
+        parseMinibusEditorialLinesPayload(await response.json() as unknown),
+      );
+      if (lines.length === 0) {
+        throw new MinibusDataError('WordPress minibüs kataloğunda hat bulunamadı.');
+      }
+      return lines;
     },
     minibusLinesSnapshot.payload,
     (error) => {
-      console.warn('Resmî minibüs listesi kullanılamadı; doğrulanmış snapshot kullanılıyor.', error);
+      console.warn('WordPress minibüs kataloğu kullanılamadı; doğrulanmış liste snapshot kullanılıyor.', error);
     },
-  );
-}
-
-export async function fetchMinibusLineDetails(
-  sourceId: string,
-  fetchImpl: MinibusFetch = fetch,
-): Promise<MinibusLineDetails> {
-  const payload = await postOfficialEndpoint(
-    'FindTheMinibusDetails',
-    { Global_ID: sourceId },
-    fetchImpl,
-  );
-  return parseMinibusDetailsPayload(payload);
-}
-
-export async function fetchMinibusRouteDirection(
-  sourceId: string,
-  turningPoint: 1 | 2,
-  carStatus: MinibusOfficialCarStatus,
-  fetchImpl: MinibusFetch = fetch,
-): Promise<MinibusRoutePoint[]> {
-  return fetchOfficialMinibusRouteDirection(
-    MINIBUS_SOURCE_URL,
-    sourceId,
-    turningPoint,
-    carStatus,
-    fetchImpl,
-  );
-}
-
-export async function fetchMinibusSchedule(
-  sourceId: string,
-  fetchImpl: MinibusFetch = fetch,
-): Promise<MinibusSchedule> {
-  return fetchOfficialMinibusSchedule(MINIBUS_SOURCE_URL, sourceId, fetchImpl);
-}
-
-export async function fetchVerifiedMinibusStops(
-  sourceId: string,
-  carStatus: MinibusOfficialCarStatus,
-  fetchImpl: MinibusFetch = fetch,
-): Promise<{ verified: boolean; stops: MinibusStop[] }> {
-  return fetchVerifiedOfficialMinibusStops(
-    MINIBUS_SOURCE_URL,
-    sourceId,
-    carStatus,
-    fetchImpl,
   );
 }
 
@@ -138,7 +81,7 @@ export async function fetchMinibusDistricts(
 ): Promise<MinibusDistrict[]> {
   const snapshot = parseMinibusDirectoryPayload(minibusDistrictSnapshot);
   try {
-    const response = await fetchImpl(MINIBUS_DIRECTORY_URL, {
+    const response = await fetchImpl(withMinibusCacheVersion(MINIBUS_DIRECTORY_URL), {
       headers: { Accept: 'application/json' },
       next: { revalidate: REVALIDATE_SECONDS },
     });
@@ -157,7 +100,7 @@ export async function fetchMinibusEditorialLines(
   fetchImpl: MinibusFetch = fetch,
 ): Promise<MinibusEditorialLine[]> {
   try {
-    const response = await fetchImpl(MINIBUS_DIRECTORY_URL, {
+    const response = await fetchImpl(withMinibusCacheVersion(MINIBUS_DIRECTORY_URL), {
       headers: { Accept: 'application/json' },
       next: { revalidate: REVALIDATE_SECONDS },
     });
@@ -169,6 +112,76 @@ export async function fetchMinibusEditorialLines(
     console.warn('WordPress minibüs editoryal hat kataloğu kullanılamadı; Bilgi sekmesi gizlenecek.', error);
     return [];
   }
+}
+
+export async function fetchMinibusCachedLine(
+  slug: string,
+  fetchImpl: MinibusFetch = fetch,
+): Promise<MinibusEditorialLine | null> {
+  try {
+    const response = await fetchImpl(`${MINIBUS_LINE_URL}/${encodeURIComponent(slug)}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new MinibusDataError(`Minibüs hat detayı HTTP ${response.status} döndürdü.`);
+    }
+    return parseMinibusCachedLinePayload(await response.json() as unknown);
+  } catch (error) {
+    console.warn(`${slug} WordPress minibüs hat detayı kullanılamadı.`, error);
+    return null;
+  }
+}
+
+export async function fetchOfficialMinibusLineData(
+  line: MinibusLine,
+  fetchImpl: MinibusFetch = fetch,
+): Promise<MinibusCachedData> {
+  const carStatus: MinibusOfficialCarStatus = line.vehicleType === 'minibus'
+    ? 'MİNİBÜS'
+    : 'TAKSİ DOLMUŞ';
+  return loadOfficialMinibusLineData(line, {
+    details: (sourceId) => fetchOfficialMinibusDetails(
+      MINIBUS_SOURCE_URL,
+      sourceId,
+      fetchImpl,
+    ),
+    route: (sourceId, turningPoint) => fetchOfficialMinibusRouteDirection(
+      MINIBUS_SOURCE_URL,
+      sourceId,
+      turningPoint,
+      carStatus,
+      fetchImpl,
+    ),
+    schedule: (sourceId) => fetchOfficialMinibusSchedule(
+      MINIBUS_SOURCE_URL,
+      sourceId,
+      fetchImpl,
+    ),
+    stops: (sourceId) => fetchVerifiedOfficialMinibusStops(
+      MINIBUS_SOURCE_URL,
+      sourceId,
+      carStatus,
+      fetchImpl,
+    ),
+  });
+}
+
+export async function fetchMinibusLineDetail(
+  line: MinibusLine,
+  fetchImpl: MinibusFetch = fetch,
+): Promise<{ cachedLine: MinibusEditorialLine | null; data: MinibusCachedData | null }> {
+  const cachedLine = await fetchMinibusCachedLine(line.slug, fetchImpl);
+  const cmsData = cachedLine?.data ?? line.cachedData ?? null;
+  const data = await loadMinibusDetailWithFallback(
+    cmsData,
+    () => fetchOfficialMinibusLineData(line, fetchImpl),
+    (error) => {
+      console.warn(`${line.code} minibüs detayı CMS ve resmî API'den alınamadı.`, error);
+    },
+  );
+
+  return { cachedLine, data };
 }
 
 export async function fetchMinibusCategoryInfoHtml(
@@ -203,6 +216,7 @@ export async function fetchMinibusFareTariff(code: string): Promise<MinibusFareT
 
 export {
   MINIBUS_DIRECTORY_URL,
+  MINIBUS_LINE_URL,
   MINIBUS_DIRECTORY_VERIFIED_AT,
   MINIBUS_DISTRICT_SOURCE_URL,
   MINIBUS_FARE_SOURCE_URL,

@@ -1,4 +1,13 @@
-import type { MinibusLine } from './minibusData.ts';
+import type {
+  MinibusCachedData,
+  MinibusLine,
+  MinibusLineDetails,
+  MinibusOperatingWindow,
+  MinibusRoutePoint,
+  MinibusSchedule,
+  MinibusStop,
+  MinibusVehicleType,
+} from './minibusData.ts';
 import { ISTANBUL_DISTRICTS } from './districts.ts';
 import { slugify } from './slugify.ts';
 
@@ -27,7 +36,9 @@ export type MinibusEditorialLine = {
   cityName: string;
   citySlug: string;
   sourceIds: string[];
+  vehicleType: MinibusVehicleType;
   infoHtml: string;
+  data: MinibusCachedData | null;
 };
 
 export class MinibusDirectoryError extends Error {
@@ -77,6 +88,136 @@ function integerArray(value: unknown, label: string): number[] {
     if (!result.includes(parsed)) result.push(parsed);
   }
   return result;
+}
+
+function optionalFiniteNumber(value: unknown, label: string): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new MinibusDirectoryError(`${label} geçerli bir sayı olmalıdır.`);
+  }
+  return value;
+}
+
+function clockValue(value: unknown, label: string): string {
+  const clock = textValue(value, label);
+  const match = clock.match(/^(\d{2}):(\d{2})$/);
+  const hour = match ? Number(match[1]) : Number.NaN;
+  const minute = match ? Number(match[2]) : Number.NaN;
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour > 23 || minute > 59) {
+    throw new MinibusDirectoryError(`${label} geçerli bir saat olmalıdır.`);
+  }
+  return clock;
+}
+
+function operatingWindow(value: unknown, label: string): MinibusOperatingWindow | undefined {
+  if (value === undefined) return undefined;
+  const window = objectValue(value, label);
+  const intervalMinutes = window.intervalMinutes;
+  if (!Number.isInteger(intervalMinutes) || Number(intervalMinutes) < 0) {
+    throw new MinibusDirectoryError(`${label} sefer aralığı negatif olmayan bir tam sayı olmalıdır.`);
+  }
+  return {
+    start: clockValue(window.start, `${label} başlangıç`),
+    end: clockValue(window.end, `${label} bitiş`),
+    intervalMinutes: Number(intervalMinutes),
+  };
+}
+
+function routePoints(value: unknown, label: string): MinibusRoutePoint[] {
+  if (!Array.isArray(value)) {
+    throw new MinibusDirectoryError(`${label} bir koordinat dizisi olmalıdır.`);
+  }
+  return value.map((item) => {
+    const point = objectValue(item, `${label} koordinatı`);
+    const lat = point.lat;
+    const lng = point.lng;
+    if (
+      typeof lat !== 'number'
+      || typeof lng !== 'number'
+      || !Number.isFinite(lat)
+      || !Number.isFinite(lng)
+      || lat < -90
+      || lat > 90
+      || lng < -180
+      || lng > 180
+    ) {
+      throw new MinibusDirectoryError(`${label} içinde geçersiz koordinat bulundu.`);
+    }
+    return { lat, lng };
+  });
+}
+
+function clockList(value: unknown, label: string): string[] {
+  if (!Array.isArray(value)) {
+    throw new MinibusDirectoryError(`${label} bir saat dizisi olmalıdır.`);
+  }
+  return value.map((item) => clockValue(item, label));
+}
+
+function scheduleValue(value: unknown, label: string): MinibusSchedule {
+  const schedule = objectValue(value, label);
+  return {
+    weekdayOutbound: clockList(schedule.weekdayOutbound, `${label} hafta içi gidiş`),
+    weekdayReturn: clockList(schedule.weekdayReturn, `${label} hafta içi dönüş`),
+    weekendOutbound: clockList(schedule.weekendOutbound, `${label} hafta sonu gidiş`),
+    weekendReturn: clockList(schedule.weekendReturn, `${label} hafta sonu dönüş`),
+  };
+}
+
+function stopsValue(value: unknown, label: string): MinibusStop[] {
+  if (!Array.isArray(value)) {
+    throw new MinibusDirectoryError(`${label} bir durak dizisi olmalıdır.`);
+  }
+  const ids = new Set<number>();
+  return value.map((item) => {
+    const stop = objectValue(item, `${label} durağı`);
+    const id = positiveInteger(stop.id, `${label} durak ID`);
+    if (ids.has(id)) throw new MinibusDirectoryError(`${label} içinde yinelenen durak ID: ${id}`);
+    ids.add(id);
+    return { id, name: textValue(stop.name, `${label} durak adı`) };
+  });
+}
+
+function stringArray(value: unknown, label: string): string[] {
+  if (!Array.isArray(value)) throw new MinibusDirectoryError(`${label} bir dizi olmalıdır.`);
+  return value.map((item) => textValue(item, label));
+}
+
+function cachedDataValue(value: unknown, label: string): MinibusCachedData | null {
+  if (value === undefined || value === null) return null;
+  const data = objectValue(value, `${label} saklı verisi`);
+  const detailsValue = objectValue(data.details, `${label} detayları`);
+  const details: MinibusLineDetails = {
+    routeName: textValue(detailsValue.routeName, `${label} güzergâh adı`),
+  };
+  const lengthKm = optionalFiniteNumber(detailsValue.lengthKm, `${label} uzunluğu`);
+  const durationMinutes = optionalFiniteNumber(detailsValue.durationMinutes, `${label} süresi`);
+  if (lengthKm !== undefined) details.lengthKm = lengthKm;
+  if (durationMinutes !== undefined) details.durationMinutes = durationMinutes;
+  if (detailsValue.sourceRouteId !== undefined) {
+    details.sourceRouteId = textValue(detailsValue.sourceRouteId, `${label} kaynak güzergâh ID`);
+  }
+  if (detailsValue.sourceObjectId !== undefined) {
+    details.sourceObjectId = textValue(detailsValue.sourceObjectId, `${label} kaynak nesne ID`);
+  }
+  const weekday = operatingWindow(detailsValue.weekday, `${label} hafta içi`);
+  const weekend = operatingWindow(detailsValue.weekend, `${label} hafta sonu`);
+  if (weekday) details.weekday = weekday;
+  if (weekend) details.weekend = weekend;
+  if (typeof data.stopsVerified !== 'boolean') {
+    throw new MinibusDirectoryError(`${label} durak doğrulama değeri boolean olmalıdır.`);
+  }
+  return {
+    sourceId: sourceId(data.sourceId),
+    details,
+    outboundRoute: routePoints(data.outboundRoute, `${label} gidiş güzergâhı`),
+    returnRoute: routePoints(data.returnRoute, `${label} dönüş güzergâhı`),
+    schedule: scheduleValue(data.schedule, `${label} sefer çizelgesi`),
+    stops: stopsValue(data.stops, `${label} durakları`),
+    stopsVerified: data.stopsVerified,
+    ...(data.syncedAt === undefined ? {} : { syncedAt: textValue(data.syncedAt, `${label} senkron zamanı`) }),
+    errors: data.errors === undefined ? [] : stringArray(data.errors, `${label} senkron hataları`),
+  };
 }
 
 export function parseMinibusDirectoryPayload(payload: unknown): MinibusDistrict[] {
@@ -190,6 +331,9 @@ export function parseMinibusEditorialLinesPayload(payload: unknown): MinibusEdit
       if (typeof line.infoHtml !== 'string') {
         throw new MinibusDirectoryError(`${name} bilgi metni bir dize olmalıdır.`);
       }
+      if (line.vehicleType !== 'minibus' && line.vehicleType !== 'taksi-dolmus') {
+        throw new MinibusDirectoryError(`${name} araç türü tanınmıyor.`);
+      }
 
       lines.push({
         id,
@@ -201,12 +345,49 @@ export function parseMinibusEditorialLinesPayload(payload: unknown): MinibusEdit
         cityName,
         citySlug,
         sourceIds: [...new Set(line.sourceIds.map(sourceId))],
+        vehicleType: line.vehicleType,
         infoHtml: line.infoHtml,
+        data: cachedDataValue(line.data, name),
       });
     }
   }
 
   return lines;
+}
+
+export function parseMinibusCachedLinePayload(payload: unknown): MinibusEditorialLine {
+  const root = objectValue(payload, 'Minibüs hat detayı');
+  if (root.version !== 1) {
+    throw new MinibusDirectoryError('Desteklenmeyen minibüs hat detayı sürümü.');
+  }
+  const city = objectValue(root.city, 'Minibüs hat şehri');
+  const lines = parseMinibusEditorialLinesPayload({
+    version: 1,
+    cities: [{
+      id: city.id,
+      name: city.name,
+      slug: city.slug,
+      districts: [],
+      lines: [root.line],
+    }],
+  });
+  if (lines.length !== 1) {
+    throw new MinibusDirectoryError('Minibüs hat detayı bulunamadı.');
+  }
+  return lines[0];
+}
+
+export function toMinibusLineCatalog(lines: MinibusEditorialLine[]): MinibusLine[] {
+  return lines.map((line) => ({
+    code: line.code,
+    name: line.name,
+    slug: line.slug,
+    vehicleType: line.vehicleType,
+    vehicleTypeLabel: line.vehicleType === 'minibus' ? 'Minibüs' : 'Taksi dolmuş',
+    sourceIds: [...line.sourceIds],
+    infoHtml: line.infoHtml,
+    cachedData: line.data,
+  }));
 }
 
 export function findMinibusEditorialLine(
@@ -298,6 +479,19 @@ export function buildMinibusDistrictEntries(
     district,
     lineCount: lines ? filterMinibusLinesForDistrict(lines, district).length : null,
   }));
+}
+
+export function buildMinibusCityLandingEntries(
+  districts: MinibusDistrict[],
+  cityValue: string,
+): Array<{ district: MinibusDistrict; lineCount: number }> {
+  const citySlug = slugify(cityValue);
+  return districts
+    .filter((district) => district.citySlug === citySlug)
+    .map((district) => ({
+      district,
+      lineCount: district.sourceIds.length,
+    }));
 }
 
 export type MinibusDirectoryRoute =

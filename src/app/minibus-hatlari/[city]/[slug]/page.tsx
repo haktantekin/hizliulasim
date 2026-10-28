@@ -8,10 +8,6 @@ import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
   getSupportedMinibusCity,
   type MinibusLine,
-  type MinibusLineDetails,
-  type MinibusRoutePoint,
-  type MinibusSchedule,
-  type MinibusStop,
 } from '@/lib/minibusData';
 import {
   filterMinibusLinesForDistrict,
@@ -20,13 +16,9 @@ import {
 } from '@/lib/minibusDirectory';
 import {
   fetchMinibusDistricts,
-  fetchMinibusCategoryInfoHtml,
   fetchMinibusFareTariff,
-  fetchMinibusLineDetails,
+  fetchMinibusLineDetail,
   fetchMinibusLines,
-  fetchMinibusRouteDirection,
-  fetchMinibusSchedule,
-  fetchVerifiedMinibusStops,
   MINIBUS_DIRECTORY_VERIFIED_AT,
   MINIBUS_DISTRICT_SOURCE_URL,
   MINIBUS_SOURCE_URL,
@@ -68,19 +60,6 @@ async function resolveRoute(citySlug: string, slug: string) {
     route: resolveMinibusDirectoryRoute(districtsResult.value, linesResult.value, citySlug, slug),
     lines: linesResult.value as MinibusLine[],
   };
-}
-
-async function firstAvailableDetails(
-  sourceIds: string[],
-): Promise<{ sourceId: string; details: MinibusLineDetails } | null> {
-  for (const sourceId of sourceIds) {
-    try {
-      return { sourceId, details: await fetchMinibusLineDetails(sourceId) };
-    } catch {
-      // Some duplicate source identifiers represent a direction or retired variant.
-    }
-  }
-  return null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -245,36 +224,12 @@ export default async function MinibusLineDetailPage({ params }: PageProps) {
   }
 
   const line = resolved.route.line;
-  const [detailSelection, fareTariff, infoHtml] = await Promise.all([
-    firstAvailableDetails(line.sourceIds),
+  const [lineDetail, fareTariff] = await Promise.all([
+    fetchMinibusLineDetail(line),
     fetchMinibusFareTariff(line.code),
-    fetchMinibusCategoryInfoHtml(line.slug),
   ]);
-  const carStatus = line.vehicleType === 'minibus' ? 'MİNİBÜS' : 'TAKSİ DOLMUŞ';
-  let outboundRoute: MinibusRoutePoint[] = [];
-  let returnRoute: MinibusRoutePoint[] = [];
-  let schedule: MinibusSchedule | null = null;
-  let stops: MinibusStop[] = [];
-  let stopsVerified = false;
-
-  if (detailSelection) {
-    const [outboundResult, returnResult, scheduleResult] = await Promise.allSettled([
-      fetchMinibusRouteDirection(detailSelection.sourceId, 1, carStatus),
-      fetchMinibusRouteDirection(detailSelection.sourceId, 2, carStatus),
-      fetchMinibusSchedule(detailSelection.sourceId),
-    ]);
-    if (outboundResult.status === 'fulfilled') outboundRoute = outboundResult.value;
-    if (returnResult.status === 'fulfilled') returnRoute = returnResult.value;
-    if (scheduleResult.status === 'fulfilled') schedule = scheduleResult.value;
-
-    try {
-      const verifiedStops = await fetchVerifiedMinibusStops(detailSelection.sourceId, carStatus);
-      stops = verifiedStops.stops;
-      stopsVerified = verifiedStops.verified;
-    } catch (error) {
-      console.warn(`${line.code} minibüs durak listesi doğrulanamadı.`, error);
-    }
-  }
+  const cachedData = lineDetail.data;
+  const infoHtml = lineDetail.cachedLine?.infoHtml ?? line.infoHtml ?? '';
   const canonical = `${SITE_URL}/minibus-hatlari/${city.slug}/${line.slug}`;
 
   return (
@@ -315,12 +270,12 @@ export default async function MinibusLineDetailPage({ params }: PageProps) {
 
       <MinibusDetailTabs
         lineName={line.name}
-        details={detailSelection?.details ?? null}
-        outboundRoute={outboundRoute}
-        returnRoute={returnRoute}
-        schedule={schedule}
-        stops={stops}
-        stopsVerified={stopsVerified}
+        details={cachedData?.details ?? null}
+        outboundRoute={cachedData?.outboundRoute ?? []}
+        returnRoute={cachedData?.returnRoute ?? []}
+        schedule={cachedData?.schedule ?? null}
+        stops={cachedData?.stops ?? []}
+        stopsVerified={cachedData?.stopsVerified ?? false}
         fareTariff={fareTariff}
         fareSourceUrl={MINIBUS_FARE_SOURCE_URL}
         infoHtml={infoHtml}

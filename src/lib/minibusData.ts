@@ -9,6 +9,8 @@ export type MinibusLine = {
   vehicleType: MinibusVehicleType;
   vehicleTypeLabel: 'Minibüs' | 'Taksi dolmuş';
   sourceIds: string[];
+  infoHtml?: string;
+  cachedData?: MinibusCachedData | null;
 };
 
 export type MinibusOperatingWindow = {
@@ -42,6 +44,18 @@ export type MinibusSchedule = {
 export type MinibusStop = {
   id: number;
   name: string;
+};
+
+export type MinibusCachedData = {
+  sourceId: string;
+  details: MinibusLineDetails;
+  outboundRoute: MinibusRoutePoint[];
+  returnRoute: MinibusRoutePoint[];
+  schedule: MinibusSchedule;
+  stops: MinibusStop[];
+  stopsVerified: boolean;
+  syncedAt?: string;
+  errors: string[];
 };
 
 export const SUPPORTED_MINIBUS_CITIES = [

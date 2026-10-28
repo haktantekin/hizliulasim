@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import { parseMinibusLinesPayload } from './minibusData.ts';
 import {
+  buildMinibusCityLandingEntries,
   buildMinibusDistrictEntries,
   filterMinibusLinesForDistrict,
   findMinibusDistrict,
@@ -85,10 +86,36 @@ test('parses and matches a WordPress line category by official source identity',
         name: 'Bakırköy-Hastane-Esenler-Atışalanı',
         slug: 'a19-bakirkoy-hastane-esenler-atisalani',
         sourceIds: ['{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}'],
+        vehicleType: 'minibus',
         infoHtml: '<p>Hat hakkında editoryal bilgi.</p>',
+        data: {
+          sourceId: '{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}',
+          details: {
+            routeName: 'Bakırköy-Hastane-Esenler-Atışalanı',
+            lengthKm: 18.4,
+            durationMinutes: 55,
+            weekday: { start: '06:00', end: '23:30', intervalMinutes: 10 },
+          },
+          outboundRoute: [{ lat: 40.98, lng: 28.87 }],
+          returnRoute: [{ lat: 41.04, lng: 28.88 }],
+          schedule: {
+            weekdayOutbound: ['06:00'],
+            weekdayReturn: ['06:15'],
+            weekendOutbound: [],
+            weekendReturn: [],
+          },
+          stops: [{ id: 1, name: 'Bakırköy' }],
+          stopsVerified: true,
+          syncedAt: '2026-10-28T12:00:00Z',
+          errors: [],
+        },
       }],
     }],
   });
+  const cachedData = editorialLines[0].data as {
+    details: { routeName: string };
+    stops: Array<{ id: number; name: string }>;
+  } | undefined;
   const [officialLine] = parseMinibusLinesPayload({
     d: JSON.stringify([{
       Value: '{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}',
@@ -98,7 +125,129 @@ test('parses and matches a WordPress line category by official source identity',
   });
 
   assert.equal(editorialLines[0].infoHtml, '<p>Hat hakkında editoryal bilgi.</p>');
+  assert.equal(editorialLines[0].vehicleType, 'minibus');
+  assert.equal(cachedData?.details.routeName, 'Bakırköy-Hastane-Esenler-Atışalanı');
+  assert.deepEqual(cachedData?.stops, [{ id: 1, name: 'Bakırköy' }]);
   assert.equal(findEditorialLine(editorialLines, 'istanbul', officialLine)?.id, 101);
+});
+
+test('maps the WordPress line directory to the public catalog with cached detail data', async () => {
+  const directoryModule = await import('./minibusDirectory.ts') as unknown as Record<string, unknown>;
+  assert.equal(typeof directoryModule.toMinibusLineCatalog, 'function');
+  const parseEditorialLines = directoryModule.parseMinibusEditorialLinesPayload as (payload: unknown) => Array<Record<string, unknown>>;
+  const toCatalog = directoryModule.toMinibusLineCatalog as (lines: Array<Record<string, unknown>>) => Array<Record<string, unknown>>;
+  const editorialLines = parseEditorialLines({
+    ...validPayload,
+    cities: [{
+      ...validPayload.cities[0],
+      lines: [{
+        id: 101,
+        categoryId: 501,
+        code: 'A19',
+        name: 'Bakırköy-Hastane-Esenler-Atışalanı',
+        slug: 'a19-bakirkoy-hastane-esenler-atisalani',
+        sourceIds: ['{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}'],
+        vehicleType: 'minibus',
+        infoHtml: '<p>Bilgi.</p>',
+        data: {
+          sourceId: '{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}',
+          details: { routeName: 'A19 Güzergâhı' },
+          outboundRoute: [],
+          returnRoute: [],
+          schedule: {
+            weekdayOutbound: [], weekdayReturn: [], weekendOutbound: [], weekendReturn: [],
+          },
+          stops: [],
+          stopsVerified: false,
+          errors: [],
+        },
+      }],
+    }],
+  });
+
+  assert.deepEqual(toCatalog(editorialLines), [{
+    code: 'A19',
+    name: 'Bakırköy-Hastane-Esenler-Atışalanı',
+    slug: 'a19-bakirkoy-hastane-esenler-atisalani',
+    vehicleType: 'minibus',
+    vehicleTypeLabel: 'Minibüs',
+    sourceIds: ['{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}'],
+    infoHtml: '<p>Bilgi.</p>',
+    cachedData: editorialLines[0].data,
+  }]);
+});
+
+test('parses one cached line from the lightweight WordPress detail endpoint', async () => {
+  const directoryModule = await import('./minibusDirectory.ts') as unknown as Record<string, unknown>;
+  assert.equal(typeof directoryModule.parseMinibusCachedLinePayload, 'function');
+  const parseCachedLine = directoryModule.parseMinibusCachedLinePayload as (payload: unknown) => {
+    slug: string;
+    data: { details: { routeName: string } } | null;
+  };
+  const line = parseCachedLine({
+    version: 1,
+    city: { id: 78, name: 'İstanbul', slug: 'istanbul' },
+    line: {
+      id: 101,
+      categoryId: 501,
+      code: 'A19',
+      name: 'Bakırköy-Hastane-Esenler-Atışalanı',
+      slug: 'a19-bakirkoy-hastane-esenler-atisalani',
+      sourceIds: ['{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}'],
+      vehicleType: 'minibus',
+      infoHtml: '<p>Bilgi.</p>',
+      data: {
+        sourceId: '{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}',
+        details: { routeName: 'A19 Güzergâhı' },
+        outboundRoute: [],
+        returnRoute: [],
+        schedule: {
+          weekdayOutbound: [], weekdayReturn: [], weekendOutbound: [], weekendReturn: [],
+        },
+        stops: [],
+        stopsVerified: true,
+        errors: [],
+      },
+    },
+  });
+
+  assert.equal(line.slug, 'a19-bakirkoy-hastane-esenler-atisalani');
+  assert.equal(line.data?.details.routeName, 'A19 Güzergâhı');
+});
+
+test('rejects malformed cached WordPress route data instead of rendering untrusted coordinates', async () => {
+  const directoryModule = await import('./minibusDirectory.ts');
+  assert.throws(
+    () => directoryModule.parseMinibusEditorialLinesPayload({
+      ...validPayload,
+      cities: [{
+        ...validPayload.cities[0],
+        lines: [{
+          id: 101,
+          categoryId: 501,
+          code: 'A19',
+          name: 'Bakırköy-Hastane-Esenler-Atışalanı',
+          slug: 'a19-bakirkoy-hastane-esenler-atisalani',
+          sourceIds: ['{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}'],
+          vehicleType: 'minibus',
+          infoHtml: '',
+          data: {
+            sourceId: '{FC8193A4-E0A1-4091-9146-F0C8EEE2A0A4}',
+            details: { routeName: 'A19 Güzergâhı' },
+            outboundRoute: [{ lat: 999, lng: 28.87 }],
+            returnRoute: [],
+            schedule: {
+              weekdayOutbound: [], weekdayReturn: [], weekendOutbound: [], weekendReturn: [],
+            },
+            stops: [],
+            stopsVerified: false,
+            errors: [],
+          },
+        }],
+      }],
+    }),
+    (error) => error instanceof MinibusDirectoryError && /koordinat/i.test(error.message),
+  );
 });
 
 test('treats empty category markup as no information tab content', async () => {
@@ -375,4 +524,24 @@ test('keeps district links with an unknown count when the official line source i
     district: districts[0],
     lineCount: null,
   }]);
+});
+
+test('builds the city landing directory without loading the full line catalog', () => {
+  const districts = parseMinibusDirectoryPayload(validPayload);
+
+  assert.deepEqual(buildMinibusCityLandingEntries(districts, 'istanbul'), [{
+    district: districts[0],
+    lineCount: 2,
+  }]);
+  assert.deepEqual(buildMinibusCityLandingEntries(districts, 'ankara'), []);
+});
+
+test('reads a line detail freshly from WordPress after an admin data sync', () => {
+  const serviceSource = readFileSync(new URL('../services/minibus.ts', import.meta.url), 'utf8');
+  const detailFetcher = serviceSource.match(
+    /export async function fetchMinibusCachedLine[\s\S]*?\n}\n/,
+  )?.[0] ?? '';
+
+  assert.match(detailFetcher, /cache:\s*'no-store'/);
+  assert.doesNotMatch(detailFetcher, /next:\s*{\s*revalidate:/);
 });
