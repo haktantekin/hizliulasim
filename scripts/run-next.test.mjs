@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import * as runNext from './run-next.mjs';
+
+test('uses the stable webpack compiler for the production build command', () => {
+  const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(packageJson.scripts.build, 'node scripts/run-next.mjs build --webpack');
+});
 
 test('does not pass the system CA as a worker-incompatible Node flag', () => {
   assert.deepEqual(

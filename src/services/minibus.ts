@@ -16,8 +16,11 @@ import {
 } from '@/lib/minibusOfficialClient';
 import {
   mergeMinibusDistrictCatalogs,
+  parseMinibusCategoryInfoPayload,
+  parseMinibusEditorialLinesPayload,
   parseMinibusDirectoryPayload,
   type MinibusDistrict,
+  type MinibusEditorialLine,
 } from '@/lib/minibusDirectory';
 import {
   findMinibusFareTariffByCode,
@@ -33,6 +36,7 @@ const MINIBUS_DIRECTORY_VERIFIED_AT = minibusDistrictSnapshot.generatedAt;
 const REVALIDATE_SECONDS = 3600;
 const WORDPRESS_API_BASE_URL = process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2';
 const MINIBUS_DIRECTORY_URL = `${WORDPRESS_API_BASE_URL.replace(/\/wp\/v2\/?$/, '')}/hizliulasim/v1/minibus-directory`;
+const WORDPRESS_CATEGORY_URL = `${WORDPRESS_API_BASE_URL.replace(/\/$/, '')}/categories`;
 
 type MinibusFetch = (
   input: string | URL,
@@ -136,6 +140,46 @@ export async function fetchMinibusDistricts(
   } catch (error) {
     console.warn('WordPress minibüs ilçe kataloğu kullanılamadı; doğrulanmış snapshot kullanılıyor.', error);
     return snapshot;
+  }
+}
+
+export async function fetchMinibusEditorialLines(
+  fetchImpl: MinibusFetch = fetch,
+): Promise<MinibusEditorialLine[]> {
+  try {
+    const response = await fetchImpl(MINIBUS_DIRECTORY_URL, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: REVALIDATE_SECONDS },
+    });
+    if (!response.ok) {
+      throw new MinibusDataError(`Minibüs editoryal hat kataloğu HTTP ${response.status} döndürdü.`);
+    }
+    return parseMinibusEditorialLinesPayload(await response.json() as unknown);
+  } catch (error) {
+    console.warn('WordPress minibüs editoryal hat kataloğu kullanılamadı; Bilgi sekmesi gizlenecek.', error);
+    return [];
+  }
+}
+
+export async function fetchMinibusCategoryInfoHtml(
+  slug: string,
+  fetchImpl: MinibusFetch = fetch,
+): Promise<string> {
+  try {
+    const url = new URL(WORDPRESS_CATEGORY_URL);
+    url.searchParams.set('slug', slug);
+    url.searchParams.set('_fields', 'slug,description');
+    const response = await fetchImpl(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: REVALIDATE_SECONDS },
+    });
+    if (!response.ok) {
+      throw new MinibusDataError(`Minibüs kategori bilgisi HTTP ${response.status} döndürdü.`);
+    }
+    return parseMinibusCategoryInfoPayload(await response.json() as unknown, slug);
+  } catch (error) {
+    console.warn('WordPress minibüs kategori bilgisi kullanılamadı; Bilgi sekmesi gizlenecek.', error);
+    return '';
   }
 }
 

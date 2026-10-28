@@ -80,3 +80,4 @@ settings.json
 *.test.mjs
 !scripts/run-next.test.mjs
 !src/lib/minibusDetailHeadings.test.ts
+!src/lib/minibusDirectory.test.ts

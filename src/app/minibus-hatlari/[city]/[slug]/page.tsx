@@ -20,6 +20,7 @@ import {
 } from '@/lib/minibusDirectory';
 import {
   fetchMinibusDistricts,
+  fetchMinibusCategoryInfoHtml,
   fetchMinibusFareTariff,
   fetchMinibusLineDetails,
   fetchMinibusLines,
@@ -244,9 +245,10 @@ export default async function MinibusLineDetailPage({ params }: PageProps) {
   }
 
   const line = resolved.route.line;
-  const [detailSelection, fareTariff] = await Promise.all([
+  const [detailSelection, fareTariff, infoHtml] = await Promise.all([
     firstAvailableDetails(line.sourceIds),
     fetchMinibusFareTariff(line.code),
+    fetchMinibusCategoryInfoHtml(line.slug),
   ]);
   const carStatus = line.vehicleType === 'minibus' ? 'MİNİBÜS' : 'TAKSİ DOLMUŞ';
   let outboundRoute: MinibusRoutePoint[] = [];
@@ -321,6 +323,7 @@ export default async function MinibusLineDetailPage({ params }: PageProps) {
         stopsVerified={stopsVerified}
         fareTariff={fareTariff}
         fareSourceUrl={MINIBUS_FARE_SOURCE_URL}
+        infoHtml={infoHtml}
       />
 
       <p className="mt-8 text-xs text-gray-500">

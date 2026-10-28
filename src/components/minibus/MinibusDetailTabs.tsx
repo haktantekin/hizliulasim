@@ -7,6 +7,7 @@ import {
   Banknote,
   CalendarDays,
   Clock3,
+  Info,
   MapPin,
   Route,
   Ruler,
@@ -20,6 +21,7 @@ import type {
   MinibusStop,
 } from '@/lib/minibusData';
 import { buildMinibusDetailHeadings } from '@/lib/minibusDetailHeadings';
+import { hasMeaningfulMinibusInfo } from '@/lib/minibusDirectory';
 import type { MinibusFareTariff } from '@/lib/minibusFare';
 import MinibusFareCalculator from './MinibusFareCalculator';
 
@@ -32,11 +34,11 @@ const MinibusRouteMap = dynamic(() => import('./MinibusRouteMap'), {
   ),
 });
 
-type TabKey = 'route' | 'schedule' | 'stops' | 'fare';
+type TabKey = 'route' | 'schedule' | 'stops' | 'fare' | 'info';
 type DirectionKey = 'outbound' | 'return';
 type DayKey = 'weekday' | 'weekend';
 
-const TABS = [
+const BASE_TABS = [
   { key: 'route' as const, label: 'Güzergâh', icon: Route },
   { key: 'schedule' as const, label: 'Sefer Bilgileri', icon: Clock3 },
   { key: 'stops' as const, label: 'Duraklar', icon: MapPin },
@@ -83,6 +85,7 @@ export default function MinibusDetailTabs({
   stopsVerified,
   fareTariff,
   fareSourceUrl,
+  infoHtml = '',
 }: {
   lineName: string;
   details: MinibusLineDetails | null;
@@ -93,11 +96,16 @@ export default function MinibusDetailTabs({
   stopsVerified: boolean;
   fareTariff: MinibusFareTariff | null;
   fareSourceUrl: string;
+  infoHtml?: string;
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('route');
   const [direction, setDirection] = useState<DirectionKey>(outboundRoute.length > 0 ? 'outbound' : 'return');
   const [day, setDay] = useState<DayKey>('weekday');
   const sectionHeadings = buildMinibusDetailHeadings(lineName);
+  const hasInfo = hasMeaningfulMinibusInfo(infoHtml);
+  const tabs = hasInfo
+    ? [...BASE_TABS, { key: 'info' as const, label: 'Bilgi', icon: Info }]
+    : BASE_TABS;
 
   const directions = useMemo(() => [
     ...(outboundRoute.length > 0 ? [{ key: 'outbound' as const, label: 'Gidiş', points: outboundRoute, color: '#304269' }] : []),
@@ -107,14 +115,14 @@ export default function MinibusDetailTabs({
 
   function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) {
     let nextIndex: number | null = null;
-    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % TABS.length;
-    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + TABS.length) % TABS.length;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
     if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = TABS.length - 1;
+    if (event.key === 'End') nextIndex = tabs.length - 1;
     if (nextIndex === null) return;
 
     event.preventDefault();
-    const nextTab = TABS[nextIndex];
+    const nextTab = tabs[nextIndex];
     setActiveTab(nextTab.key);
     document.getElementById(`minibus-tab-${nextTab.key}`)?.focus();
   }
@@ -123,7 +131,7 @@ export default function MinibusDetailTabs({
     <section aria-label="Minibüs hat detayları" className="mt-6">
       <div className="overflow-x-auto pb-1">
         <div role="tablist" aria-label="Minibüs hat bilgi bölümleri" className="flex min-w-max gap-1 rounded-xl bg-gray-100 p-1 sm:min-w-0">
-          {TABS.map((tab, index) => {
+          {tabs.map((tab, index) => {
             const Icon = tab.icon;
             const selected = activeTab === tab.key;
             return (
@@ -323,6 +331,13 @@ export default function MinibusDetailTabs({
               <EmptyPanel>Bu hat kodu için İBB ücret tarifesinde doğrulanmış bir fiyat tablosu bulunamadı.</EmptyPanel>
             )}
           </div>
+        )}
+
+        {activeTab === 'info' && hasInfo && (
+          <article
+            className="post-detail prose prose-sm max-w-none rounded-xl border border-gray-200 bg-white p-5 text-gray-700 sm:p-6"
+            dangerouslySetInnerHTML={{ __html: infoHtml }}
+          />
         )}
       </div>
     </section>

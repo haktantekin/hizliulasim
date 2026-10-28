@@ -17,6 +17,19 @@ export type MinibusDistrict = {
   lineIds: number[];
 };
 
+export type MinibusEditorialLine = {
+  id: number;
+  categoryId: number;
+  code: string;
+  name: string;
+  slug: string;
+  cityId: number;
+  cityName: string;
+  citySlug: string;
+  sourceIds: string[];
+  infoHtml: string;
+};
+
 export class MinibusDirectoryError extends Error {
   constructor(message: string) {
     super(message);
@@ -128,6 +141,112 @@ export function parseMinibusDirectoryPayload(payload: unknown): MinibusDistrict[
   }
 
   return districts;
+}
+
+export function parseMinibusEditorialLinesPayload(payload: unknown): MinibusEditorialLine[] {
+  const root = objectValue(payload, 'Minibüs dizini');
+  if (root.version !== 1) {
+    throw new MinibusDirectoryError('Desteklenmeyen minibüs dizini sürümü.');
+  }
+  if (!Array.isArray(root.cities)) {
+    throw new MinibusDirectoryError('Minibüs şehirleri bir dizi olmalıdır.');
+  }
+
+  const lines: MinibusEditorialLine[] = [];
+  const citySlugs = new Set<string>();
+
+  for (const rawCity of root.cities) {
+    const city = objectValue(rawCity, 'Minibüs şehri');
+    const cityId = positiveInteger(city.id, 'Şehir ID');
+    const cityName = textValue(city.name, 'Şehir adı');
+    const citySlug = slugify(textValue(city.slug, 'Şehir slug'));
+    if (!citySlug) throw new MinibusDirectoryError('Şehir slug geçersiz.');
+    if (citySlugs.has(citySlug)) {
+      throw new MinibusDirectoryError(`Yinelenen şehir slug: ${citySlug}`);
+    }
+    citySlugs.add(citySlug);
+
+    if (city.lines === undefined) continue;
+    if (!Array.isArray(city.lines)) {
+      throw new MinibusDirectoryError(`${cityName} editoryal hatları bir dizi olmalıdır.`);
+    }
+
+    const lineSlugs = new Set<string>();
+    for (const rawLine of city.lines) {
+      const line = objectValue(rawLine, 'Minibüs editoryal hattı');
+      const id = positiveInteger(line.id, 'Hat ID');
+      const categoryId = positiveInteger(line.categoryId, 'Hat kategori ID');
+      const code = textValue(line.code, 'Hat kodu');
+      const name = textValue(line.name, 'Hat adı');
+      const slug = slugify(textValue(line.slug, 'Hat slug'));
+      if (!slug) throw new MinibusDirectoryError('Hat slug geçersiz.');
+      if (lineSlugs.has(slug)) {
+        throw new MinibusDirectoryError(`${cityName} içinde yinelenen hat slug: ${slug}`);
+      }
+      lineSlugs.add(slug);
+      if (!Array.isArray(line.sourceIds) || line.sourceIds.length === 0) {
+        throw new MinibusDirectoryError(`${name} minibüs kaynak kimlikleri boş olamaz.`);
+      }
+      if (typeof line.infoHtml !== 'string') {
+        throw new MinibusDirectoryError(`${name} bilgi metni bir dize olmalıdır.`);
+      }
+
+      lines.push({
+        id,
+        categoryId,
+        code,
+        name,
+        slug,
+        cityId,
+        cityName,
+        citySlug,
+        sourceIds: [...new Set(line.sourceIds.map(sourceId))],
+        infoHtml: line.infoHtml,
+      });
+    }
+  }
+
+  return lines;
+}
+
+export function findMinibusEditorialLine(
+  lines: MinibusEditorialLine[],
+  cityValue: string,
+  officialLine: MinibusLine,
+): MinibusEditorialLine | null {
+  const citySlug = slugify(cityValue);
+  const officialSourceIds = new Set(officialLine.sourceIds.map(sourceId));
+  const matches = lines.filter((line) => (
+    line.citySlug === citySlug
+    && line.sourceIds.some((id) => officialSourceIds.has(sourceId(id)))
+  ));
+  return matches.find((line) => line.slug === officialLine.slug)
+    ?? matches.sort((left, right) => left.id - right.id)[0]
+    ?? null;
+}
+
+export function hasMeaningfulMinibusInfo(html: string | null | undefined): boolean {
+  if (!html) return false;
+  const visibleText = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&(nbsp|#160|#x0*a0);/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return visibleText.length > 0;
+}
+
+export function parseMinibusCategoryInfoPayload(payload: unknown, categorySlug: string): string {
+  if (!Array.isArray(payload)) return '';
+  const expectedSlug = slugify(categorySlug);
+  if (!expectedSlug) return '';
+
+  for (const rawCategory of payload) {
+    if (!rawCategory || typeof rawCategory !== 'object' || Array.isArray(rawCategory)) continue;
+    const category = rawCategory as Record<string, unknown>;
+    if (typeof category.slug !== 'string' || slugify(category.slug) !== expectedSlug) continue;
+    return typeof category.description === 'string' ? category.description.trim() : '';
+  }
+  return '';
 }
 
 export function findMinibusDistrict(
