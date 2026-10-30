@@ -4,6 +4,14 @@ import { hasLegacyContentSegment } from "./src/lib/legacyContentPaths";
 import { BROKEN_DURAK_SLUGS, BROKEN_HAT_SLUGS } from "./src/broken-redirects";
 import redirectSnapshot from "./src/data/redirects.snapshot.json";
 
+const PERMANENT_CATEGORY_ALIASES = [
+  {
+    source: '/ulasim-rehberi/avmlar/:path*',
+    destination: '/ulasim-rehberi/avmler/:path*',
+    statusCode: 301 as const,
+  },
+];
+
 const nextConfig: NextConfig = {
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
@@ -67,10 +75,11 @@ const nextConfig: NextConfig = {
 
         return true;
       });
-    if (redirects.length > 2048) {
-      throw new Error(`CMS redirect count (${redirects.length}) exceeds Vercel's 2048 static rule limit`);
+    const allRedirects = [...redirects, ...PERMANENT_CATEGORY_ALIASES];
+    if (allRedirects.length > 2048) {
+      throw new Error(`Redirect count (${allRedirects.length}) exceeds Vercel's 2048 static rule limit`);
     }
-    return redirects;
+    return allRedirects;
   },
   // Security and performance headers
   async headers() {

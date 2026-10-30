@@ -1,6 +1,9 @@
 import { WPCategory, WPPost, WPAuthor, WPMedia, BlogCategory, BlogPost } from '../types/WordPress';
 import type { InternalLinkCandidate } from '../lib/internalLinking';
-import { fetchAllWordPressCategories } from '../lib/wordpressCategories';
+import {
+  fetchAllWordPressCategories,
+  fetchWordPressJsonWithFreshRetry,
+} from '../lib/wordpressCategories';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_WP_API_URL || 'https://cms.hizliulasim.com/wp-json/wp/v2';
 const WORDPRESS_REVALIDATE_SECONDS = 3600;
@@ -54,6 +57,43 @@ type WPPostDetail = Pick<
   | 'hizliulasim_meta'
   | '_embedded'
 >;
+
+const isRenderedField = (value: unknown): value is { rendered: string } => (
+  typeof value === 'object'
+  && value !== null
+  && 'rendered' in value
+  && typeof value.rendered === 'string'
+);
+
+const isWPPostDetailArray = (value: unknown): value is WPPostDetail[] => (
+  Array.isArray(value)
+  && value.every((post) => (
+    typeof post === 'object'
+    && post !== null
+    && 'id' in post
+    && typeof post.id === 'number'
+    && 'date' in post
+    && typeof post.date === 'string'
+    && 'modified' in post
+    && typeof post.modified === 'string'
+    && 'slug' in post
+    && typeof post.slug === 'string'
+    && 'title' in post
+    && isRenderedField(post.title)
+    && 'excerpt' in post
+    && isRenderedField(post.excerpt)
+    && 'content' in post
+    && isRenderedField(post.content)
+    && 'categories' in post
+    && Array.isArray(post.categories)
+    && post.categories.every((categoryId: unknown) => typeof categoryId === 'number')
+    && 'author' in post
+    && typeof post.author === 'number'
+    && 'tags' in post
+    && Array.isArray(post.tags)
+    && post.tags.every((tagId: unknown) => typeof tagId === 'number')
+  ))
+);
 // Minimal Page type including Yoast head json if available
 type WPPage = {
   id: number;
@@ -369,18 +409,11 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
       _embed: 'author,wp:featuredmedia',
       _fields: POST_DETAIL_FIELDS,
     });
-    const response = await fetch(`${API_BASE_URL}/posts?${queryParams.toString()}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: WORDPRESS_REVALIDATE_SECONDS },
+    const posts = await fetchWordPressJsonWithFreshRetry<WPPostDetail[]>({
+      url: `${API_BASE_URL}/posts?${queryParams.toString()}`,
+      revalidateSeconds: WORDPRESS_REVALIDATE_SECONDS,
+      validate: isWPPostDetailArray,
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const posts: WPPostDetail[] = await response.json();
     
     if (posts.length === 0) {
       return null;
@@ -435,7 +468,7 @@ export const fetchPostBySlug = async (slug: string): Promise<BlogPost | null> =>
     };
   } catch (error) {
     console.error('Error fetching post by slug:', error);
-    return null;
+    throw error;
   }
 };
 

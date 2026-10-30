@@ -12,6 +12,66 @@ type WordPressFetch = (
   init?: RequestInit & { next?: { revalidate: number } },
 ) => Promise<Response>;
 
+async function readWordPressJson<T>({
+  url,
+  fetchImpl,
+  requestInit,
+  validate,
+}: {
+  url: string;
+  fetchImpl: WordPressFetch;
+  requestInit: RequestInit & { next?: { revalidate: number } };
+  validate?: (value: unknown) => value is T;
+}): Promise<T> {
+  const response = await fetchImpl(url, requestInit);
+  if (!response.ok) {
+    throw new Error(`WordPress request failed: ${response.status}`);
+  }
+
+  const payload: unknown = await response.json();
+  if (validate && !validate(payload)) {
+    throw new Error('WordPress response has an invalid shape');
+  }
+
+  return payload as T;
+}
+
+export async function fetchWordPressJsonWithFreshRetry<T>({
+  url,
+  revalidateSeconds,
+  fetchImpl = fetch,
+  validate,
+}: {
+  url: string;
+  revalidateSeconds: number;
+  fetchImpl?: WordPressFetch;
+  validate?: (value: unknown) => value is T;
+}): Promise<T> {
+  const headers = { 'Content-Type': 'application/json' };
+
+  try {
+    return await readWordPressJson<T>({
+      url,
+      fetchImpl,
+      requestInit: {
+        headers,
+        next: { revalidate: revalidateSeconds },
+      },
+      validate,
+    });
+  } catch {
+    return await readWordPressJson<T>({
+      url,
+      fetchImpl,
+      requestInit: {
+        headers,
+        cache: 'no-store',
+      },
+      validate,
+    });
+  }
+}
+
 const CATEGORY_PAGE_SIZE = 50;
 const CATEGORY_FIELDS = 'id,name,slug,description,count,parent';
 

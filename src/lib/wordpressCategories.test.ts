@@ -3,7 +3,89 @@ import { once } from 'node:events';
 import http from 'node:http';
 import test from 'node:test';
 
-import { fetchAllWordPressCategories } from './wordpressCategories.ts';
+import * as wordpressFetch from './wordpressCategories.ts';
+
+const { fetchAllWordPressCategories } = wordpressFetch;
+
+test('retries a poisoned cached WordPress response with a fresh request', async () => {
+  const fetchJsonWithFreshRetry = (
+    wordpressFetch as typeof wordpressFetch & {
+      fetchWordPressJsonWithFreshRetry?: <T>(options: {
+        url: string;
+        revalidateSeconds: number;
+        fetchImpl: typeof fetch;
+        validate?: (value: unknown) => value is T;
+      }) => Promise<T>;
+    }
+  ).fetchWordPressJsonWithFreshRetry;
+
+  assert.equal(typeof fetchJsonWithFreshRetry, 'function');
+
+  let requestCount = 0;
+  const fetchImpl: typeof fetch = async (_input, init) => {
+    requestCount += 1;
+    if (init?.cache === 'no-store') {
+      return Response.json([{ id: 27710, slug: 'zonguldak-filyos-tren-saatleri' }]);
+    }
+
+    return new Response('{"truncated":', {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  const posts = await fetchJsonWithFreshRetry!<Array<{ id: number; slug: string }>>({
+    url: 'https://cms.example.test/wp-json/wp/v2/posts?slug=zonguldak-filyos-tren-saatleri',
+    revalidateSeconds: 3600,
+    fetchImpl,
+  });
+
+  assert.deepEqual(posts, [{ id: 27710, slug: 'zonguldak-filyos-tren-saatleri' }]);
+  assert.equal(requestCount, 2);
+});
+
+test('retries a parseable cached WordPress payload that fails validation', async () => {
+  const fetchJsonWithFreshRetry = (
+    wordpressFetch as typeof wordpressFetch & {
+      fetchWordPressJsonWithFreshRetry?: <T>(options: {
+        url: string;
+        revalidateSeconds: number;
+        fetchImpl: typeof fetch;
+        validate?: (value: unknown) => value is T;
+      }) => Promise<T>;
+    }
+  ).fetchWordPressJsonWithFreshRetry;
+
+  assert.equal(typeof fetchJsonWithFreshRetry, 'function');
+
+  let requestCount = 0;
+  const fetchImpl: typeof fetch = async (_input, init) => {
+    requestCount += 1;
+    return init?.cache === 'no-store'
+      ? Response.json([{ id: 27309, slug: 'kentpark-avm' }])
+      : Response.json({ code: 'corrupt-cache-shape' });
+  };
+
+  const isPostList = (value: unknown): value is Array<{ id: number; slug: string }> => (
+    Array.isArray(value)
+    && value.every((item) => (
+      typeof item === 'object'
+      && item !== null
+      && typeof item.id === 'number'
+      && typeof item.slug === 'string'
+    ))
+  );
+
+  const posts = await fetchJsonWithFreshRetry!<Array<{ id: number; slug: string }>>({
+    url: 'https://cms.example.test/wp-json/wp/v2/posts?slug=kentpark-avm',
+    revalidateSeconds: 3600,
+    fetchImpl,
+    validate: isPostList,
+  });
+
+  assert.deepEqual(posts, [{ id: 27309, slug: 'kentpark-avm' }]);
+  assert.equal(requestCount, 2);
+});
 
 test('loads every WordPress category through bounded 50-item pages', async (t) => {
   const requests: string[] = [];
