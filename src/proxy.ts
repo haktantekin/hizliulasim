@@ -66,7 +66,7 @@ async function fetchLegacyPostDestination(pathname: string): Promise<string | nu
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   const protocol = requestHeaders.get('x-forwarded-proto');
   const host = requestHeaders.get('host') || '';
