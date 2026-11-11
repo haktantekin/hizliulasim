@@ -26,7 +26,9 @@ test('keeps /harita iframe navigation without the removed Google Directions deta
   );
 
   assert.match(haritaPageSource, /<DirectionsForm\b/);
+  assert.match(haritaPageSource, /<DirectionsForm\s+onNavigate=\{setMapSrc\}\s*\/>/);
   assert.match(haritaPageSource, /<iframe\b/);
+  assert.match(haritaPageSource, /src=\{mapSrc\}/);
   assert.match(haritaPageSource, /https:\/\/www\.google\.com\/maps\?output=embed/);
   assert.match(directionsFormSource, /https:\/\/www\.google\.com\/maps\?output=embed/);
   assert.match(directionsFormSource, /onNavigate\(embedUrl\)/);
