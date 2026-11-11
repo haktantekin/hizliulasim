@@ -56,7 +56,17 @@ export class TransitSnapshotError extends Error {
 
 interface SnapshotStorage {
   readonly cacheScope: string;
+  readonly checkTime?: () => void;
   read(path: string, limit: number, immutable: boolean): Promise<Buffer>;
+}
+
+interface SnapshotReadOptions {
+  checkTime?: () => void;
+  signal?: AbortSignal;
+}
+
+interface SnapshotPreflightOptions extends SnapshotReadOptions {
+  onFallback?: (reason: SnapshotErrorCode) => void;
 }
 
 export interface LoadedSnapshot {
@@ -119,7 +129,7 @@ function parseJson(bytes: Buffer): unknown {
   return JSON.parse(text);
 }
 
-async function readLocalFile(root: string, path: string, limit: number): Promise<Buffer> {
+async function readLocalFile(root: string, path: string, limit: number, checkTime?: () => void): Promise<Buffer> {
   // The local adapter assumes a trusted development/test tree. These checks catch aliases and file swaps.
   const filename = resolve(root, path);
   const fromRoot = relative(root, filename);
@@ -127,12 +137,16 @@ async function readLocalFile(root: string, path: string, limit: number): Promise
     throw new TransitSnapshotError('READ_FAILED');
   }
   // Use bigint identities to retain the full inode/file ID on Windows and POSIX.
+  checkTime?.();
   const candidate = await lstat(filename, { bigint: true });
+  checkTime?.();
   if (!candidate.isFile() || candidate.ino === BigInt(0) || relative(filename, await realpath(filename)) !== '') {
     throw new TransitSnapshotError('READ_FAILED');
   }
+  checkTime?.();
   const file = await open(filename, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
   try {
+    checkTime?.();
     const opened = await file.stat({ bigint: true });
     if (!opened.isFile() || opened.dev !== candidate.dev || opened.ino !== candidate.ino || opened.size !== candidate.size) {
       throw new TransitSnapshotError('READ_FAILED');
@@ -142,6 +156,7 @@ async function readLocalFile(root: string, path: string, limit: number): Promise
     const bytes = Buffer.allocUnsafe(size + 1);
     let offset = 0;
     while (offset < bytes.length) {
+      checkTime?.();
       const { bytesRead } = await file.read(bytes, offset, bytes.length - offset, offset);
       if (bytesRead === 0) break;
       offset += bytesRead;
@@ -153,10 +168,12 @@ async function readLocalFile(root: string, path: string, limit: number): Promise
   }
 }
 
-async function readHttpFile(base: URL, path: string, limit: number, immutable: boolean): Promise<Buffer> {
+async function readHttpFile(base: URL, path: string, limit: number, immutable: boolean,
+  { checkTime, signal }: SnapshotReadOptions): Promise<Buffer> {
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), httpTimeoutMs);
   try {
+    checkTime?.();
     const response = await fetch(new URL(path, base), {
       cache: immutable ? 'default' : 'no-store',
       // Next's Data Cache buffers response clones before validation. Preserve origin/CDN caching for
@@ -164,7 +181,7 @@ async function readHttpFile(base: URL, path: string, limit: number, immutable: b
       ...(immutable && { next: { revalidate: 0 } }),
       headers: { 'Accept-Encoding': 'identity', 'Cache-Control': immutable ? 'max-age=31536000' : 'no-cache' },
       redirect: 'error',
-      signal: abort.signal,
+      signal: signal ? AbortSignal.any([abort.signal, signal]) : abort.signal,
     });
     const contentEncoding = response.headers.get('content-encoding');
     if (!response.ok || !response.body || (contentEncoding !== null && contentEncoding !== 'identity')) {
@@ -178,6 +195,7 @@ async function readHttpFile(base: URL, path: string, limit: number, immutable: b
     let length = 0;
     try {
       for (;;) {
+        checkTime?.();
         const { done, value } = await reader.read();
         if (done) return bytes.subarray(0, length);
         const nextLength = length + value.byteLength;
@@ -203,7 +221,9 @@ async function readHttpFile(base: URL, path: string, limit: number, immutable: b
 }
 
 // This module uses Node-only filesystem, crypto, and zlib imports and is a server entry point.
-async function getStorage(): Promise<SnapshotStorage> {
+async function getStorage(options: SnapshotReadOptions = {}): Promise<SnapshotStorage> {
+  const { checkTime } = options;
+  checkTime?.();
   const local = process.env.TRANSIT_DATA_STORAGE_PATH?.trim();
   if (local && process.env.NODE_ENV === 'production') {
     throw new TransitSnapshotError('INVALID_STORAGE_CONFIGURATION');
@@ -211,7 +231,7 @@ async function getStorage(): Promise<SnapshotStorage> {
   try {
     if (local) {
       const root = await realpath(resolve(local));
-      return { cacheScope: `file:${root}`, read: (path, limit) => readLocalFile(root, path, limit) };
+      return { cacheScope: `file:${root}`, checkTime, read: (path, limit) => readLocalFile(root, path, limit, checkTime) };
     }
     const base = new URL(process.env.TRANSIT_DATA_BASE_URL ?? '');
     if (!['http:', 'https:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) {
@@ -220,7 +240,8 @@ async function getStorage(): Promise<SnapshotStorage> {
     if (!base.pathname.endsWith('/')) base.pathname += '/';
     return {
       cacheScope: base.href,
-      read: (path, limit, immutable) => readHttpFile(base, path, limit, immutable),
+      checkTime,
+      read: (path, limit, immutable) => readHttpFile(base, path, limit, immutable, options),
     };
   } catch {
     throw new TransitSnapshotError('DATA_UNAVAILABLE');
@@ -228,12 +249,14 @@ async function getStorage(): Promise<SnapshotStorage> {
 }
 
 async function readAsset(storage: SnapshotStorage, path: string, limit: number, immutable: boolean): Promise<Buffer> {
-  try {
-    return await storage.read(path, limit, immutable);
-  } catch (error) {
+  storage.checkTime?.();
+  const bytes = await storage.read(path, limit, immutable).catch((error: unknown) => {
+    storage.checkTime?.();
     if (error instanceof TransitSnapshotError) throw error;
     throw new TransitSnapshotError('READ_FAILED');
-  }
+  });
+  storage.checkTime?.();
+  return bytes;
 }
 
 async function readPointer(storage: SnapshotStorage, name: PointerName): Promise<TransitSnapshotPointer> {
@@ -356,11 +379,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePath: string): Promise<T> {
+  const storage = snapshot[snapshotStorage];
+  storage.checkTime?.();
   // The captured manifest's own inventory keys have already passed the relative-path validator.
   if (!relativePath.endsWith('.json.gz') || !Object.hasOwn(snapshot.manifest.files, relativePath)) {
     throw new TransitSnapshotError('UNDECLARED_SHARD');
   }
-  const storage = snapshot[snapshotStorage];
   const key = JSON.stringify([storage.cacheScope, snapshot.version, snapshot.pointer.manifestSha256, relativePath]);
   const cached = shardCache.get(key);
   if (cached) return JSON.parse(decoder.decode(cached)) as T;
@@ -370,6 +394,7 @@ export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePat
   if (compressed.length !== metadata.bytes) throw new TransitSnapshotError('SIZE_LIMIT');
   if (sha256(compressed) !== metadata.sha256) throw new TransitSnapshotError('SHARD_HASH');
   const expanded = await expandShard(compressed, metadata);
+  storage.checkTime?.();
   let value: unknown;
   try {
     value = parseJson(expanded);
@@ -414,14 +439,16 @@ async function attemptSnapshot(storage: SnapshotStorage, name: PointerName, sele
 }
 
 /** Pin a snapshot after validating the shard paths needed to start this request. */
-export async function loadActiveSnapshotWithPreflight(selectShards: StartupShardSelector): Promise<LoadedSnapshot> {
-  const storage = await getStorage();
+export async function loadActiveSnapshotWithPreflight(selectShards: StartupShardSelector,
+  options: SnapshotPreflightOptions = {}): Promise<LoadedSnapshot> {
+  const storage = await getStorage(options);
   const current = await attemptSnapshot(storage, 'current', selectShards);
   if (!(current instanceof TransitSnapshotError)) return current;
 
   const fallback = await attemptSnapshot(storage, 'previous', selectShards);
   if (fallback instanceof TransitSnapshotError) throw new TransitSnapshotError('DATA_UNAVAILABLE');
-  console.warn({ event: 'transit_snapshot_fallback', version: fallback.version, reason: current.code });
+  if (options.onFallback) options.onFallback(current.code);
+  else console.warn({ event: 'transit_snapshot_fallback', version: fallback.version, reason: current.code });
   return fallback;
 }
 

@@ -575,6 +575,21 @@ function selectBuckets(manifest: TransitManifest, departure: number, end: number
     || compareIds(a.day.serviceDate, b.day.serviceDate));
 }
 
+/** The scan needs every bucket at the first start time before it can process departures. */
+export function getStartupConnectionPaths(manifest: TransitManifest, departureAt: Date, overrides: Partial<RouterLimits>,
+  checkTime: () => void): string[] {
+  const { horizonSeconds, maxBuckets } = routerLimits(overrides);
+  const departure = departureAt.getTime();
+  const buckets = selectBuckets(manifest, departure, departure + horizonSeconds * 1000, checkTime);
+  const firstStart = buckets[0]?.startEpochMs;
+  const paths = new Set<string>();
+  for (const bucket of buckets.slice(0, maxBuckets)) {
+    if (bucket.startEpochMs !== firstStart) break;
+    paths.add(bucket.path);
+  }
+  return [...paths];
+}
+
 function compareProducerConnections(first: TransitConnection, second: TransitConnection): number {
   return first.departure - second.departure || first.arrival - second.arrival
     // PHP strcmp orders UTF-8 bytes, including trip IDs containing supplementary characters.
@@ -624,17 +639,23 @@ function readBucket(payload: unknown, bucket: Bucket, manifest: TransitManifest,
 interface SnapshotRouterOptions {
   /** Monotonic milliseconds. Useful for deterministic deadline tests. */
   clock?: () => number;
+  /** Keeps a smaller caller budget in force throughout the scan. */
+  checkTime?: () => void;
+  /** Optional caller-owned counters that remain available if a shard read fails. */
+  diagnostics?: SnapshotRouterResult['diagnostics'];
 }
 
 /** Route against the captured version, loading only the next relevant connection bucket(s). */
 export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: RouterQuery,
-  { clock = () => performance.now() }: SnapshotRouterOptions = {}): Promise<SnapshotRouterResult> {
+  { clock = () => performance.now(), checkTime: checkRequestTime,
+    diagnostics = { connectionBuckets: 0, connectionShards: 0, transferShards: 0 } }: SnapshotRouterOptions = {}
+): Promise<SnapshotRouterResult> {
   const limits = routerLimits(input.limits);
   const deadline = clock() + limits.wallTimeMs;
-  const diagnostics = { connectionBuckets: 0, connectionShards: 0, transferShards: 0 };
   let expired = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const checkTime = () => {
+    checkRequestTime?.();
     if (expired || clock() >= deadline) throw new BudgetExceeded('timeout');
   };
 

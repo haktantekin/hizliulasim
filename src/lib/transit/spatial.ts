@@ -1,4 +1,4 @@
-import type { Coordinate, TransitStop, TransitTransfer } from './contracts.ts';
+import type { Coordinate, TransitManifest, TransitStop, TransitTransfer } from './contracts.ts';
 import { loadSnapshotShard, TransitSnapshotError, type LoadedSnapshot } from './snapshot-source.ts';
 
 const gridCellsPerDegree = 100;
@@ -67,6 +67,17 @@ function neighboringGridCells(latitude: number, longitude: number): string[] {
 
 export function getNearbyStopGridCells(point: Coordinate): string[] {
   return isCoordinate(point) ? neighboringGridCells(gridCellNumber(point[0]), gridCellNumber(point[1])) : [];
+}
+
+export function getNearbyStopGridPaths(manifest: TransitManifest, points: readonly Coordinate[]): Map<string, string> {
+  const grid = manifest.indexes.stopGrid;
+  const paths = new Map<string, string>();
+  for (const point of points) {
+    for (const cell of getNearbyStopGridCells(point)) {
+      if (Object.hasOwn(grid, cell)) paths.set(cell, grid[cell]);
+    }
+  }
+  return paths;
 }
 
 function haversineDistanceMeters(from: Coordinate, to: Coordinate): number {
@@ -162,6 +173,27 @@ async function loadIndexedStopGrid(snapshot: LoadedSnapshot, cell: string, path:
     records.set(stop.stopId, stop);
   }
   return records;
+}
+
+export async function loadNearbyStopGrid(snapshot: LoadedSnapshot, points: readonly Coordinate[],
+  checkTime: () => void): Promise<StopGrid> {
+  const paths = getNearbyStopGridPaths(snapshot.manifest, points);
+  if (paths.size === 0) return {};
+  const counts = new Map([...paths.values()].map((path) => [path, 0]));
+  for (const path of Object.values(snapshot.manifest.indexes.stops)) {
+    checkTime();
+    const count = counts.get(path);
+    if (count !== undefined) counts.set(path, count + 1);
+  }
+
+  const grid: Partial<Record<string, TransitStop[]>> = {};
+  for (const [cell, path] of paths) {
+    checkTime();
+    const stops = await loadIndexedStopGrid(snapshot, cell, path);
+    if (stops.size !== counts.get(path)) throw new TransitSnapshotError('INVALID_SHARD');
+    grid[cell] = [...stops.values()];
+  }
+  return grid;
 }
 
 /** Reuse endpoint grids verified against this pinned snapshot throughout one request. */
