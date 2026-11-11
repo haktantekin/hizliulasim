@@ -91,6 +91,42 @@ test('uses the historical Istanbul offset when converting service midnight', () 
   assert.equal(serviceTimeToEpochMs(summer.serviceDays[0], 1800), Date.parse('2015-07-02T21:30:00Z'));
 });
 
+test('uses local noon on the spring offset change date to anchor GTFS times', () => {
+  const historical = { ...manifest, serviceDateRange: { start: '2015-01-01', end: '2015-12-31' } };
+  const context = getServiceContext(new Date('2015-03-29T00:30:00Z'), historical);
+  const serviceDay = context.serviceDays[0];
+  assert.equal(context.localDepartureSeconds, 2.5 * 3600);
+  assert.equal(serviceDay.serviceDate, '2015-03-29');
+  assert.equal(serviceDay.departureSeconds, 3.5 * 3600);
+  assert.equal(serviceTimeToEpochMs(serviceDay, 0), Date.parse('2015-03-28T21:00:00Z'));
+  assert.equal(serviceTimeToEpochMs(serviceDay, 12 * 3600), Date.parse('2015-03-29T09:00:00Z'));
+});
+
+test('includes Friday 71:30 service at Monday 00:30 after the spring offset change', () => {
+  const historical = { ...manifest, serviceDateRange: { start: '2015-01-01', end: '2015-12-31' } };
+  const context = getServiceContext(new Date('2015-03-29T21:30:00Z'), historical);
+  assert.deepEqual(context.serviceDays.map((day) => day.serviceDate), [
+    '2015-03-30', '2015-03-29', '2015-03-28', '2015-03-27',
+  ]);
+  const friday = context.serviceDays[3];
+  assert.equal(friday.departureSeconds, 257400);
+  assert.equal(serviceTimeToEpochMs(friday, 257400), context.departureEpochMs);
+  const next = getServiceContext(new Date('2015-03-29T22:00:00Z'), historical);
+  assert.equal(next.serviceDays.some((day) => day.serviceDate === friday.serviceDate), false);
+});
+
+test('keeps the two occurrences of the fall transition hour distinct on the GTFS time axis', () => {
+  const historical = { ...manifest, serviceDateRange: { start: '2015-01-01', end: '2015-12-31' } };
+  const first = getServiceContext(new Date('2015-11-08T00:30:00Z'), historical);
+  const second = getServiceContext(new Date('2015-11-08T01:30:00Z'), historical);
+  assert.equal(first.localDepartureSeconds, 3.5 * 3600);
+  assert.equal(second.localDepartureSeconds, 3.5 * 3600);
+  assert.equal(first.serviceDays[0].departureSeconds, 2.5 * 3600);
+  assert.equal(second.serviceDays[0].departureSeconds, 3.5 * 3600);
+  assert.equal(serviceTimeToEpochMs(first.serviceDays[0], 0), Date.parse('2015-11-07T22:00:00Z'));
+  assert.equal(serviceTimeToEpochMs(first.serviceDays[0], 12 * 3600), Date.parse('2015-11-08T10:00:00Z'));
+});
+
 test('exposes distinct service days with full GTFS times through 71:59:59', () => {
   const context = getServiceContext(new Date('2026-11-10T21:10:00Z'), manifest);
   assert.deepEqual(context.serviceDays.map(({ serviceDate, departureSeconds }) => [serviceDate, departureSeconds]), [

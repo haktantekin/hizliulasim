@@ -2,6 +2,7 @@ import type { TransitManifest } from './contracts.ts';
 
 const secondsPerDay = 24 * 60 * 60;
 const millisecondsPerDay = secondsPerDay * 1000;
+const millisecondsPerHalfDay = millisecondsPerDay / 2;
 const maxServiceSeconds = 3 * secondsPerDay;
 const istanbulClock = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/Istanbul',
@@ -20,8 +21,9 @@ export interface ServiceDay {
   readonly serviceDate: string;
   /** Monday is zero, Sunday is six. */
   readonly weekdayIndex: number;
-  readonly midnightEpochMs: number;
-  /** Elapsed seconds since this service day's midnight, including overnight carryover. */
+  /** The service date's Istanbul noon minus 12 elapsed hours. */
+  readonly anchorEpochMs: number;
+  /** Elapsed GTFS seconds from this service day's anchor, including overnight carryover. */
   readonly departureSeconds: number;
 }
 
@@ -54,10 +56,11 @@ function istanbulOffsetMs(instant: number): number {
   return civilDateNumber(local.date) + local.seconds * 1000 - instant;
 }
 
-function istanbulMidnight(civilDate: number): number {
-  const estimate = civilDate - istanbulOffsetMs(civilDate);
-  // Re-evaluate at the intended local midnight in case the offset changed that morning.
-  return civilDate - istanbulOffsetMs(estimate);
+function gtfsDayAnchor(civilDate: number): number {
+  const noonWallTime = civilDate + millisecondsPerHalfDay;
+  const estimatedNoon = noonWallTime - istanbulOffsetMs(noonWallTime);
+  const noon = noonWallTime - istanbulOffsetMs(estimatedNoon);
+  return noon - millisecondsPerHalfDay;
 }
 
 export function getServiceContext(departureAt: Date, manifest: TransitManifest): ServiceContext {
@@ -74,16 +77,19 @@ export function getServiceContext(departureAt: Date, manifest: TransitManifest):
   if (local.date < start || local.date > end) return context;
 
   const departureCivilDate = civilDateNumber(local.date);
-  for (let daysAgo = 0; daysAgo < maxServiceSeconds / secondsPerDay; daysAgo++) {
+  // An offset increase can bring late service from three civil dates ago inside 72 elapsed hours.
+  for (let daysAgo = 0; daysAgo <= maxServiceSeconds / secondsPerDay; daysAgo++) {
     const civilDate = new Date(departureCivilDate - daysAgo * millisecondsPerDay);
     const serviceDate = civilDate.toISOString().slice(0, 10);
     if (serviceDate < start) break;
-    const midnightEpochMs = istanbulMidnight(civilDate.getTime());
+    const anchorEpochMs = gtfsDayAnchor(civilDate.getTime());
+    const departureSeconds = (departureEpochMs - anchorEpochMs) / 1000;
+    if (departureSeconds < 0 || departureSeconds >= maxServiceSeconds) continue;
     context.serviceDays.push({
       serviceDate,
       weekdayIndex: (civilDate.getUTCDay() + 6) % 7,
-      midnightEpochMs,
-      departureSeconds: (departureEpochMs - midnightEpochMs) / 1000,
+      anchorEpochMs,
+      departureSeconds,
     });
   }
   return context;
@@ -113,5 +119,5 @@ export function serviceTimeToEpochMs(day: ServiceDay, gtfsSeconds: number): numb
   if (!Number.isInteger(gtfsSeconds) || gtfsSeconds < 0 || gtfsSeconds >= maxServiceSeconds) {
     throw new RangeError('Invalid GTFS service time');
   }
-  return day.midnightEpochMs + gtfsSeconds * 1000;
+  return day.anchorEpochMs + gtfsSeconds * 1000;
 }

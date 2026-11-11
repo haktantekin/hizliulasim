@@ -118,12 +118,13 @@ const transferC: TransitTransfer = {
   fromStopId: 'B', toStopId: '0', distanceMeters: 56, seconds: 111,
   evidence: { type: 'manual', reference: 'Documented reverse walk B/0' },
 };
+const extraStops = Array.from({ length: 9 }, (_, index) => stop(`P${index + 1}`, 41.0099, 29.0006));
 
 function sha256(content: Buffer | string) {
   return createHash('sha256').update(content).digest('hex');
 }
 
-async function setupSnapshot(t: TestContext, originPayload: unknown) {
+async function setupSnapshot(t: TestContext, originPayload: unknown, adjacentStops?: unknown[]) {
   const root = await mkdtemp(join(tmpdir(), 'transit-transfers-'));
   const env: NodeJS.Dict<string> = process.env;
   const previousNodeEnv = env.NODE_ENV;
@@ -158,18 +159,24 @@ async function setupSnapshot(t: TestContext, originPayload: unknown) {
     files[path] = { bytes: bytes.length, sha256: sha256(bytes) };
   }
 
-  for (const [cell, ids] of [[originCell, ['0', 'B']], [adjacentCell, ['C', 'D']], [unrelatedCell, ['UNRELATED']]] as const) {
+  const stopsByCell = {
+    [originCell]: [stop('0', 41.0099, 29.0005), stop('B', 41.0099, 29.0011), ...extraStops],
+    [adjacentCell]: [stop('C', 41.0106, 29.0005), stop('D', 41.0106, 29.0006)],
+    [unrelatedCell]: [stop('UNRELATED', 41.1001, 29.0005)],
+  };
+  for (const [cell, stops] of Object.entries(stopsByCell)) {
     const hash = sha256(cell);
     const stopPath = `stops-grid/${hash}.json.gz`;
     const transferPath = `transfers/${hash}.json.gz`;
     indexes.stopGrid[cell] = stopPath;
     indexes.transfers[cell] = transferPath;
-    for (const id of ids) indexes.stops[id] = stopPath;
-    files[stopPath] = { bytes: 1, sha256: hash };
+    for (const { stopId } of stops) indexes.stops[stopId] = stopPath;
     if (cell === unrelatedCell) {
       // Declared and deliberately absent so an accidental read fails the test.
+      files[stopPath] = { bytes: 1, sha256: hash };
       files[transferPath] = { bytes: 1, sha256: hash };
     } else {
+      await writeShard(stopPath, { cell, precision: 0.01, stops: cell === adjacentCell ? adjacentStops ?? stops : stops });
       await writeShard(transferPath, cell === originCell ? originPayload : { cell, transfers: [] });
     }
   }
@@ -187,7 +194,7 @@ async function setupSnapshot(t: TestContext, originPayload: unknown) {
 
 test('loads pinned transfer shards for requested stop IDs and preserves evidence in stable order', async (t) => {
   const snapshot = await setupSnapshot(t, {
-    cell: originCell, transfers: [transferC, transferB, transferA, transferA],
+    cell: originCell, transfers: [transferC, transferB, transferA],
   });
   assert.deepEqual(await loadTransferCandidates(['B', 'C', '0', '0', 'unknown', '__proto__'], snapshot),
     [transferA, transferB, transferC]);
@@ -221,14 +228,53 @@ test('rejects invalid transfer edges even when their origin was not requested', 
   for (const [name, transfers] of [
     ['unknown destination', [{ ...transferC, toStopId: 'unknown' }]],
     ['origin belongs to a different cell', [{ ...transferC, fromStopId: 'C' }]],
+    ['destination belongs to a nonadjacent cell', [{ ...transferC, toStopId: 'UNRELATED' }]],
     ['missing evidence reference', [{ ...transferC, evidence: { type: 'manual', reference: ' ' } }]],
     ['unverified evidence type', [{ ...transferC, evidence: { type: 'proximity', reference: 'nearby' } }]],
     ['non-conservative duration', [{ ...transferC, seconds: 110 }]],
     ['distance beyond producer limit', [{ ...transferC, distanceMeters: 351, seconds: 400 }]],
+    ['understated distance in the same cell', [{ ...transferC, distanceMeters: 49 }]],
+    ['understated distance in an adjacent cell', [{ ...transferB, fromStopId: 'B', distanceMeters: 65 }]],
+    ['duplicate directed edge', [transferC, transferC]],
     ['conflicting directed duplicates', [transferC, { ...transferC, seconds: 120 }]],
   ] as const) {
     await t.test(name, async (subtest) => {
       const snapshot = await setupSnapshot(subtest, { cell: originCell, transfers });
+      await assert.rejects(loadTransferCandidates(['0'], snapshot), { code: 'INVALID_SHARD' });
+    });
+  }
+});
+
+test('allows the floor of endpoint distance as the evidence distance', async (t) => {
+  // The origin and destination are about 50.35 m apart.
+  const edge = { ...transferA, distanceMeters: 50, seconds: 106 };
+  const snapshot = await setupSnapshot(t, { cell: originCell, transfers: [edge] });
+  assert.deepEqual(await loadTransferCandidates(['0'], snapshot), [edge]);
+});
+
+test('rejects an actual endpoint distance just over the producer radius', async (t) => {
+  const edge = { ...transferB, distanceMeters: 350, seconds: 400 };
+  const snapshot = await setupSnapshot(t, { cell: originCell, transfers: [edge] }, [
+    stop('C', 41.013054, 29.0005),
+  ]);
+  await assert.rejects(loadTransferCandidates(['0'], snapshot), { code: 'INVALID_SHARD' });
+});
+
+test('rejects a ninth distinct transfer destination for one origin', async (t) => {
+  const transfers = extraStops.map(({ stopId }) => ({ ...transferA, toStopId: stopId }));
+  const snapshot = await setupSnapshot(t, { cell: originCell, transfers });
+  await assert.rejects(loadTransferCandidates(['0'], snapshot), { code: 'INVALID_SHARD' });
+});
+
+test('requires destination records to exist in the indexed stop grid shard', async (t) => {
+  for (const [name, stops] of [
+    ['missing endpoint', [stop('D', 41.0106, 29.0006)]],
+    ['malformed endpoint', [{ ...stop('C', 41.0106, 29.0005), longitude: '29.0005' }]],
+    ['misplaced endpoint', [stop('C', 41.00995, 29.0005)]],
+    ['unindexed stop', [stop('C', 41.0106, 29.0005), stop('UNINDEXED', 41.0106, 29.0006)]],
+  ] as const) {
+    await t.test(name, async (subtest) => {
+      const snapshot = await setupSnapshot(subtest, { cell: originCell, transfers: [transferB] }, [...stops]);
       await assert.rejects(loadTransferCandidates(['0'], snapshot), { code: 'INVALID_SHARD' });
     });
   }

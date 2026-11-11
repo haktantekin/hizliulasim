@@ -10,6 +10,7 @@ const walkingMetersPerSecond = 1.1;
 const boardingBufferSeconds = 30;
 const transferBufferSeconds = 60;
 const maxTransferDistanceMeters = 350;
+const maxTransferNeighbors = 8;
 const maxTransferSeconds = 3600;
 const maxEvidenceReferenceBytes = 512;
 
@@ -54,10 +55,7 @@ export function getStopGridCell(point: Coordinate): string | null {
   return isCoordinate(point) ? `${gridCellNumber(point[0])}_${gridCellNumber(point[1])}` : null;
 }
 
-export function getNearbyStopGridCells(point: Coordinate): string[] {
-  if (!isCoordinate(point)) return [];
-  const latitude = gridCellNumber(point[0]);
-  const longitude = gridCellNumber(point[1]);
+function neighboringGridCells(latitude: number, longitude: number): string[] {
   const cells: string[] = [];
   for (let latOffset = -1; latOffset <= 1; latOffset++) {
     for (let lngOffset = -1; lngOffset <= 1; lngOffset++) {
@@ -65,6 +63,10 @@ export function getNearbyStopGridCells(point: Coordinate): string[] {
     }
   }
   return cells;
+}
+
+export function getNearbyStopGridCells(point: Coordinate): string[] {
+  return isCoordinate(point) ? neighboringGridCells(gridCellNumber(point[0]), gridCellNumber(point[1])) : [];
 }
 
 function haversineDistanceMeters(from: Coordinate, to: Coordinate): number {
@@ -140,9 +142,22 @@ function isTransfer(value: unknown, stopPath: string, stops: Record<string, stri
     && Buffer.byteLength(evidence.reference) <= maxEvidenceReferenceBytes;
 }
 
-function sameTransfer(first: TransitTransfer, second: TransitTransfer): boolean {
-  return first.distanceMeters === second.distanceMeters && first.seconds === second.seconds
-    && first.evidence.type === second.evidence.type && first.evidence.reference === second.evidence.reference;
+async function loadIndexedStopGrid(snapshot: LoadedSnapshot, cell: string, path: string): Promise<Map<string, TransitStop>> {
+  const shard = await loadSnapshotShard<unknown>(snapshot, path);
+  if (!isRecord(shard) || shard.cell !== cell || shard.precision !== 0.01
+    || !Array.isArray(shard.stops) || shard.stops.length === 0) {
+    throw new TransitSnapshotError('INVALID_SHARD');
+  }
+  const indexedStops = snapshot.manifest.indexes.stops;
+  const records = new Map<string, TransitStop>();
+  for (const stop of shard.stops) {
+    if (!isTransitStop(stop) || !Object.hasOwn(indexedStops, stop.stopId) || indexedStops[stop.stopId] !== path
+      || records.has(stop.stopId) || getStopGridCell([stop.latitude, stop.longitude]) !== cell) {
+      throw new TransitSnapshotError('INVALID_SHARD');
+    }
+    records.set(stop.stopId, stop);
+  }
+  return records;
 }
 
 export async function loadTransferCandidates(stopIds: string[], snapshot: LoadedSnapshot): Promise<TransitTransfer[]> {
@@ -152,7 +167,21 @@ export async function loadTransferCandidates(stopIds: string[], snapshot: Loaded
 
   const stopPaths = new Set([...requested].map((id) => stops[id]));
   const loadedPaths = new Set<string>();
-  const edges = new Map<string, TransitTransfer>();
+  const loadedStopGrids = new Map<string, Map<string, TransitStop>>();
+  const edges: TransitTransfer[] = [];
+
+  async function readEndpoint(stopId: string, cell: string): Promise<TransitStop> {
+    const path = stops[stopId];
+    let records = loadedStopGrids.get(path);
+    if (!records) {
+      records = await loadIndexedStopGrid(snapshot, cell, path);
+      loadedStopGrids.set(path, records);
+    }
+    const stop = records.get(stopId);
+    if (!stop) throw new TransitSnapshotError('INVALID_SHARD');
+    return stop;
+  }
+
   for (const [cell, stopPath] of Object.entries(stopGrid)) {
     if (!stopPaths.has(stopPath)) continue;
     const path = transfers[cell];
@@ -162,16 +191,34 @@ export async function loadTransferCandidates(stopIds: string[], snapshot: Loaded
     if (!isRecord(shard) || shard.cell !== cell || !Array.isArray(shard.transfers)) {
       throw new TransitSnapshotError('INVALID_SHARD');
     }
+    const [latitude, longitude] = cell.split('_').map(Number);
+    const adjacentCellsByPath = new Map<string, string>();
+    for (const neighbor of neighboringGridCells(latitude, longitude)) {
+      if (Object.hasOwn(stopGrid, neighbor)) adjacentCellsByPath.set(stopGrid[neighbor], neighbor);
+    }
+
+    const destinationsByOrigin = new Map<string, Set<string>>();
     for (const transfer of shard.transfers) {
       if (!isTransfer(transfer, stopPath, stops)) throw new TransitSnapshotError('INVALID_SHARD');
-      const key = JSON.stringify([transfer.fromStopId, transfer.toStopId]);
-      const existing = edges.get(key);
-      if (existing && !sameTransfer(existing, transfer)) throw new TransitSnapshotError('INVALID_SHARD');
-      if (!existing) edges.set(key, transfer);
+      const { fromStopId, toStopId } = transfer;
+      const destinationCell = adjacentCellsByPath.get(stops[toStopId]);
+      const destinations = destinationsByOrigin.get(fromStopId) ?? new Set<string>();
+      if (!destinationCell || destinations.has(toStopId) || destinations.size >= maxTransferNeighbors) {
+        throw new TransitSnapshotError('INVALID_SHARD');
+      }
+      destinations.add(toStopId);
+      destinationsByOrigin.set(fromStopId, destinations);
+
+      const from = await readEndpoint(fromStopId, cell);
+      const to = await readEndpoint(toStopId, destinationCell);
+      const distance = haversineDistanceMeters([from.latitude, from.longitude], [to.latitude, to.longitude]);
+      if (distance > maxTransferDistanceMeters || transfer.distanceMeters < Math.floor(distance)) {
+        throw new TransitSnapshotError('INVALID_SHARD');
+      }
+      if (requested.has(fromStopId)) edges.push(transfer);
     }
   }
 
-  return [...edges.values()]
-    .filter(({ fromStopId }) => requested.has(fromStopId))
-    .sort((first, second) => compareIds(first.fromStopId, second.fromStopId) || compareIds(first.toStopId, second.toStopId));
+  return edges.sort((first, second) =>
+    compareIds(first.fromStopId, second.fromStopId) || compareIds(first.toStopId, second.toStopId));
 }
