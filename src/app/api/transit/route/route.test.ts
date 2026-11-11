@@ -10,18 +10,29 @@ import {
   destinationTransferPath, fixtureStorage, originStopPath, shapePath,
 } from '../test-storage.ts';
 import { createTransitRouteHandler } from './handler.ts';
-import { dynamic, GET, runtime } from './route.ts';
+import { dynamic, POST, runtime } from './route.ts';
 
-const params = {
-  originLat: '41.000987', originLng: '28.999913',
-  destinationLat: '41.021234', destinationLng: '29.021234',
+const params: Record<string, unknown> = {
+  originLat: 41.000987, originLng: 28.999913,
+  destinationLat: 41.021234, destinationLng: 29.021234,
   departureAt: '2026-11-10T07:00:00Z', preference: 'fastest',
 };
 const now = () => new Date(checkedAt);
-const routeRequest = (edit?: (query: URLSearchParams) => void) => {
-  const query = new URLSearchParams(params);
-  edit?.(query);
-  return new Request(`https://hizliulasim.com/api/transit/route?${query}`);
+const routeRequest = (
+  edit?: (body: Record<string, unknown>) => void,
+  options: { method?: string; contentType?: string | null; rawBody?: string; contentLength?: string } = {},
+) => {
+  const body = { ...params };
+  edit?.(body);
+  const method = options.method ?? 'POST';
+  const headers = new Headers();
+  if (options.contentType !== null) headers.set('Content-Type', options.contentType ?? 'application/json');
+  if (options.contentLength !== undefined) headers.set('Content-Length', options.contentLength);
+  return new Request('https://hizliulasim.com/api/transit/route', {
+    method,
+    headers,
+    ...(method !== 'GET' && method !== 'HEAD' && { body: options.rawBody ?? JSON.stringify(body) }),
+  });
 };
 const routeHandler = (options: Parameters<typeof createTransitRouteHandler>[0] = {}) => {
   const logs: unknown[] = [];
@@ -45,7 +56,7 @@ test('the public route is dynamic and writes one coordinate-free JSON line with 
     lines.push(line);
     return true;
   });
-  const response = await GET(routeRequest((query) => query.delete('preference')));
+  const response = await POST(routeRequest((body) => delete body.preference));
   writer.mock.restore();
   await expectError(response, 400, 'INVALID_REQUEST');
   assert.equal(lines.length, 1);
@@ -60,19 +71,18 @@ test('the public route is dynamic and writes one coordinate-free JSON line with 
   });
 });
 
-test('Next development request logging ignores only the route endpoint, including its query string', async () => {
+test('Next development request logging does not need to hide the coordinate-free route endpoint', async () => {
   const nextConfigPath = fileURLToPath(new URL('../../../../../next.config.ts', import.meta.url));
   const { default: config }: { default: NextConfig } = await transpileConfig({ nextConfigPath, dir: dirname(nextConfigPath) });
   const logging = config.logging;
   assert.ok(logging && typeof logging.incomingRequests === 'object' && logging.incomingRequests.ignore);
   const { ignore } = logging.incomingRequests;
   const ignored = (url: string) => ignore.some((pattern) => pattern.test(url));
-  for (const url of ['/api/transit/route', '/api/transit/route?originLat=41.000987', '/api/transit/route/?originLat=41.000987']) {
-    assert.equal(ignored(url), true, url);
-  }
-  for (const url of ['/api/transit/status', '/api/transit/router', '/api/transit/route/details',
-    '/api/health?next=/api/transit/route', '/yol-tarifi']) {
+  for (const url of ['/api/transit/route', '/api/transit/route/', '/api/transit/status']) {
     assert.equal(ignored(url), false, url);
+  }
+  for (const url of ['/yol-tarifi?o=41,29&d=41.1,29.1', '/yol-tarifi/?o=41,29']) {
+    assert.equal(ignored(url), true, url);
   }
 });
 
@@ -102,17 +112,16 @@ test('preflights adjacent stop grids and the first connection hour before routin
   assert.doesNotMatch(JSON.stringify(logs), /41\.000987|29\.021234|originLat|Başlangıç|hizliulasim|internal-assets/u);
 });
 
-const invalidQueries: [string, (query: URLSearchParams) => void][] = [
-  ['missing parameter', (query) => query.delete('departureAt')],
-  ['duplicate parameter', (query) => query.append('originLat', params.originLat)],
-  ['unexpected parameter', (query) => query.append('originName', 'private place')],
-  ['malformed coordinate', (query) => query.set('originLng', '0x1d')],
-  ['coordinate outside İstanbul', (query) => query.set('destinationLat', '43')],
-  ['malformed timestamp', (query) => query.set('departureAt', '2026-11-10T07:00')],
-  ['timestamp outside request horizon', (query) => query.set('departureAt', '2026-11-17T00:00:00Z')],
-  ['unsupported preference', (query) => query.set('preference', 'walking')],
+const invalidBodies: [string, (body: Record<string, unknown>) => void][] = [
+  ['missing parameter', (body) => delete body.departureAt],
+  ['unexpected parameter', (body) => { body.originName = 'private place'; }],
+  ['malformed coordinate', (body) => { body.originLng = '0x1d'; }],
+  ['coordinate outside İstanbul', (body) => { body.destinationLat = 43; }],
+  ['malformed timestamp', (body) => { body.departureAt = '2026-11-10T07:00'; }],
+  ['timestamp outside request horizon', (body) => { body.departureAt = '2026-11-17T00:00:00Z'; }],
+  ['unsupported preference', (body) => { body.preference = 'walking'; }],
 ];
-for (const [label, edit] of invalidQueries) {
+for (const [label, edit] of invalidBodies) {
   test(`rejects ${label} before reading storage`, async (t) => {
     const { reads } = fixtureStorage(t);
     const { get, logs } = routeHandler();
@@ -122,11 +131,26 @@ for (const [label, edit] of invalidQueries) {
   });
 }
 
+test('rejects a non-POST method, missing JSON content type, malformed JSON and oversized body before storage', async (t) => {
+  const { reads } = fixtureStorage(t);
+  const { get, logs } = routeHandler();
+  const requests = [
+    routeRequest(undefined, { method: 'GET' }),
+    routeRequest(undefined, { contentType: null }),
+    routeRequest(undefined, { rawBody: '{' }),
+    routeRequest(undefined, { rawBody: JSON.stringify({ ...params, padding: 'x'.repeat(1024) }) }),
+    routeRequest(undefined, { contentLength: '2048' }),
+  ];
+  for (const request of requests) await expectError(await get(request), 400, 'INVALID_REQUEST');
+  assert.deepEqual(reads, []);
+  assert.equal(logs.length, requests.length);
+});
+
 test('returns no route when a valid endpoint has no nearby stop', async (t) => {
   const storage = fixtureStorage(t);
   storage.publish('current', 'current_test');
   const { get } = routeHandler();
-  await expectError(await get(routeRequest((query) => query.set('destinationLat', '41.5'))), 404, 'NO_ROUTE');
+  await expectError(await get(routeRequest((body) => { body.destinationLat = 41.5; })), 404, 'NO_ROUTE');
   assert.equal(storage.reads.some((path) => path.includes('/transfers/')), false);
   assert.equal(storage.reads.includes('previous.json'), false);
 });

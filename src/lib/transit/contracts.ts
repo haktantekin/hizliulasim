@@ -208,7 +208,6 @@ const connectionBucketPattern = /^([a-f0-9]{64})-(?:[0-6]\d|7[01])$/;
 const gridCellPattern = /^(?:0|-?[1-9]\d*)_(?:0|-?[1-9]\d*)$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const instantPattern = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
-const decimalPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -388,39 +387,45 @@ export function parseManifest(value: unknown): TransitManifest {
   return value as unknown as TransitManifest;
 }
 
-function readRouteParameter(params: URLSearchParams, name: string): string {
-  const values = params.getAll(name);
-  if (values.length !== 1 || values[0].length === 0 || values[0].length > 64) {
-    throw new TypeError(`Invalid ${name}`);
-  }
-  return values[0];
-}
+const routeRequestFields = [
+  'originLat', 'originLng', 'destinationLat', 'destinationLng', 'departureAt', 'preference',
+] as const;
 
-function parseCoordinate(params: URLSearchParams, name: string, min: number, max: number): number {
-  const raw = readRouteParameter(params, name);
-  const value = Number(raw);
-  if (!decimalPattern.test(raw) || !isInRange(value, min, max)) {
+function readRouteString(body: Record<string, unknown>, name: string): string {
+  const value = body[name];
+  if (typeof value !== 'string' || value.length === 0 || value.length > 64) {
     throw new TypeError(`Invalid ${name}`);
   }
   return value;
 }
 
-export function parseRouteRequest(url: URL, now = new Date()): TransitRouteRequest {
-  const params = url.searchParams;
+function parseCoordinate(body: Record<string, unknown>, name: string, min: number, max: number): number {
+  const value = body[name];
+  if (!isInRange(value, min, max)) {
+    throw new TypeError(`Invalid ${name}`);
+  }
+  return value;
+}
+
+export function parseRouteRequest(value: unknown, now = new Date()): TransitRouteRequest {
+  if (!isRecord(value) || Object.keys(value).length !== routeRequestFields.length
+    || routeRequestFields.some((field) => !Object.hasOwn(value, field))) {
+    throw new TypeError('Invalid route request body');
+  }
   const origin: Coordinate = [
-    parseCoordinate(params, 'originLat', ...routeSearchBounds.latitude),
-    parseCoordinate(params, 'originLng', ...routeSearchBounds.longitude),
+    parseCoordinate(value, 'originLat', ...routeSearchBounds.latitude),
+    parseCoordinate(value, 'originLng', ...routeSearchBounds.longitude),
   ];
   const destination: Coordinate = [
-    parseCoordinate(params, 'destinationLat', ...routeSearchBounds.latitude),
-    parseCoordinate(params, 'destinationLng', ...routeSearchBounds.longitude),
+    parseCoordinate(value, 'destinationLat', ...routeSearchBounds.latitude),
+    parseCoordinate(value, 'destinationLng', ...routeSearchBounds.longitude),
   ];
-  const departure = parseInstant(readRouteParameter(params, 'departureAt'));
+  const departure = parseInstant(readRouteString(value, 'departureAt'));
   if (!Number.isFinite(departure) || departure > now.getTime() + MAX_ROUTE_DEPARTURE_AHEAD_MS) {
     throw new TypeError('Invalid departureAt');
   }
 
-  const preference = readRouteParameter(params, 'preference');
+  const preference = readRouteString(value, 'preference');
   if (preference !== 'fastest' && preference !== 'less-walking' && preference !== 'fewer-transfers') {
     throw new TypeError('Invalid preference');
   }

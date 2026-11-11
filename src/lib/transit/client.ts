@@ -113,11 +113,11 @@ export async function requestTransitRoutes(
     throw new TransitRouteError('INVALID_REQUEST');
   }
 
-  const params = new URLSearchParams({
-    originLat: String(origin[0]),
-    originLng: String(origin[1]),
-    destinationLat: String(destination[0]),
-    destinationLng: String(destination[1]),
+  const body = JSON.stringify({
+    originLat: origin[0],
+    originLng: origin[1],
+    destinationLat: destination[0],
+    destinationLng: destination[1],
     departureAt: input.departureAt.toISOString(),
     preference: input.preference,
   });
@@ -125,7 +125,13 @@ export async function requestTransitRoutes(
   let response: Response;
   let payload: unknown;
   try {
-    response = await fetch(`/api/transit/route?${params}`, { signal, cache: 'no-store' });
+    response = await fetch('/api/transit/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal,
+      cache: 'no-store',
+    });
     payload = await response.json();
   } catch {
     signal?.throwIfAborted();

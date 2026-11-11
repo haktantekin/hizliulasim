@@ -41,22 +41,22 @@ const payload = {
   diagnostics: { connectionBuckets: 1, connectionShards: 1, originCandidates: 2, destinationCandidates: 3 },
 };
 
-test('requests the local route API with the six contract parameters and returns its itineraries', async (t) => {
+test('posts the six route contract fields without putting coordinates in the request URL', async (t) => {
   const fetchRoute = t.mock.method(globalThis, 'fetch', async () => Response.json(payload));
   const signal = new AbortController().signal;
 
   assert.deepEqual(await requestTransitRoutes(input, signal), payload);
   assert.equal(fetchRoute.mock.callCount(), 1);
   const [url, init] = fetchRoute.mock.calls[0].arguments as Parameters<typeof fetch>;
-  const { pathname, searchParams } = new URL(String(url), 'https://hizliulasim.com');
-  assert.equal(pathname, '/api/transit/route');
-  assert.match(String(url), /^\/api\/transit\/route\?/u);
-  assert.deepEqual(Object.fromEntries(searchParams), {
-    originLat: '41.00123', originLng: '28.99988',
-    destinationLat: '41.02123', destinationLng: '29.02123',
+  assert.equal(url, '/api/transit/route');
+  assert.equal(init?.method, 'POST');
+  assert.deepEqual(init?.headers, { 'Content-Type': 'application/json' });
+  assert.deepEqual(JSON.parse(String(init?.body)), {
+    originLat: 41.00123, originLng: 28.99988,
+    destinationLat: 41.02123, destinationLng: 29.02123,
     departureAt: '2026-11-10T07:00:00.000Z', preference: 'less-walking',
   });
-  assert.equal(init?.method ?? 'GET', 'GET');
+  assert.equal(init?.cache, 'no-store');
   assert.equal(init?.signal, signal);
 });
 
@@ -83,9 +83,9 @@ test('requests the same coordinates before and after sharing a route near a boar
     departureAt: new Date(restored.departureAt), preference: restored.preference,
   });
 
-  const requestedUrls = fetchRoute.mock.calls.map(({ arguments: [url] }) => String(url));
-  assert.equal(requestedUrls.length, 2);
-  assert.equal(requestedUrls[0], requestedUrls[1]);
+  const requestBodies = fetchRoute.mock.calls.map(({ arguments: [, init] }) => JSON.parse(String(init?.body)));
+  assert.equal(requestBodies.length, 2);
+  assert.deepEqual(requestBodies[0], requestBodies[1]);
 });
 
 test('rejects an out-of-area coordinate before rounding could bring it into range', async (t) => {

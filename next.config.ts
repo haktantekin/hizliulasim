@@ -47,8 +47,8 @@ const nextConfig: NextConfig = {
   },
   logging: {
     incomingRequests: {
-      // Transit requests can carry exact coordinates in their query strings.
-      ignore: [/^\/api\/transit\/route\/?(?:\?|$)/, /^\/yol-tarifi\/*\?/],
+      // Shared planner URLs can carry rounded coordinates in their query strings.
+      ignore: [/^\/yol-tarifi\/*\?/],
     },
   },
   // Resolve ordinary CMS-managed redirects at build time so page requests do not boot WordPress.

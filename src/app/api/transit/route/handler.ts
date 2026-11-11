@@ -13,6 +13,8 @@ const errors = {
   ROUTE_TIMEOUT: { status: 504, message: 'Rota araması zaman veya işlem sınırına ulaştı.' },
 } as const;
 
+const MAX_ROUTE_REQUEST_BYTES = 1024;
+
 type RouteErrorCode = keyof typeof errors;
 type RouteOutcome = 'ok' | RouteErrorCode;
 
@@ -75,10 +77,19 @@ export function createTransitRouteHandler({
       let query: ReturnType<typeof parseRouteRequest>;
       try {
         const url = new URL(request.url);
-        if (url.searchParams.size !== 6) return fail('INVALID_REQUEST');
-        query = parseRouteRequest(url, requestedAt);
-      } catch (error) {
-        if (!(error instanceof TypeError)) throw error;
+        const contentType = request.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase();
+        const declaredLength = request.headers.get('content-length');
+        if (request.method !== 'POST' || url.search.length > 0 || contentType !== 'application/json'
+          || (declaredLength !== null && (!/^\d+$/u.test(declaredLength)
+            || Number(declaredLength) > MAX_ROUTE_REQUEST_BYTES))) {
+          return fail('INVALID_REQUEST');
+        }
+        const text = await request.text();
+        if (new TextEncoder().encode(text).byteLength > MAX_ROUTE_REQUEST_BYTES) {
+          return fail('INVALID_REQUEST');
+        }
+        query = parseRouteRequest(JSON.parse(text), requestedAt);
+      } catch {
         return fail('INVALID_REQUEST');
       }
 

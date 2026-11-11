@@ -7,7 +7,7 @@ import nextConfigLoader from 'next/dist/server/config.js';
 import nextRequestLogger from 'next/dist/server/dev/log-requests.js';
 import { googleAnalyticsId, googleAnalyticsSetup } from '../src/lib/googleAnalytics.ts';
 
-test('ignores directions requests with query data and keeps unrelated requests visible', async () => {
+test('hides shared planner query data while keeping the coordinate-free route API visible', async () => {
   const root = fileURLToPath(new URL('..', import.meta.url));
   const { logging } = await nextConfigLoader.default(nextConstants.PHASE_DEVELOPMENT_SERVER, root, { silent: true });
   const shouldIgnore = (url) => nextRequestLogger.ignoreLoggingIncomingRequests({ url }, logging);
@@ -15,7 +15,7 @@ test('ignores directions requests with query data and keeps unrelated requests v
   assert.equal(shouldIgnore('/yol-tarifi?o=41,29&d=41.1,29'), true);
   assert.equal(shouldIgnore('/yol-tarifi/?d=41.1%2C29'), true);
   assert.equal(shouldIgnore('/yol-tarifi?_rsc=x&o=41,29'), true);
-  assert.equal(shouldIgnore('/api/transit/route?originLat=41'), true);
+  assert.equal(shouldIgnore('/api/transit/route'), false);
   assert.equal(shouldIgnore('/yol-tarifi'), false);
   assert.equal(shouldIgnore('/yol-tarifi-ornegi?o=41,29'), false);
   assert.equal(shouldIgnore('/yol-tarifi/detay?o=41,29'), false);

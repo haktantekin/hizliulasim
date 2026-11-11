@@ -6,21 +6,18 @@ import { manifestFixture, snapshotPointerFixture } from './test-fixtures.ts';
 
 const now = new Date('2026-11-10T12:00:00.000Z');
 
-function requestUrl(overrides: Record<string, string | null> = {}): URL {
-  const url = new URL('https://hizliulasim.com/api/transit/route');
-  const fields = {
-    originLat: '41.01',
-    originLng: '29.01',
-    destinationLat: '41.05',
-    destinationLng: '29.04',
+function requestBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  const fields: Record<string, unknown> = {
+    originLat: 41.01,
+    originLng: 29.01,
+    destinationLat: 41.05,
+    destinationLng: 29.04,
     departureAt: '2026-11-10T15:00:00+03:00',
     preference: 'fastest',
     ...overrides,
   };
-  for (const [name, value] of Object.entries(fields)) {
-    if (value !== null) url.searchParams.set(name, value);
-  }
-  return url;
+  for (const [name, value] of Object.entries(fields)) if (value === null) delete fields[name];
+  return fields;
 }
 
 test('reads a CMS snapshot pointer with no schema version field', () => {
@@ -235,7 +232,7 @@ test('rejects malformed service calendars in the indexes', () => {
 
 test('parses the public route preferences, coordinates and an offset departure', () => {
   for (const preference of ['fastest', 'less-walking', 'fewer-transfers']) {
-    assert.deepEqual(parseRouteRequest(requestUrl({ preference }), now), {
+    assert.deepEqual(parseRouteRequest(requestBody({ preference }), now), {
       origin: [41.01, 29.01],
       destination: [41.05, 29.04],
       departureAt: new Date('2026-11-10T12:00:00.000Z'),
@@ -245,20 +242,20 @@ test('parses the public route preferences, coordinates and an offset departure',
 });
 
 test('rejects requests missing any required route parameter', () => {
-  for (const field of requestUrl().searchParams.keys()) {
-    assert.throws(() => parseRouteRequest(requestUrl({ [field]: null }), now));
+  for (const field of Object.keys(requestBody())) {
+    assert.throws(() => parseRouteRequest(requestBody({ [field]: null }), now));
   }
 });
 
-test('rejects duplicate route parameters', () => {
-  const url = requestUrl();
-  url.searchParams.append('originLat', '41.02');
-  assert.throws(() => parseRouteRequest(url, now));
+test('rejects non-object bodies and unexpected route fields', () => {
+  for (const value of [null, [], 'route', { ...requestBody(), originName: 'private place' }]) {
+    assert.throws(() => parseRouteRequest(value, now));
+  }
 });
 
 test('accepts the edges of the İstanbul bounds', () => {
-  const value = parseRouteRequest(requestUrl({
-    originLat: '39.5', originLng: '26', destinationLat: '42.5', destinationLng: '31.0',
+  const value = parseRouteRequest(requestBody({
+    originLat: 39.5, originLng: 26, destinationLat: 42.5, destinationLng: 31,
   }), now);
   assert.deepEqual(value.origin, [39.5, 26]);
   assert.deepEqual(value.destination, [42.5, 31]);
@@ -266,14 +263,14 @@ test('accepts the edges of the İstanbul bounds', () => {
 
 test('rejects out-of-bounds, nonfinite and malformed coordinates', () => {
   const cases = {
-    originLat: ['39.4999', '42.5001', 'NaN', 'Infinity', '41foo', ' ', '0x29'],
-    originLng: ['25.9999', '31.0001'],
-    destinationLat: ['39.4999', '42.5001'],
-    destinationLng: ['25.9999', '31.0001'],
+    originLat: [39.4999, 42.5001, NaN, Infinity, '41foo', ' ', '0x29'],
+    originLng: [25.9999, 31.0001],
+    destinationLat: [39.4999, 42.5001],
+    destinationLng: [25.9999, 31.0001],
   };
   for (const [name, values] of Object.entries(cases)) {
     for (const value of values) {
-      assert.throws(() => parseRouteRequest(requestUrl({ [name]: value }), now));
+      assert.throws(() => parseRouteRequest(requestBody({ [name]: value }), now));
     }
   }
 });
@@ -283,13 +280,13 @@ test('rejects non-ISO, offset-free and impossible departure times', () => {
     'November 10, 2026', '2026-11-10', '2026-11-10T12:00:00',
     '2026-02-29T12:00:00Z', '2026-11-10T24:00:00Z', '2026-11-10T12:00:00+03:60',
   ]) {
-    assert.throws(() => parseRouteRequest(requestUrl({ departureAt }), now));
+    assert.throws(() => parseRouteRequest(requestBody({ departureAt }), now));
   }
 });
 
 test('rejects unsupported route preferences', () => {
   for (const preference of ['time', 'walking', 'transfers', '']) {
-    assert.throws(() => parseRouteRequest(requestUrl({ preference }), now));
+    assert.throws(() => parseRouteRequest(requestBody({ preference }), now));
   }
 });
 
@@ -297,12 +294,12 @@ test('accepts past, current and exactly seven-days-ahead departure instants', ()
   for (const departureAt of [
     '2024-02-29T12:00:00.000Z', '2026-11-10T12:00:00.000Z', '2026-11-17T12:00:00.000Z',
   ]) {
-    const routeRequest = parseRouteRequest(requestUrl({ departureAt }), now);
+    const routeRequest = parseRouteRequest(requestBody({ departureAt }), now);
     assert.equal(routeRequest.departureAt.toISOString(), departureAt);
   }
 });
 
 test('rejects a departure more than seven days ahead by absolute time', () => {
   const departureAt = '2026-11-17T15:00:00.001+03:00';
-  assert.throws(() => parseRouteRequest(requestUrl({ departureAt }), now));
+  assert.throws(() => parseRouteRequest(requestBody({ departureAt }), now));
 });
