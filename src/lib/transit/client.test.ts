@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { requestTransitRoutes, TransitRouteError } from './client.ts';
 import type { TransitItinerary, TransitRouteRequest } from './contracts.ts';
+import { buildTransitPlannerUrl, parseTransitPlannerUrl } from './share-url.ts';
 
 const input: TransitRouteRequest = {
   origin: [41.001234, 28.999876],
@@ -51,12 +52,50 @@ test('requests the local route API with the six contract parameters and returns 
   assert.equal(pathname, '/api/transit/route');
   assert.match(String(url), /^\/api\/transit\/route\?/u);
   assert.deepEqual(Object.fromEntries(searchParams), {
-    originLat: '41.001234', originLng: '28.999876',
-    destinationLat: '41.021234', destinationLng: '29.021234',
+    originLat: '41.00123', originLng: '28.99988',
+    destinationLat: '41.02123', destinationLng: '29.02123',
     departureAt: '2026-11-10T07:00:00.000Z', preference: 'less-walking',
   });
   assert.equal(init?.method ?? 'GET', 'GET');
   assert.equal(init?.signal, signal);
+});
+
+test('requests the same coordinates before and after sharing a route near a boarding threshold', async (t) => {
+  const fetchRoute = t.mock.method(globalThis, 'fetch', async () => Response.json(payload));
+  // Rounding this origin changes walking time to the nearby stop at [41.00001, 29].
+  const origin = { name: 'Başlangıç', latitude: 41.0000049, longitude: 29 };
+  const destination = { name: 'Hedef', latitude: 42.4999951, longitude: 30.9999949 };
+  const departureAt = input.departureAt.toISOString();
+  const preference = input.preference;
+  const sharedUrl = new URL(buildTransitPlannerUrl({ origin, destination, departureAt, preference }), 'https://hizliulasim.com');
+  assert.equal(sharedUrl.searchParams.get('o'), '41,29');
+  assert.equal(sharedUrl.searchParams.get('d'), '42.5,30.99999');
+  const restored = parseTransitPlannerUrl(sharedUrl.searchParams);
+  assert.ok(restored.origin && restored.destination && restored.departureAt && restored.preference);
+
+  await requestTransitRoutes({
+    origin: [origin.latitude, origin.longitude], destination: [destination.latitude, destination.longitude],
+    departureAt: input.departureAt, preference,
+  });
+  await requestTransitRoutes({
+    origin: [restored.origin.latitude, restored.origin.longitude],
+    destination: [restored.destination.latitude, restored.destination.longitude],
+    departureAt: new Date(restored.departureAt), preference: restored.preference,
+  });
+
+  const requestedUrls = fetchRoute.mock.calls.map(({ arguments: [url] }) => String(url));
+  assert.equal(requestedUrls.length, 2);
+  assert.equal(requestedUrls[0], requestedUrls[1]);
+});
+
+test('rejects an out-of-area coordinate before rounding could bring it into range', async (t) => {
+  const fetchRoute = t.mock.method(globalThis, 'fetch', async () =>
+    Response.json({ error: { code: 'INVALID_REQUEST' } }, { status: 400 }));
+
+  await assert.rejects(requestTransitRoutes({ ...input, origin: [39.499999, 29] }), {
+    name: 'TransitRouteError', code: 'INVALID_REQUEST',
+  });
+  assert.equal(fetchRoute.mock.callCount(), 0);
 });
 
 for (const [status, code, safeCopy] of [

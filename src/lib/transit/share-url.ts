@@ -1,5 +1,5 @@
 import type { RoutePreference } from './contracts.ts';
-import { coordinatesInRouteSearchArea } from './route-search-area.ts';
+import { canonicalizeRouteCoordinates, coordinatesInRouteSearchArea } from './route-search-area.ts';
 
 export interface PlannerLocation {
   name: string;
@@ -15,7 +15,6 @@ export interface ShareablePlannerState {
   selectedAlternative?: number;
 }
 
-const coordinatePrecision = 5;
 const maxLabelLength = 120;
 const invalidLabelCharacters = /[\p{Cc}\uFFFD]/u;
 const coordinatePair = /^(\d{1,2}(?:\.\d{1,5})?),(\d{1,2}(?:\.\d{1,5})?)$/u;
@@ -68,9 +67,9 @@ function readLocation(
 
 function writeLocation(params: URLSearchParams, key: 'o' | 'd', location: PlannerLocation) {
   const { name, latitude, longitude } = location;
-  if (!coordinatesInRouteSearchArea(latitude, longitude)) return;
-  const pair = [latitude, longitude].map((value) => Number(value.toFixed(coordinatePrecision))).join(',');
-  params.set(key, pair);
+  const pair = canonicalizeRouteCoordinates(latitude, longitude);
+  if (!pair) return;
+  params.set(key, pair.join(','));
   const label = [...name.trim()].slice(0, maxLabelLength).join('').trimEnd();
   if (label && !invalidLabelCharacters.test(label)) params.set(`${key}n`, label);
 }

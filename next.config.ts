@@ -115,6 +115,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/yol-tarifi',
+        headers: [
+          {
+            // Route-sharing coordinates and place names must stay out of same-origin referrers.
+            key: 'Referrer-Policy',
+            value: 'strict-origin',
+          },
+        ],
+      },
       // Cache static assets
       {
         source: '/fonts/:path*',

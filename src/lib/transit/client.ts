@@ -1,4 +1,5 @@
 import type { TransitItinerary, TransitRouteRequest } from './contracts.ts';
+import { canonicalizeRouteCoordinates } from './route-search-area.ts';
 
 const errorMessages = {
   INVALID_REQUEST: 'Konum, kalkış zamanı veya rota tercihi geçersiz.',
@@ -106,13 +107,17 @@ export async function requestTransitRoutes(
   signal?: AbortSignal,
 ): Promise<TransitRouteResponse> {
   signal?.throwIfAborted();
-  if (!Number.isFinite(input.departureAt.getTime())) throw new TransitRouteError('INVALID_REQUEST');
+  const origin = canonicalizeRouteCoordinates(...input.origin);
+  const destination = canonicalizeRouteCoordinates(...input.destination);
+  if (!origin || !destination || !Number.isFinite(input.departureAt.getTime())) {
+    throw new TransitRouteError('INVALID_REQUEST');
+  }
 
   const params = new URLSearchParams({
-    originLat: String(input.origin[0]),
-    originLng: String(input.origin[1]),
-    destinationLat: String(input.destination[0]),
-    destinationLng: String(input.destination[1]),
+    originLat: String(origin[0]),
+    originLng: String(origin[1]),
+    destinationLat: String(destination[0]),
+    destinationLng: String(destination[1]),
     departureAt: input.departureAt.toISOString(),
     preference: input.preference,
   });
