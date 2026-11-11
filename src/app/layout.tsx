@@ -9,6 +9,7 @@ import Footer from '../components/ui/Footer';
 import Header from '../components/ui/Header';
 import Script from "next/script";
 import CookieBanner from '../components/ui/CookieBanner';
+import { googleAnalyticsId, googleAnalyticsSetup } from '../lib/googleAnalytics';
 
 const outfit = Outfit({ subsets: ["latin"], display: "swap" });
 
@@ -138,16 +139,11 @@ export default function RootLayout({
               crossOrigin="anonymous"
             />
             <Script
-              src="https://www.googletagmanager.com/gtag/js?id=G-XJ33LRDG0G"
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
               strategy="afterInteractive"
             />
             <Script id="ga-setup" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){window.dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', 'G-XJ33LRDG0G');
-              `}
+              {googleAnalyticsSetup}
             </Script>
           </>
         )}

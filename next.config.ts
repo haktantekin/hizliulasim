@@ -47,8 +47,8 @@ const nextConfig: NextConfig = {
   },
   logging: {
     incomingRequests: {
-      // The transit route logs its own summary without the coordinate query string.
-      ignore: [/^\/api\/transit\/route\/?(?:\?|$)/],
+      // Transit requests can carry exact coordinates in their query strings.
+      ignore: [/^\/api\/transit\/route\/?(?:\?|$)/, /^\/yol-tarifi\/*\?/],
     },
   },
   // Resolve ordinary CMS-managed redirects at build time so page requests do not boot WordPress.
