@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import * as zlib from 'node:zlib';
 import {
@@ -19,6 +19,9 @@ const maxPointerBytes = 4 * 1024;
 const maxManifestBytes = 12 * mib;
 const maxCompressedShardBytes = 24 * mib;
 const maxUncompressedShardBytes = 64 * mib;
+const maxJsonDepth = 64;
+const maxJsonTokens = 1_000_000;
+const maxJsonStringLength = 64 * 1024;
 const httpTimeoutMs = 10_000;
 const contentLinksPath = 'content-links.json.gz';
 const sha256Pattern = /^[a-f0-9]{64}$/;
@@ -28,9 +31,11 @@ const shardCache = new SnapshotCache<Buffer>(128, 64 * mib);
 const snapshotStorage = Symbol('snapshotStorage');
 
 type PointerName = 'current' | 'previous';
+type StartupShardSelector = (manifest: TransitManifest) => readonly string[];
 
 type SnapshotErrorCode = 'DATA_UNAVAILABLE' | 'READ_FAILED' | 'SIZE_LIMIT' | 'INVALID_POINTER'
-  | 'MANIFEST_HASH' | 'INVALID_MANIFEST' | 'UNDECLARED_SHARD' | 'SHARD_HASH' | 'INVALID_GZIP' | 'INVALID_SHARD';
+  | 'MANIFEST_HASH' | 'INVALID_MANIFEST' | 'UNDECLARED_SHARD' | 'SHARD_HASH' | 'INVALID_GZIP' | 'INVALID_SHARD'
+  | 'JSON_COMPLEXITY';
 
 export class TransitSnapshotError extends Error {
   readonly code: SnapshotErrorCode;
@@ -64,29 +69,87 @@ function sha256(bytes: Buffer): string {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
+function checkJsonComplexity(text: string): void {
+  let depth = 0;
+  let tokens = 0;
+  let stringStart = -1;
+  let inLiteral = false;
+
+  // Count each container, property name, and scalar once. JSON.parse handles syntax.
+  for (let offset = 0; offset < text.length; offset++) {
+    const character = text[offset];
+    if (stringStart !== -1) {
+      if (offset - stringStart > maxJsonStringLength) throw new TransitSnapshotError('JSON_COMPLEXITY');
+      if (character === '\\') offset++;
+      else if (character === '"') stringStart = -1;
+      continue;
+    }
+    switch (character) {
+      case '"':
+        stringStart = offset + 1;
+        tokens++;
+        inLiteral = false;
+        break;
+      case '[':
+      case '{':
+        depth++;
+        tokens++;
+        inLiteral = false;
+        break;
+      case ']':
+      case '}':
+        depth--;
+        inLiteral = false;
+        break;
+      case ',':
+      case ':':
+      case ' ':
+      case '\t':
+      case '\n':
+      case '\r':
+        inLiteral = false;
+        break;
+      default:
+        if (!inLiteral) tokens++;
+        inLiteral = true;
+    }
+    if (depth > maxJsonDepth || tokens > maxJsonTokens) throw new TransitSnapshotError('JSON_COMPLEXITY');
+  }
+}
+
 function parseJson(bytes: Buffer): unknown {
-  return JSON.parse(decoder.decode(bytes));
+  const text = decoder.decode(bytes);
+  checkJsonComplexity(text);
+  return JSON.parse(text);
 }
 
 async function readLocalFile(root: string, path: string, limit: number): Promise<Buffer> {
   const filename = resolve(root, path);
-  // The publisher does not serve symlinks or junctions within an immutable version.
-  if (relative(filename, await realpath(filename)) !== '' || !(await lstat(filename)).isFile()) {
+  const fromRoot = relative(root, filename);
+  if (fromRoot === '' || fromRoot === '..' || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) {
+    throw new TransitSnapshotError('READ_FAILED');
+  }
+  // Use bigint identities to retain the full inode/file ID on Windows and POSIX.
+  const candidate = await lstat(filename, { bigint: true });
+  if (!candidate.isFile() || candidate.ino === BigInt(0) || relative(filename, await realpath(filename)) !== '') {
     throw new TransitSnapshotError('READ_FAILED');
   }
   const file = await open(filename, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
   try {
-    const stat = await file.stat();
-    if (!stat.isFile()) throw new TransitSnapshotError('READ_FAILED');
-    if (stat.size > limit) throw new TransitSnapshotError('SIZE_LIMIT');
-    const bytes = Buffer.allocUnsafe(stat.size + 1);
+    const opened = await file.stat({ bigint: true });
+    if (!opened.isFile() || opened.dev !== candidate.dev || opened.ino !== candidate.ino || opened.size !== candidate.size) {
+      throw new TransitSnapshotError('READ_FAILED');
+    }
+    if (opened.size > BigInt(limit)) throw new TransitSnapshotError('SIZE_LIMIT');
+    const size = Number(opened.size);
+    const bytes = Buffer.allocUnsafe(size + 1);
     let offset = 0;
     while (offset < bytes.length) {
       const { bytesRead } = await file.read(bytes, offset, bytes.length - offset, offset);
       if (bytesRead === 0) break;
       offset += bytesRead;
     }
-    if (offset !== stat.size) throw new TransitSnapshotError('SIZE_LIMIT');
+    if (offset !== size) throw new TransitSnapshotError('SIZE_LIMIT');
     return bytes.subarray(0, offset);
   } finally {
     await file.close();
@@ -178,7 +241,8 @@ async function readPointer(storage: SnapshotStorage, name: PointerName): Promise
   const bytes = await readAsset(storage, `${name}.json`, maxPointerBytes, false);
   try {
     return parseSnapshotPointer(parseJson(bytes));
-  } catch {
+  } catch (error) {
+    if (error instanceof TransitSnapshotError) throw error;
     throw new TransitSnapshotError('INVALID_POINTER');
   }
 }
@@ -213,15 +277,17 @@ function freezeManifest(manifest: TransitManifest): TransitManifest {
 async function readManifest(storage: SnapshotStorage, pointer: TransitSnapshotPointer): Promise<TransitManifest> {
   const bytes = await readAsset(storage, `versions/${pointer.version}/manifest.json`, maxManifestBytes, true);
   if (sha256(bytes) !== pointer.manifestSha256) throw new TransitSnapshotError('MANIFEST_HASH');
+  let manifest: TransitManifest;
   try {
-    const manifest = parseManifest(parseJson(bytes));
-    if (manifest.version !== pointer.version || !Object.values(manifest.files).every(hasValidShardMetadata)) {
-      throw new TransitSnapshotError('INVALID_MANIFEST');
-    }
-    return freezeManifest(manifest);
-  } catch {
+    manifest = parseManifest(parseJson(bytes));
+  } catch (error) {
+    if (error instanceof TransitSnapshotError) throw error;
     throw new TransitSnapshotError('INVALID_MANIFEST');
   }
+  if (manifest.version !== pointer.version || !Object.values(manifest.files).every(hasValidShardMetadata)) {
+    throw new TransitSnapshotError('INVALID_MANIFEST');
+  }
+  return freezeManifest(manifest);
 }
 
 export async function loadManifest(pointer: TransitSnapshotPointer): Promise<TransitManifest> {
@@ -297,7 +363,7 @@ export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePat
   const storage = snapshot[snapshotStorage];
   const key = JSON.stringify([storage.cacheScope, snapshot.version, snapshot.pointer.manifestSha256, relativePath]);
   const cached = shardCache.get(key);
-  if (cached) return parseJson(cached) as T;
+  if (cached) return JSON.parse(decoder.decode(cached)) as T;
 
   const metadata = snapshot.manifest.files[relativePath];
   const compressed = await readAsset(storage, `versions/${snapshot.version}/${relativePath}`, metadata.bytes, true);
@@ -307,7 +373,8 @@ export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePat
   let value: unknown;
   try {
     value = parseJson(expanded);
-  } catch {
+  } catch (error) {
+    if (error instanceof TransitSnapshotError) throw error;
     throw new TransitSnapshotError('INVALID_SHARD');
   }
   if (!isRecord(value) || (relativePath === contentLinksPath
@@ -322,29 +389,44 @@ export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePat
 async function readSnapshot(storage: SnapshotStorage, name: PointerName): Promise<LoadedSnapshot> {
   const pointer = Object.freeze(await readPointer(storage, name));
   const manifest = await readManifest(storage, pointer);
-  const snapshot = Object.freeze({
+  return Object.freeze({
     pointer, manifest, version: pointer.version, usedFallback: name === 'previous', [snapshotStorage]: storage,
   });
-  await loadSnapshotShard(snapshot, contentLinksPath);
-  return snapshot;
+}
+
+function snapshotFailure(error: unknown): TransitSnapshotError {
+  if (error instanceof TransitSnapshotError) return error;
+  throw error;
+}
+
+async function attemptSnapshot(storage: SnapshotStorage, name: PointerName, selectShards: StartupShardSelector) {
+  const snapshot = await readSnapshot(storage, name).catch(snapshotFailure);
+  if (snapshot instanceof TransitSnapshotError) return snapshot;
+
+  // The selector runs outside the storage error handling, even when it throws a snapshot error.
+  const paths = new Set([contentLinksPath, ...selectShards(snapshot.manifest)]);
+  try {
+    for (const path of paths) await loadSnapshotShard(snapshot, path);
+    return snapshot;
+  } catch (error) {
+    return snapshotFailure(error);
+  }
+}
+
+/** Pin a snapshot after validating the shard paths needed to start this request. */
+export async function loadActiveSnapshotWithPreflight(selectShards: StartupShardSelector): Promise<LoadedSnapshot> {
+  const storage = await getStorage();
+  const current = await attemptSnapshot(storage, 'current', selectShards);
+  if (!(current instanceof TransitSnapshotError)) return current;
+
+  const fallback = await attemptSnapshot(storage, 'previous', selectShards);
+  if (fallback instanceof TransitSnapshotError) throw new TransitSnapshotError('DATA_UNAVAILABLE');
+  console.warn({ event: 'transit_snapshot_fallback', version: fallback.version, reason: current.code });
+  return fallback;
 }
 
 export async function loadActiveSnapshot(): Promise<LoadedSnapshot> {
-  const storage = await getStorage();
-  try {
-    return await readSnapshot(storage, 'current');
-  } catch (error) {
-    if (!(error instanceof TransitSnapshotError)) throw error;
-    let fallback: LoadedSnapshot;
-    try {
-      fallback = await readSnapshot(storage, 'previous');
-    } catch (fallbackError) {
-      if (!(fallbackError instanceof TransitSnapshotError)) throw fallbackError;
-      throw new TransitSnapshotError('DATA_UNAVAILABLE');
-    }
-    console.warn({ event: 'transit_snapshot_fallback', version: fallback.version, reason: error.code });
-    return fallback;
-  }
+  return loadActiveSnapshotWithPreflight(() => []);
 }
 
 export function clearTransitSnapshotCacheForTests(): void {

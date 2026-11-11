@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import fs, { mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test, type TestContext } from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { SnapshotCache } from './snapshot-cache.ts';
+import * as snapshotSource from './snapshot-source.ts';
 import {
   clearTransitSnapshotCacheForTests,
   loadActiveSnapshot,
@@ -272,6 +274,73 @@ test('rejects local shard directories linked outside the version', async (t) => 
   await assert.rejects(loadSnapshotShard(snapshot, stopPath), { code: 'READ_FAILED' });
 });
 
+test('rejects a same-size shard substituted after validating its parent path', async (t) => {
+  const root = await setupStorage(t);
+  const pointer = await stageVersion(root, 'current_v1');
+  await writePointer(root, 'current', pointer);
+  const snapshot = await loadActiveSnapshot();
+  const filename = await fs.realpath(join(root, 'versions', pointer.version, stopPath));
+  const shardDirectory = dirname(filename);
+  const substitute = join(root, 'replacement-directory');
+  await mkdir(substitute);
+  await writeFile(join(substitute, stopPath.split('/').at(-1)!), await readFile(filename));
+
+  const originalOpen = fs.open;
+  let readCalls: (() => number) | undefined;
+  const open = t.mock.method(fs, 'open', async (...args: Parameters<typeof originalOpen>) => {
+    if (args[0] !== filename) return originalOpen(...args);
+    await rename(shardDirectory, join(root, 'original-directory'));
+    await rename(substitute, shardDirectory);
+    const handle = await originalOpen(...args);
+    const read = t.mock.method(handle, 'read');
+    readCalls = () => read.mock.callCount();
+    return handle;
+  });
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(loadSnapshotShard(snapshot, stopPath), { code: 'READ_FAILED' });
+    assert.equal(readCalls?.(), 0);
+  } finally {
+    open.mock.restore();
+    syncBuiltinESMExports();
+  }
+});
+
+for (const [description, makeLinks] of [
+  ['excessive JSON nesting', () => '"stop":' + '['.repeat(80) + '0' + ']'.repeat(80)],
+  ['too many JSON values', () => '"stop":[' + '{},'.repeat(1_000_000) + '0]'],
+  ['an oversized JSON string', () => '"stop":"' + 'x'.repeat(70 * 1024) + '"'],
+] as const) {
+  test(`rejects ${description} before JSON.parse`, async (t) => {
+    const root = await setupStorage(t);
+    const payload = `{"links":{${makeLinks()}},"schemaVersion":1}`;
+    await writePointer(root, 'current', await stageVersion(root, 'current_v1', { contentBytes: gzipSync(payload) }));
+    await writePointer(root, 'previous', await stageVersion(root, 'previous_v1'));
+    const warn = t.mock.method(console, 'warn', () => {});
+    const parse = t.mock.method(JSON, 'parse');
+
+    assert.equal((await loadActiveSnapshot()).version, 'previous_v1');
+    assert.equal(parse.mock.calls.some(({ arguments: args }) => args[0] === payload), false);
+    assert.deepEqual(warn.mock.calls[0].arguments[0], {
+      event: 'transit_snapshot_fallback', version: 'previous_v1', reason: 'JSON_COMPLEXITY',
+    });
+  });
+}
+
+test('loads a producer-shaped link map with escaped quotes, backslashes and brackets in titles', async (t) => {
+  const root = await setupStorage(t);
+  const title = 'İstanbul ["Durak"] \\ {Meydan}\n';
+  const payload = { links: Object.fromEntries(Array.from({ length: 2_000 }, (_, index) => [
+    `D${index}`, { canonicalUrl: `/durak/${index}`, title },
+  ])), schemaVersion: 1 };
+  await writePointer(root, 'current', await stageVersion(root, 'current_v1', {
+    contentBytes: gzipSync(JSON.stringify(payload)),
+  }));
+
+  const snapshot = await loadActiveSnapshot();
+  assert.deepEqual(await loadSnapshotShard(snapshot, contentPath), payload);
+});
+
 test('keeps a request on its captured version when the current pointer switches', async (t) => {
   const root = await setupStorage(t);
   await writePointer(root, 'current', await stageVersion(root, 'current_v1'));
@@ -318,7 +387,40 @@ test('falls back when the required initial shard is missing', async (t) => {
   assert.equal((await loadSnapshotShard<StopShard>(snapshot, stopPath)).stops[0].name, 'Durak previous_v1');
 });
 
-test('fails a later shard read without consulting previous', async (t) => {
+test('selects and validates the required startup shards again against the previous manifest', async (t) => {
+  const root = await setupStorage(t);
+  await writePointer(root, 'current', await stageVersion(root, 'current_v1'));
+  await writePointer(root, 'previous', await stageVersion(root, 'previous_v1'));
+  await rm(join(root, 'versions/current_v1', stopPath));
+  await rm(join(root, 'versions/previous_v1', stopPath));
+  const warn = t.mock.method(console, 'warn', () => {});
+  const versions: string[] = [];
+  const snapshot = await snapshotSource.loadActiveSnapshotWithPreflight((manifest) => {
+    versions.push(manifest.version);
+    return [manifest.version === 'current_v1' ? manifest.indexes.stopGrid['4100_2900'] : manifest.indexes.routes['0']];
+  });
+
+  assert.deepEqual(versions, ['current_v1', 'previous_v1']);
+  assert.equal(snapshot.version, 'previous_v1');
+  assert.deepEqual(warn.mock.calls[0].arguments[0], {
+    event: 'transit_snapshot_fallback', version: 'previous_v1', reason: 'READ_FAILED',
+  });
+});
+
+test('propagates an application error thrown by the startup selector without trying previous', async (t) => {
+  const root = await setupStorage(t);
+  await writePointer(root, 'current', await stageVersion(root, 'current_v1'));
+  await writePointer(root, 'previous', await stageVersion(root, 'previous_v1'));
+  const applicationError = new snapshotSource.TransitSnapshotError('READ_FAILED');
+  const versions: string[] = [];
+  await assert.rejects(snapshotSource.loadActiveSnapshotWithPreflight((manifest) => {
+    versions.push(manifest.version);
+    throw applicationError;
+  }), (error) => error === applicationError);
+  assert.deepEqual(versions, ['current_v1']);
+});
+
+test('keeps later lazy shard errors on the already pinned snapshot', async (t) => {
   const root = await setupStorage(t);
   await writePointer(root, 'current', await stageVersion(root, 'current_v1'));
   await writePointer(root, 'previous', await stageVersion(root, 'previous_v1'));
