@@ -26,6 +26,9 @@ export function createTransitStatusHandler(now = () => new Date()) {
     return Response.json({
       ready: coversToday,
       status: coversToday ? (usedFallback ? 'degraded' : 'ready') : 'unavailable',
+      readinessScope: 'manifest',
+      shardIntegrityChecked: false,
+      shardValidation: 'on-route-request',
       activeVersion: active?.version ?? null,
       usedFallback,
       currentVersion: current.version,

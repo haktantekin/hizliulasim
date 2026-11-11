@@ -45,6 +45,12 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  logging: {
+    incomingRequests: {
+      // The transit route logs its own summary without the coordinate query string.
+      ignore: [/^\/api\/transit\/route\/?(?:\?|$)/],
+    },
+  },
   // Resolve ordinary CMS-managed redirects at build time so page requests do not boot WordPress.
   async redirects() {
     const {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { checkedAt, fixtureStorage } from '../test-storage.ts';
+import { checkedAt, contentPath, fixtureStorage } from '../test-storage.ts';
 import { createTransitStatusHandler } from './handler.ts';
 import { dynamic, GET, runtime } from './route.ts';
 
@@ -11,6 +11,9 @@ async function check(response: Response, status: number) {
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
   const body = await response.json();
   assert.doesNotMatch(JSON.stringify(body), /private-storage|internal-assets|versions\/|[a-f0-9]{64}|https?:\/\//u);
+  assert.equal(body.readinessScope, 'manifest');
+  assert.equal(body.shardIntegrityChecked, false);
+  assert.equal(body.shardValidation, 'on-route-request');
   return body;
 }
 
@@ -25,6 +28,7 @@ test('uses validated pointers and manifests and checks the current Istanbul date
   const storage = fixtureStorage(t);
   storage.publish('current', 'current_test');
   storage.publish('previous', 'previous_test');
+  storage.files.delete(`versions/current_test/${contentPath}`);
   const body = await check(await get(), 200);
   assert.deepEqual(body, {
     ready: true, status: 'ready', activeVersion: 'current_test', usedFallback: false,
@@ -32,6 +36,7 @@ test('uses validated pointers and manifests and checks the current Istanbul date
     schemaCompatible: true, serviceDateRange: { start: '2026-11-10', end: '2026-11-10' },
     istanbulDate: '2026-11-10', coversToday: true,
     generatedAt: '2026-11-10T13:00:00Z', checkedAt,
+    readinessScope: 'manifest', shardIntegrityChecked: false, shardValidation: 'on-route-request',
   });
   assert.deepEqual(new Set(storage.reads), new Set(['current.json', 'previous.json',
     'versions/current_test/manifest.json', 'versions/previous_test/manifest.json']));

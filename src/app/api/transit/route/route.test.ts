@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import { dirname } from 'node:path';
 import { test } from 'node:test';
 import { setImmediate } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
+import type { NextConfig } from 'next';
+import { transpileConfig } from 'next/dist/build/next-config-ts/transpile-config.js';
 import {
   checkedAt, connectionPath, contentPath, decoyStopPath, destinationStopPath,
   destinationTransferPath, fixtureStorage, originStopPath, shapePath,
@@ -33,11 +37,43 @@ async function expectError(response: Response, status: number, code: string) {
   assert.doesNotMatch(JSON.stringify(body), /private-storage|internal-assets|versions\/|\.json\.gz|41\.000987|originLat|[a-f0-9]{64}/u);
 }
 
-test('the public route is dynamic, Node-only and returns private errors', async (t) => {
-  t.mock.method(console, 'info', () => {});
+test('the public route is dynamic and writes one coordinate-free JSON line with the default logger', async (t) => {
   assert.equal(runtime, 'nodejs');
   assert.equal(dynamic, 'force-dynamic');
-  await expectError(await GET(routeRequest((query) => query.delete('originLat'))), 400, 'INVALID_REQUEST');
+  const lines: string[] = [];
+  const writer = t.mock.method(process.stdout, 'write', (line: string) => {
+    lines.push(line);
+    return true;
+  });
+  const response = await GET(routeRequest((query) => query.delete('preference')));
+  writer.mock.restore();
+  await expectError(response, 400, 'INVALID_REQUEST');
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /^[^\r\n]+\n$/u);
+  assert.doesNotMatch(lines[0], /41\.000987|28\.999913|originLat|destinationLng|departureAt/u);
+  const { elapsedMs, ...entry } = JSON.parse(lines[0]);
+  assert.ok(Number.isInteger(elapsedMs) && elapsedMs >= 0);
+  assert.deepEqual(entry, {
+    event: 'transit_route', outcome: 'INVALID_REQUEST', version: null, usedFallback: false,
+    connectionShards: 0, transferShards: 0, originCandidates: 0, destinationCandidates: 0,
+    alternatives: 0, errorCode: 'INVALID_REQUEST',
+  });
+});
+
+test('Next development request logging ignores only the route endpoint, including its query string', async () => {
+  const nextConfigPath = fileURLToPath(new URL('../../../../../next.config.ts', import.meta.url));
+  const { default: config }: { default: NextConfig } = await transpileConfig({ nextConfigPath, dir: dirname(nextConfigPath) });
+  const logging = config.logging;
+  assert.ok(logging && typeof logging.incomingRequests === 'object' && logging.incomingRequests.ignore);
+  const { ignore } = logging.incomingRequests;
+  const ignored = (url: string) => ignore.some((pattern) => pattern.test(url));
+  for (const url of ['/api/transit/route', '/api/transit/route?originLat=41.000987', '/api/transit/route/?originLat=41.000987']) {
+    assert.equal(ignored(url), true, url);
+  }
+  for (const url of ['/api/transit/status', '/api/transit/router', '/api/transit/route/details',
+    '/api/health?next=/api/transit/route', '/yol-tarifi']) {
+    assert.equal(ignored(url), false, url);
+  }
 });
 
 test('preflights adjacent stop grids and the first connection hour before routing against the selected version', async (t) => {

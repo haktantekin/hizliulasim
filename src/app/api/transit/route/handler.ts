@@ -37,7 +37,10 @@ interface RouteHandlerOptions {
 }
 
 export function createTransitRouteHandler({
-  now = () => new Date(), clock = () => performance.now(), limits = {}, log = (entry) => console.info(entry),
+  now = () => new Date(),
+  clock = () => performance.now(),
+  limits = {},
+  log = (entry) => { process.stdout.write(`${JSON.stringify(entry)}\n`); },
 }: RouteHandlerOptions = {}) {
   const wallTimeMs = limits.wallTimeMs ?? DEFAULT_ROUTER_LIMITS.wallTimeMs;
   const maxAlternatives = limits.maxAlternatives ?? DEFAULT_ROUTER_LIMITS.maxAlternatives;
