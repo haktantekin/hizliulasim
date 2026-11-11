@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useReducer, type Dispatch } from 'react';
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight, Maximize2 } from 'lucide-react';
 import { requestTransitRoutes, TransitRouteError } from '@/lib/transit/client';
 import {
   createPlannerState,
@@ -13,7 +13,7 @@ import {
   type PlannerPrediction,
   type PlannerRoute,
 } from '@/lib/transit/presentation';
-import type { PlannerLocation, ShareablePlannerState } from '@/lib/transit/share-url';
+import { buildTransitPlannerUrl, type PlannerLocation, type ShareablePlannerState } from '@/lib/transit/share-url';
 import TransitAlternatives from './TransitAlternatives';
 import TransitItinerary from './TransitItinerary';
 import TransitLocationField from './TransitLocationField';
@@ -220,6 +220,22 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
             selectedAlternative={route.selectedAlternative}
             selectedStep={route.selectedStep}
           />
+          {compact && origin.value && destination.value && (
+            // The coordinate-bearing URL needs a document load for the planner's telemetry sanitization.
+            <a
+              href={buildTransitPlannerUrl({
+                origin: origin.value,
+                destination: destination.value,
+                departureAt: route.departureAt,
+                preference,
+                selectedAlternative: route.selectedAlternative,
+              })}
+              className="inline-flex min-h-10 items-center gap-1.5 justify-self-start rounded text-sm font-semibold text-brand-soft-blue hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue"
+            >
+              <Maximize2 aria-hidden="true" className="size-4" />
+              Büyük haritada aç
+            </a>
+          )}
         </div>
       )}
     </div>
