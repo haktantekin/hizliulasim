@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test, type TestContext } from 'node:test';
 import { gzipSync } from 'node:zlib';
+import type { TransitConnection } from './contracts.ts';
 import { SnapshotCache } from './snapshot-cache.ts';
 import * as snapshotSource from './snapshot-source.ts';
 import {
@@ -31,13 +32,18 @@ function sha256(bytes: Buffer | string): string {
 
 async function setupStorage(t: TestContext, useLocal = true): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'transit-snapshot-'));
+  const env: NodeJS.Dict<string> = process.env;
+  const previousNodeEnv = env.NODE_ENV;
   const previousStorage = process.env.TRANSIT_DATA_STORAGE_PATH;
   const previousBaseUrl = process.env.TRANSIT_DATA_BASE_URL;
+  env.NODE_ENV = 'test';
   if (useLocal) process.env.TRANSIT_DATA_STORAGE_PATH = root;
   else delete process.env.TRANSIT_DATA_STORAGE_PATH;
   delete process.env.TRANSIT_DATA_BASE_URL;
   clearTransitSnapshotCacheForTests();
   t.after(async () => {
+    if (previousNodeEnv === undefined) delete env.NODE_ENV;
+    else env.NODE_ENV = previousNodeEnv;
     if (previousStorage === undefined) delete process.env.TRANSIT_DATA_STORAGE_PATH;
     else process.env.TRANSIT_DATA_STORAGE_PATH = previousStorage;
     if (previousBaseUrl === undefined) delete process.env.TRANSIT_DATA_BASE_URL;
@@ -87,6 +93,22 @@ test('loads the exact published manifest bytes and a legacy gzip inventory', asy
   assert.equal(snapshot.version, 'current_v1');
   assert.equal(snapshot.usedFallback, false);
   assert.deepEqual(await loadSnapshotShard(snapshot, contentPath), { links: {}, schemaVersion: 1 });
+});
+
+test('fails closed when a local snapshot root is configured in production', async (t) => {
+  const root = await setupStorage(t);
+  const pointer = await stageVersion(root, 'current_v1');
+  await writePointer(root, 'current', pointer);
+  Object.assign(process.env, {
+    NODE_ENV: 'production',
+    TRANSIT_DATA_BASE_URL: 'https://snapshot.example.test/',
+  });
+  const fetch = t.mock.method(globalThis, 'fetch', () => assert.fail('production must reject the conflicting configuration'));
+
+  await assert.rejects(loadActiveSnapshot(), {
+    code: 'INVALID_STORAGE_CONFIGURATION', message: 'Transit snapshot storage is misconfigured',
+  });
+  assert.equal(fetch.mock.callCount(), 0);
 });
 
 test('uses and logs a validated previous version when current is corrupt', async (t) => {
@@ -308,7 +330,8 @@ test('rejects a same-size shard substituted after validating its parent path', a
 
 for (const [description, makeLinks] of [
   ['excessive JSON nesting', () => '"stop":' + '['.repeat(80) + '0' + ']'.repeat(80)],
-  ['too many JSON values', () => '"stop":[' + '{},'.repeat(1_000_000) + '0]'],
+  ['too many JSON containers', () => '"stop":[' + '{},'.repeat(600_000) + '0]'],
+  ['too many flat JSON array entries', () => '"stop":[' + '0,'.repeat(3_100_000) + '0]'],
   ['an oversized JSON string', () => '"stop":"' + 'x'.repeat(70 * 1024) + '"'],
 ] as const) {
   test(`rejects ${description} before JSON.parse`, async (t) => {
@@ -339,6 +362,45 @@ test('loads a producer-shaped link map with escaped quotes, backslashes and brac
 
   const snapshot = await loadActiveSnapshot();
   assert.deepEqual(await loadSnapshotShard(snapshot, contentPath), payload);
+});
+
+test('loads 70,000 producer-layout connection records in one hour bucket', async (t) => {
+  const root = await setupStorage(t);
+  const [bucket, path] = Object.entries(manifestFixture.indexes.connectionBuckets)[0];
+  const record: TransitConnection = {
+    arrival: 90_720,
+    arrivalStopSequence: 2,
+    departure: 90_600,
+    directionId: '0',
+    dropOffType: 0,
+    fromStopId: '0',
+    headsign: 'İstanbul',
+    patternId: Object.keys(manifestFixture.indexes.patterns)[0],
+    pickupType: 0,
+    routeId: '0',
+    serviceClass: bucket.slice(0, 64),
+    serviceId: '0',
+    shapeId: Object.keys(manifestFixture.indexes.shapes)[0],
+    stopSequence: 1,
+    toStopId: '1',
+    tripId: 'sample-trip',
+  };
+  const count = 70_000;
+  const recordJson = JSON.stringify(record);
+  const bytes = gzipSync(`{"connections":[${`${recordJson},`.repeat(count - 1)}${recordJson}]}`);
+  const pointer = await stageVersion(root, 'current_v1', {
+    updateManifest: (manifest) => {
+      manifest.counts.connections = count;
+      manifest.files[path] = { bytes: bytes.length, sha256: sha256(bytes) };
+    },
+  });
+  await writeFile(join(root, 'versions', pointer.version, path), bytes);
+  await writePointer(root, 'current', pointer);
+
+  const snapshot = await loadActiveSnapshot();
+  const { connections } = await loadSnapshotShard<{ connections: TransitConnection[] }>(snapshot, path);
+  assert.equal(connections.length, count);
+  assert.deepEqual(connections.at(-1), record);
 });
 
 test('keeps a request on its captured version when the current pointer switches', async (t) => {
@@ -433,10 +495,13 @@ test('keeps later lazy shard errors on the already pinned snapshot', async (t) =
   assert.equal(warn.mock.callCount(), 0);
 });
 
-test('reads mutable HTTP pointers fresh and permits CDN caching of versioned assets', async (t) => {
+test('reads production HTTP pointers fresh and permits CDN caching of versioned assets', async (t) => {
   const root = await setupStorage(t, false);
   await writePointer(root, 'previous', await stageVersion(root, 'previous_v1'));
-  process.env.TRANSIT_DATA_BASE_URL = 'https://snapshot.example.test/feeds/transit';
+  Object.assign(process.env, {
+    NODE_ENV: 'production',
+    TRANSIT_DATA_BASE_URL: 'https://snapshot.example.test/feeds/transit',
+  });
   const requests: [string, RequestCache | undefined, string | null][] = [];
   t.mock.method(console, 'warn', () => {});
   t.mock.method(globalThis, 'fetch', async (input: URL | string, init: RequestInit) => {

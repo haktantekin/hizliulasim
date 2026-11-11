@@ -20,7 +20,9 @@ const maxManifestBytes = 12 * mib;
 const maxCompressedShardBytes = 24 * mib;
 const maxUncompressedShardBytes = 64 * mib;
 const maxJsonDepth = 64;
-const maxJsonTokens = 1_000_000;
+const maxJsonContainers = 500_000;
+// Even a 64 MiB connection bucket with minimum-width fields has fewer than 3M commas.
+const maxJsonCommas = 3_000_000;
 const maxJsonStringLength = 64 * 1024;
 const httpTimeoutMs = 10_000;
 const contentLinksPath = 'content-links.json.gz';
@@ -33,15 +35,20 @@ const snapshotStorage = Symbol('snapshotStorage');
 type PointerName = 'current' | 'previous';
 type StartupShardSelector = (manifest: TransitManifest) => readonly string[];
 
-type SnapshotErrorCode = 'DATA_UNAVAILABLE' | 'READ_FAILED' | 'SIZE_LIMIT' | 'INVALID_POINTER'
+type SnapshotErrorCode = 'DATA_UNAVAILABLE' | 'INVALID_STORAGE_CONFIGURATION' | 'READ_FAILED' | 'SIZE_LIMIT' | 'INVALID_POINTER'
   | 'MANIFEST_HASH' | 'INVALID_MANIFEST' | 'UNDECLARED_SHARD' | 'SHARD_HASH' | 'INVALID_GZIP' | 'INVALID_SHARD'
   | 'JSON_COMPLEXITY';
+
+const snapshotErrorMessages: Partial<Record<SnapshotErrorCode, string>> = {
+  DATA_UNAVAILABLE: 'Transit snapshot data is unavailable',
+  INVALID_STORAGE_CONFIGURATION: 'Transit snapshot storage is misconfigured',
+};
 
 export class TransitSnapshotError extends Error {
   readonly code: SnapshotErrorCode;
 
   constructor(code: SnapshotErrorCode) {
-    super(code === 'DATA_UNAVAILABLE' ? 'Transit snapshot data is unavailable' : `Transit snapshot validation failed (${code})`);
+    super(snapshotErrorMessages[code] ?? `Transit snapshot validation failed (${code})`);
     this.name = 'TransitSnapshotError';
     this.code = code;
   }
@@ -71,11 +78,11 @@ function sha256(bytes: Buffer): string {
 
 function checkJsonComplexity(text: string): void {
   let depth = 0;
-  let tokens = 0;
+  let containers = 0;
+  let commas = 0;
   let stringStart = -1;
-  let inLiteral = false;
 
-  // Count each container, property name, and scalar once. JSON.parse handles syntax.
+  // Count containers and member separators. JSON.parse handles syntax.
   for (let offset = 0; offset < text.length; offset++) {
     const character = text[offset];
     if (stringStart !== -1) {
@@ -87,33 +94,22 @@ function checkJsonComplexity(text: string): void {
     switch (character) {
       case '"':
         stringStart = offset + 1;
-        tokens++;
-        inLiteral = false;
         break;
       case '[':
       case '{':
         depth++;
-        tokens++;
-        inLiteral = false;
+        containers++;
+        if (depth > maxJsonDepth || containers > maxJsonContainers) throw new TransitSnapshotError('JSON_COMPLEXITY');
         break;
       case ']':
       case '}':
         depth--;
-        inLiteral = false;
         break;
       case ',':
-      case ':':
-      case ' ':
-      case '\t':
-      case '\n':
-      case '\r':
-        inLiteral = false;
+        commas++;
+        if (commas > maxJsonCommas) throw new TransitSnapshotError('JSON_COMPLEXITY');
         break;
-      default:
-        if (!inLiteral) tokens++;
-        inLiteral = true;
     }
-    if (depth > maxJsonDepth || tokens > maxJsonTokens) throw new TransitSnapshotError('JSON_COMPLEXITY');
   }
 }
 
@@ -124,6 +120,7 @@ function parseJson(bytes: Buffer): unknown {
 }
 
 async function readLocalFile(root: string, path: string, limit: number): Promise<Buffer> {
+  // The local adapter assumes a trusted development/test tree. These checks catch aliases and file swaps.
   const filename = resolve(root, path);
   const fromRoot = relative(root, filename);
   if (fromRoot === '' || fromRoot === '..' || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) {
@@ -207,8 +204,11 @@ async function readHttpFile(base: URL, path: string, limit: number, immutable: b
 
 // This module uses Node-only filesystem, crypto, and zlib imports and is a server entry point.
 async function getStorage(): Promise<SnapshotStorage> {
+  const local = process.env.TRANSIT_DATA_STORAGE_PATH?.trim();
+  if (local && process.env.NODE_ENV === 'production') {
+    throw new TransitSnapshotError('INVALID_STORAGE_CONFIGURATION');
+  }
   try {
-    const local = process.env.TRANSIT_DATA_STORAGE_PATH?.trim();
     if (local) {
       const root = await realpath(resolve(local));
       return { cacheScope: `file:${root}`, read: (path, limit) => readLocalFile(root, path, limit) };
