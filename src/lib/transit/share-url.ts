@@ -1,4 +1,5 @@
 import type { RoutePreference } from './contracts.ts';
+import { coordinatesInRouteSearchArea } from './route-search-area.ts';
 
 export interface PlannerLocation {
   name: string;
@@ -24,10 +25,6 @@ const instant = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\
 const maxDepartureAheadMs = 7 * 24 * 60 * 60 * 1000;
 // The default router returns at most three alternatives.
 const maxAlternativeIndex = 2;
-
-function coordinatesInSearchArea(latitude: number, longitude: number): boolean {
-  return latitude >= 39.5 && latitude <= 42.5 && longitude >= 26 && longitude <= 31;
-}
 
 function getSingleParam(params: URLSearchParams, key: string): string | undefined {
   const values = params.getAll(key);
@@ -61,7 +58,7 @@ function readLocation(
   if (!match || match[0] !== raw) return undefined;
   const latitude = Number(match[1]);
   const longitude = Number(match[2]);
-  if (!coordinatesInSearchArea(latitude, longitude)) return undefined;
+  if (!coordinatesInRouteSearchArea(latitude, longitude)) return undefined;
 
   const label = getSingleParam(params, `${key}n`);
   const name = label && label.length <= maxLabelLength * 2 && !invalidLabelCharacters.test(label)
@@ -71,7 +68,7 @@ function readLocation(
 
 function writeLocation(params: URLSearchParams, key: 'o' | 'd', location: PlannerLocation) {
   const { name, latitude, longitude } = location;
-  if (!coordinatesInSearchArea(latitude, longitude)) return;
+  if (!coordinatesInRouteSearchArea(latitude, longitude)) return;
   const pair = [latitude, longitude].map((value) => Number(value.toFixed(coordinatePrecision))).join(',');
   params.set(key, pair);
   const label = [...name.trim()].slice(0, maxLabelLength).join('').trimEnd();

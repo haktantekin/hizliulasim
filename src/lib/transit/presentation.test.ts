@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { TransitItinerary, TransitMode } from './contracts.ts';
-import { buildTimelineItems, createPlannerState, getModePresentation, reducePlanner } from './presentation.ts';
+import { buildTimelineItems, createPlannerState, getModePresentation, isPlannerLocation, reducePlanner } from './presentation.ts';
 
 const modes = [
   ['walking', 'Yürüme', '#6b7280', 'footprints'],
@@ -133,6 +133,59 @@ test('rejects non-finite coordinates from an initial state or a location fix', (
   assert.equal(state.route.kind, 'idle');
 });
 
+test('accepts the inclusive API bounds and suppresses a fixed detail destination outside them', () => {
+  for (const [latitude, longitude] of [[39.5, 26], [42.5, 31]]) {
+    assert.equal(isPlannerLocation({ ...destination, latitude, longitude }), true);
+  }
+  for (const [latitude, longitude] of [[39.49, 29], [42.51, 29], [41, 25.99], [41, 31.01]]) {
+    const fixed = { ...destination, latitude, longitude };
+    assert.equal(isPlannerLocation(fixed), false);
+    const state = createPlannerState({ origin, destination }, fixed);
+    assert.equal(state.destination.value, null);
+    assert.equal(state.route.kind, 'idle');
+  }
+});
+
+test('keeps an out-of-area editable initial location unselected and shows coverage feedback', () => {
+  const state = createPlannerState({ origin, destination: { ...destination, latitude: 38 } });
+  assert.equal(state.destination.value, null);
+  assert.equal(state.destination.lookup.kind, 'error');
+  assert.match(state.destination.lookup.message, /rota arama alanının dışında/);
+  assert.equal(state.route.kind, 'idle');
+});
+
+test('shows coverage feedback for an out-of-area position fix without routing', () => {
+  const locating = reducePlanner(createPlannerState({ destination }), { type: 'locate', role: 'origin' });
+  assert.equal(locating.origin.lookup.kind, 'geolocation');
+  const state = reducePlanner(locating, {
+    type: 'resolve-location', role: 'origin', id: locating.origin.lookup.id,
+    value: { name: 'Konumum', latitude: 39.9, longitude: 32.8 },
+  });
+  assert.equal(state.origin.value, null);
+  assert.equal(state.origin.lookup.kind, 'error');
+  assert.match(state.origin.lookup.message, /rota arama alanının dışında/);
+  assert.equal(state.route.kind, 'idle');
+});
+
+test('shows coverage feedback for an out-of-area Place result without routing', () => {
+  const search = reducePlanner(createPlannerState({ origin }), { type: 'edit-location', role: 'destination', query: 'Ankara' });
+  assert.equal(search.destination.lookup.kind, 'search');
+  const suggested = reducePlanner(search, {
+    type: 'suggestions', role: 'destination', id: search.destination.lookup.id,
+    predictions: [{ id: 'ankara', description: 'Ankara' }],
+  });
+  const chosen = reducePlanner(suggested, { type: 'choose-place', role: 'destination', placeId: 'ankara' });
+  assert.equal(chosen.destination.lookup.kind, 'details');
+  const state = reducePlanner(chosen, {
+    type: 'resolve-location', role: 'destination', id: chosen.destination.lookup.id,
+    value: { name: 'Ankara', latitude: 39.9, longitude: 32.8 },
+  });
+  assert.equal(state.destination.value, null);
+  assert.equal(state.destination.lookup.kind, 'error');
+  assert.match(state.destination.lookup.message, /rota arama alanının dışında/);
+  assert.equal(state.route.kind, 'idle');
+});
+
 test('swaps both selected locations and starts a new request in the reversed direction', () => {
   const state = createPlannerState({ origin, destination });
   const swapped = reducePlanner(state, { type: 'swap-locations' });
@@ -248,4 +301,26 @@ test('restores an available alternative and ignores invalid selection indexes', 
   const fewer = reducePlanner(initial, { type: 'route-succeeded', id: initial.route.id, departureAt, alternatives: [itinerary] });
   assert.equal(fewer.route.kind, 'success');
   assert.equal(fewer.route.selectedAlternative, 0);
+});
+
+test('restores the shared alternative after route failure and cancellation when retrying unchanged inputs', () => {
+  const initial = createPlannerState({ origin, destination, departureAt, selectedAlternative: 1 });
+  assert.equal(initial.route.kind, 'loading');
+  const failed = reducePlanner(initial, { type: 'route-failed', id: initial.route.id, message: 'Rota hatası' });
+  const retry = reducePlanner(failed, { type: 'retry-route' });
+  const cancelled = reducePlanner(retry, { type: 'cancel-route' });
+  const resumed = reducePlanner(cancelled, { type: 'retry-route' });
+  assert.equal(resumed.route.kind, 'loading');
+  const result = reducePlanner(resumed, { type: 'route-succeeded', id: resumed.route.id, departureAt, alternatives });
+  assert.equal(result.route.kind, 'success');
+  assert.equal(result.route.selectedAlternative, 1);
+});
+
+test('uses the first alternative after the route inputs change', () => {
+  const initial = createPlannerState({ origin, destination, departureAt, selectedAlternative: 1 });
+  const changed = reducePlanner(initial, { type: 'set-preference', preference: 'fewer-transfers' });
+  assert.equal(changed.route.kind, 'loading');
+  const result = reducePlanner(changed, { type: 'route-succeeded', id: changed.route.id, departureAt, alternatives });
+  assert.equal(result.route.kind, 'success');
+  assert.equal(result.route.selectedAlternative, 0);
 });

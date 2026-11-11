@@ -1,4 +1,5 @@
 import type { RoutePreference, TransitBoardingPoint, TransitItinerary, TransitMode } from './contracts.ts';
+import { coordinatesInRouteSearchArea } from './route-search-area.ts';
 import type { PlannerLocation, ShareablePlannerState } from './share-url.ts';
 
 const modes = {
@@ -80,7 +81,7 @@ export interface PlannerEndpoint {
 
 export type PlannerRoute =
   | { kind: 'idle' }
-  | ({ kind: 'loading'; id: number } & ShareablePlannerState)
+  | ({ kind: 'loading'; id: number } & Omit<ShareablePlannerState, 'selectedAlternative'>)
   | { kind: 'success'; departureAt: string; alternatives: TransitItinerary[]; selectedAlternative: number }
   | { kind: 'error'; message: string };
 
@@ -90,6 +91,7 @@ export interface PlannerState {
   destinationLocked: boolean;
   departureAt: string;
   preference: RoutePreference;
+  requestedAlternative: number;
   route: PlannerRoute;
   serial: number;
 }
@@ -112,25 +114,33 @@ export type PlannerAction =
   | { type: 'retry-route' }
   | { type: 'select-alternative'; index: number };
 
-export function isPlannerLocation(value: PlannerLocation | undefined): value is PlannerLocation {
-  return value !== undefined && Number.isFinite(value.latitude) && Math.abs(value.latitude) <= 90
-    && Number.isFinite(value.longitude) && Math.abs(value.longitude) <= 180;
+export function isPlannerLocation(value: PlannerLocation | undefined): boolean {
+  return !!value && coordinatesInRouteSearchArea(value.latitude, value.longitude);
 }
 
 function selectedEndpoint(location?: PlannerLocation): PlannerEndpoint {
-  const value = isPlannerLocation(location) ? location : null;
-  return { value, query: value?.name ?? '', lookup: { kind: 'idle' } };
+  if (!location) return { value: null, query: '', lookup: { kind: 'idle' } };
+  if (isPlannerLocation(location)) return { value: location, query: location.name, lookup: { kind: 'idle' } };
+
+  const message = Number.isFinite(location.latitude) && Number.isFinite(location.longitude)
+    ? 'Bu konum rota arama alanının dışında. İstanbul ve çevresinde bir yer seçin.'
+    : 'Konumun koordinatları alınamadı. Yer aramasını kullanabilirsiniz.';
+  return { value: null, query: location.name, lookup: { kind: 'error', message } };
 }
 
-function calculateRoute(state: PlannerState, selectedAlternative?: number): PlannerState {
+function calculateRoute(state: PlannerState): PlannerState {
   const { origin, destination, departureAt, preference } = state;
   if (!origin.value || !destination.value) return { ...state, route: { kind: 'idle' } };
   const id = state.serial + 1;
   return {
     ...state,
     serial: id,
-    route: { kind: 'loading', id, origin: origin.value, destination: destination.value, departureAt, preference, selectedAlternative },
+    route: { kind: 'loading', id, origin: origin.value, destination: destination.value, departureAt, preference },
   };
+}
+
+function recalculateRoute(state: PlannerState): PlannerState {
+  return calculateRoute({ ...state, requestedAlternative: 0 });
 }
 
 export function createPlannerState(
@@ -143,16 +153,17 @@ export function createPlannerState(
     destinationLocked: fixedDestination !== undefined,
     departureAt: initialState.departureAt ?? '',
     preference: initialState.preference ?? 'fastest',
+    requestedAlternative: initialState.selectedAlternative ?? 0,
     route: { kind: 'idle' },
     serial: 0,
-  }, initialState.selectedAlternative);
+  });
 }
 
 function replaceEndpoint(
   state: PlannerState, role: PlannerEndpointRole, endpoint: PlannerEndpoint,
 ): PlannerState {
   const next = { ...state, [role]: endpoint };
-  return state[role].value === endpoint.value ? next : calculateRoute(next);
+  return state[role].value === endpoint.value ? next : recalculateRoute(next);
 }
 
 function reduceLocation(state: PlannerState, action: Extract<PlannerAction, { role: PlannerEndpointRole }>): PlannerState {
@@ -187,12 +198,11 @@ function reduceLocation(state: PlannerState, action: Extract<PlannerAction, { ro
       return replaceEndpoint({ ...state, serial: id }, role, {
         value: null, query: endpoint.value ? '' : endpoint.query, lookup: { kind: 'geolocation', id },
       });
-    case 'resolve-location':
+    case 'resolve-location': {
       if ((lookup.kind !== 'details' && lookup.kind !== 'geolocation') || lookup.id !== action.id) return state;
-      if (isPlannerLocation(action.value)) return replaceEndpoint(state, role, selectedEndpoint(action.value));
-      return replaceEndpoint(state, role, {
-        ...endpoint, lookup: { kind: 'error', message: 'Konumun koordinatları alınamadı. Yer aramasını kullanabilirsiniz.' },
-      });
+      const selection = selectedEndpoint(action.value);
+      return replaceEndpoint(state, role, selection.value ? selection : { ...endpoint, lookup: selection.lookup });
+    }
     case 'lookup-failed':
       if (!('id' in lookup) || lookup.id !== action.id) return state;
       return replaceEndpoint(state, role, { ...endpoint, lookup: { kind: 'error', message: action.message } });
@@ -206,14 +216,14 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
   switch (action.type) {
     case 'swap-locations':
       if (state.destinationLocked || !origin.value || !destination.value) return state;
-      return calculateRoute({ ...state, origin: destination, destination: origin });
+      return recalculateRoute({ ...state, origin: destination, destination: origin });
     case 'set-departure':
-      return state.departureAt === action.departureAt ? state : calculateRoute({ ...state, departureAt: action.departureAt });
+      return state.departureAt === action.departureAt ? state : recalculateRoute({ ...state, departureAt: action.departureAt });
     case 'set-preference':
-      return state.preference === action.preference ? state : calculateRoute({ ...state, preference: action.preference });
+      return state.preference === action.preference ? state : recalculateRoute({ ...state, preference: action.preference });
     case 'route-succeeded': {
       if (route.kind !== 'loading' || route.id !== action.id) return state;
-      const index = route.selectedAlternative ?? 0;
+      const index = state.requestedAlternative;
       return {
         ...state,
         route: {

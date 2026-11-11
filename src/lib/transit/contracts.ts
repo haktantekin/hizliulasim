@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { routeSearchBounds } from './route-search-area.ts';
 
 export const TRANSIT_SCHEMA_VERSION = 1;
 export const MAX_ROUTE_DEPARTURE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
@@ -407,12 +408,12 @@ function parseCoordinate(params: URLSearchParams, name: string, min: number, max
 export function parseRouteRequest(url: URL, now = new Date()): TransitRouteRequest {
   const params = url.searchParams;
   const origin: Coordinate = [
-    parseCoordinate(params, 'originLat', 39.5, 42.5),
-    parseCoordinate(params, 'originLng', 26, 31),
+    parseCoordinate(params, 'originLat', ...routeSearchBounds.latitude),
+    parseCoordinate(params, 'originLng', ...routeSearchBounds.longitude),
   ];
   const destination: Coordinate = [
-    parseCoordinate(params, 'destinationLat', 39.5, 42.5),
-    parseCoordinate(params, 'destinationLng', 26, 31),
+    parseCoordinate(params, 'destinationLat', ...routeSearchBounds.latitude),
+    parseCoordinate(params, 'destinationLng', ...routeSearchBounds.longitude),
   ];
   const departure = parseInstant(readRouteParameter(params, 'departureAt'));
   if (!Number.isFinite(departure) || departure > now.getTime() + MAX_ROUTE_DEPARTURE_AHEAD_MS) {
