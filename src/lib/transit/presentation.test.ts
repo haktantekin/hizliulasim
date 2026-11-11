@@ -4,7 +4,10 @@ import type { TransitItinerary, TransitMode } from './contracts.ts';
 import { buildTransitMapModel } from './map-model.ts';
 import * as presentation from './presentation.ts';
 
-const { buildTimelineItems, createPlannerState, getModePresentation, isPlannerLocation, reducePlanner } = presentation;
+const {
+  buildTimelineItems, createPlannerState, getCurrentDepartureAt,
+  getCurrentLocationButtonVisibility, getModePresentation, isPlannerLocation, reducePlanner,
+} = presentation;
 
 const modes = [
   ['walking', 'Yürüme', '#6b7280', 'footprints'],
@@ -132,6 +135,42 @@ test('uses plain stop names for external or invalid canonical URLs', () => {
 const origin = { name: 'Beşiktaş', latitude: 41.04, longitude: 29.01 };
 const destination = { name: 'Kadıköy', latitude: 40.99, longitude: 29.03 };
 const prediction = { id: 'besiktas', description: 'Beşiktaş, İstanbul' };
+
+test('turns the now button clock into an explicit departure instant', () => {
+  assert.equal(getCurrentDepartureAt(new Date('2026-11-12T08:34:56.789Z')), '2026-11-12T08:34:56.789Z');
+});
+
+test('hides the other current-location button from click through resolution and restores it after editing', () => {
+  let state = createPlannerState();
+  assert.deepEqual(
+    getCurrentLocationButtonVisibility('full', state.origin, state.destination),
+    { origin: true, destination: true },
+  );
+
+  state = reducePlanner(state, { type: 'locate', role: 'origin' });
+  assert.equal(state.origin.usesCurrentLocation, true);
+  assert.deepEqual(
+    getCurrentLocationButtonVisibility('full', state.origin, state.destination),
+    { origin: true, destination: false },
+  );
+
+  const lookup = state.origin.lookup;
+  assert.equal(lookup.kind, 'geolocation');
+  state = reducePlanner(state, {
+    type: 'resolve-location', role: 'origin', id: lookup.id,
+    value: { name: 'Konumum', latitude: 41.01, longitude: 29.01 },
+  });
+  assert.deepEqual(
+    getCurrentLocationButtonVisibility('full', state.origin, state.destination),
+    { origin: true, destination: false },
+  );
+
+  state = reducePlanner(state, { type: 'edit-location', role: 'origin', query: 'Beşiktaş' });
+  assert.deepEqual(
+    getCurrentLocationButtonVisibility('full', state.origin, state.destination),
+    { origin: true, destination: true },
+  );
+});
 
 test('starts a route only when both location fields have selected coordinates', () => {
   let state = createPlannerState({ destination });

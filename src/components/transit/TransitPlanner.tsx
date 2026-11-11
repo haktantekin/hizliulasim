@@ -5,6 +5,7 @@ import { ArrowLeftRight, Maximize2 } from 'lucide-react';
 import { requestTransitRoutes, TransitRouteError } from '@/lib/transit/client';
 import {
   createPlannerState,
+  getCurrentLocationButtonVisibility,
   isPlannerLocation,
   reducePlanner,
   type PlannerAction,
@@ -153,6 +154,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
   useRouteRequest(route, dispatch);
 
   const compact = variant !== 'full';
+  const currentLocationButtons = getCurrentLocationButtonVisibility(variant, origin, destination);
   const canCalculate = Boolean(origin.value && destination.value);
   const activeItinerary = route.kind === 'success' ? route.alternatives[route.selectedAlternative] : null;
   const fieldLayout = destinationLocked ? 'sm:grid-cols-2'
@@ -162,7 +164,12 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
   return (
     <div className="grid gap-4">
       <div className={`grid items-start gap-3 ${fieldLayout}`}>
-        <TransitLocationField role="origin" {...origin} allowCurrentLocation dispatch={dispatch} />
+        <TransitLocationField
+          role="origin"
+          {...origin}
+          allowCurrentLocation={currentLocationButtons.origin}
+          dispatch={dispatch}
+        />
         {!destinationLocked && (
           <button
             type="button"
@@ -178,7 +185,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
           role="destination"
           {...destination}
           locked={destinationLocked}
-          allowCurrentLocation={variant === 'full'}
+          allowCurrentLocation={currentLocationButtons.destination}
           dispatch={dispatch}
         />
       </div>

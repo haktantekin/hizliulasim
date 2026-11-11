@@ -1,4 +1,5 @@
 import type { RoutePreference } from '@/lib/transit/contracts';
+import { getCurrentDepartureAt } from '@/lib/transit/presentation';
 
 interface TransitPlannerOptionsProps {
   compact: boolean;
@@ -40,9 +41,8 @@ export default function TransitPlannerOptions({
         </label>
         <button
           type="button"
-          aria-pressed={!departureAt}
-          onClick={() => onDepartureChange('')}
-          className="min-h-10 rounded-lg border border-gray-200 px-2.5 text-sm text-brand-soft-blue hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-brand-soft-blue aria-pressed:border-brand-soft-blue aria-pressed:bg-brand-light-blue/40"
+          onClick={() => onDepartureChange(getCurrentDepartureAt())}
+          className="min-h-10 rounded-lg border border-gray-200 px-2.5 text-sm text-brand-soft-blue hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-brand-soft-blue"
         >
           Şimdi
         </button>

@@ -111,6 +111,7 @@ export interface PlannerEndpoint {
   value: PlannerLocation | null;
   query: string;
   lookup: PlannerLookup;
+  usesCurrentLocation: boolean;
 }
 
 export type PlannerRoute =
@@ -153,14 +154,32 @@ export function isPlannerLocation(value: PlannerLocation | undefined): boolean {
   return !!value && coordinatesInRouteSearchArea(value.latitude, value.longitude);
 }
 
-function selectedEndpoint(location?: PlannerLocation): PlannerEndpoint {
-  if (!location) return { value: null, query: '', lookup: { kind: 'idle' } };
-  if (isPlannerLocation(location)) return { value: location, query: location.name, lookup: { kind: 'idle' } };
+export function getCurrentDepartureAt(now = new Date()): string {
+  return now.toISOString();
+}
+
+export function getCurrentLocationButtonVisibility(
+  variant: 'full' | 'home' | 'detail',
+  origin: PlannerEndpoint,
+  destination: PlannerEndpoint,
+): { origin: boolean; destination: boolean } {
+  if (variant !== 'full') return { origin: true, destination: false };
+  return {
+    origin: !destination.usesCurrentLocation,
+    destination: !origin.usesCurrentLocation,
+  };
+}
+
+function selectedEndpoint(location?: PlannerLocation, usesCurrentLocation = location?.name === 'Konumum'): PlannerEndpoint {
+  if (!location) return { value: null, query: '', lookup: { kind: 'idle' }, usesCurrentLocation: false };
+  if (isPlannerLocation(location)) {
+    return { value: location, query: location.name, lookup: { kind: 'idle' }, usesCurrentLocation };
+  }
 
   const message = Number.isFinite(location.latitude) && Number.isFinite(location.longitude)
     ? 'Bu konum rota arama alanının dışında. İstanbul ve çevresinde bir yer seçin.'
     : 'Konumun koordinatları alınamadı. Yer aramasını kullanabilirsiniz.';
-  return { value: null, query: location.name, lookup: { kind: 'error', message } };
+  return { value: null, query: location.name, lookup: { kind: 'error', message }, usesCurrentLocation: false };
 }
 
 function calculateRoute(state: PlannerState): PlannerState {
@@ -212,10 +231,12 @@ function reduceLocation(state: PlannerState, action: Extract<PlannerAction, { ro
     case 'edit-location': {
       const query = action.query.trim();
       if (query.length < 2) {
-        return replaceEndpoint(state, role, { value: null, query: action.query, lookup: { kind: 'idle' } });
+        return replaceEndpoint(state, role, {
+          value: null, query: action.query, lookup: { kind: 'idle' }, usesCurrentLocation: false,
+        });
       }
       return replaceEndpoint({ ...state, serial: id }, role, {
-        value: null, query: action.query, lookup: { kind: 'search', id, query },
+        value: null, query: action.query, lookup: { kind: 'search', id, query }, usesCurrentLocation: false,
       });
     }
     case 'suggestions':
@@ -226,21 +247,26 @@ function reduceLocation(state: PlannerState, action: Extract<PlannerAction, { ro
       const prediction = lookup.predictions.find((item) => item.id === action.placeId);
       if (!prediction) return state;
       return replaceEndpoint({ ...state, serial: id }, role, {
-        value: null, query: prediction.description, lookup: { kind: 'details', id, prediction },
+        value: null, query: prediction.description, lookup: { kind: 'details', id, prediction }, usesCurrentLocation: false,
       });
     }
     case 'locate':
       return replaceEndpoint({ ...state, serial: id }, role, {
-        value: null, query: endpoint.value ? '' : endpoint.query, lookup: { kind: 'geolocation', id },
+        value: null, query: endpoint.value ? '' : endpoint.query,
+        lookup: { kind: 'geolocation', id }, usesCurrentLocation: true,
       });
     case 'resolve-location': {
       if ((lookup.kind !== 'details' && lookup.kind !== 'geolocation') || lookup.id !== action.id) return state;
-      const selection = selectedEndpoint(action.value);
-      return replaceEndpoint(state, role, selection.value ? selection : { ...endpoint, lookup: selection.lookup });
+      const selection = selectedEndpoint(action.value, lookup.kind === 'geolocation');
+      return replaceEndpoint(state, role, selection.value ? selection : {
+        ...endpoint, lookup: selection.lookup, usesCurrentLocation: false,
+      });
     }
     case 'lookup-failed':
       if (!('id' in lookup) || lookup.id !== action.id) return state;
-      return replaceEndpoint(state, role, { ...endpoint, lookup: { kind: 'error', message: action.message } });
+      return replaceEndpoint(state, role, {
+        ...endpoint, lookup: { kind: 'error', message: action.message }, usesCurrentLocation: false,
+      });
   }
 }
 
