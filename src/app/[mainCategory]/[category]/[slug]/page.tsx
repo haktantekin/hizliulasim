@@ -25,6 +25,7 @@ import { rankInternalLinks } from "@/lib/internalLinking";
 import SemanticInternalLinks from "@/components/blog/SemanticInternalLinks";
 import AnswerSummary from "@/components/blog/AnswerSummary";
 import { extractAnswerSummary } from "@/lib/answerSummary";
+import { coordinatesInRouteSearchArea } from "@/lib/transit/route-search-area";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ mainCategory: string; category: string; slug: string }> }) {
   const { slug, category, mainCategory } = await params;
@@ -96,7 +97,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ mainC
 
       <AnswerSummary html={summaryHtml} />
 
-      <PostTransitWidget postTitle={post.title} />
+      {post.location && coordinatesInRouteSearchArea(post.location.latitude, post.location.longitude) && (
+        <PostTransitWidget postTitle={post.title} destination={post.location} />
+      )}
 
       <div className="text-xs text-gray-500 mb-4">
         <span>{formatTrDateTime(post.publishedAt)}</span>

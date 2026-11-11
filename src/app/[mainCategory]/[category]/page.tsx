@@ -27,6 +27,7 @@ import { rankInternalLinks } from '@/lib/internalLinking';
 import SemanticInternalLinks from '@/components/blog/SemanticInternalLinks';
 import AnswerSummary from '@/components/blog/AnswerSummary';
 import { extractAnswerSummary } from '@/lib/answerSummary';
+import { coordinatesInRouteSearchArea } from '@/lib/transit/route-search-area';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -325,7 +326,9 @@ export default async function SubCategoryPage({ params }: PageProps) {
 
         <AnswerSummary html={summaryHtml} />
 
-        <PostTransitWidget postTitle={post.title} />
+        {post.location && coordinatesInRouteSearchArea(post.location.latitude, post.location.longitude) && (
+          <PostTransitWidget postTitle={post.title} destination={post.location} />
+        )}
 
         <div className="text-xs text-gray-500 mb-4">
           <span>{formatTrDateTime(post.publishedAt)}</span>
