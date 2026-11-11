@@ -208,11 +208,17 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
               <TransitSummary itinerary={activeItinerary} />
             </div>
           )}
-          <TransitItinerary itinerary={activeItinerary} compact={compact} />
+          <TransitItinerary
+            itinerary={activeItinerary}
+            compact={compact}
+            selectedStep={route.selectedStep}
+            onSelectStep={(index) => dispatch({ type: 'select-step', index })}
+          />
           <TransitRouteMapLoader
             itinerary={activeItinerary}
             size={compact ? 'compact' : 'full'}
             selectedAlternative={route.selectedAlternative}
+            selectedStep={route.selectedStep}
           />
         </div>
       )}

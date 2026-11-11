@@ -10,45 +10,61 @@ export interface TransitRouteMapProps {
   itinerary: TransitItinerary;
   size: 'compact' | 'full';
   selectedAlternative: number;
+  selectedStep: number | null;
 }
 
 type Leaflet = typeof import('leaflet');
 
-function addKeyPoint(leaflet: Leaflet, group: ReturnType<Leaflet['layerGroup']>, point: TransitMapMarker) {
-  const mode = point.mode ? getModePresentation(point.mode) : undefined;
-  const travel = [mode?.label, point.lineCode, point.time].filter(Boolean).join(' · ');
-  const label = [point.action, point.name, travel].filter(Boolean).join(' · ');
-  const tooltip = document.createElement('span');
-  tooltip.textContent = label;
+function addKeyPoint(leaflet: Leaflet, group: ReturnType<Leaflet['layerGroup']>, keyPoint: TransitMapMarker) {
+  const { points, coordinate, highlighted } = keyPoint;
+  const tooltip = document.createElement('div');
+  tooltip.className = 'grid max-w-60 gap-1 whitespace-normal';
+  const popup = document.createElement('div');
+  popup.className = 'relative pr-5 text-sm text-gray-700';
+  const list = document.createElement('ul');
+  list.className = 'grid max-h-44 list-none gap-2 overflow-y-auto';
 
+  for (const point of points) {
+    const modeLabel = point.mode && getModePresentation(point.mode).label;
+    const travel = [modeLabel, point.lineCode, point.time].filter(Boolean).join(' · ');
+    const tooltipRow = document.createElement('span');
+    tooltipRow.textContent = [point.action, point.name, travel].filter(Boolean).join(' · ');
+    tooltip.append(tooltipRow);
+
+    const row = document.createElement('li');
+    row.className = 'grid gap-0.5';
+    const heading = document.createElement('strong');
+    heading.textContent = point.action;
+    const name = document.createElement(point.href ? 'a' : 'span');
+    name.className = 'font-semibold';
+    name.textContent = point.name;
+    if (name instanceof HTMLAnchorElement && point.href) {
+      name.href = point.href;
+      name.classList.add('underline', 'underline-offset-2');
+    }
+    const details = document.createElement('span');
+    details.textContent = [point.code, travel].filter(Boolean).join(' · ');
+    details.className = 'text-xs';
+    row.append(heading, name, details);
+    list.append(row);
+  }
+
+  const firstMode = points[0]?.mode;
+  const diameter = highlighted ? 24 : 20;
   const dot = document.createElement('span');
-  dot.className = 'pointer-events-none block size-full rounded-full border-2 border-white shadow-md';
-  dot.style.backgroundColor = mode?.color ?? '#304269';
-  const marker = leaflet.marker(point.coordinate, {
+  dot.className = `pointer-events-none block size-full rounded-full border-2 border-white shadow-md ${highlighted ? 'ring-2 ring-brand-soft-blue' : ''}`;
+  dot.style.backgroundColor = firstMode ? getModePresentation(firstMode).color : '#304269';
+  const marker = leaflet.marker(coordinate, {
     riseOnHover: true,
+    zIndexOffset: highlighted ? 1000 : 0,
     icon: leaflet.divIcon({
       className: 'rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue',
       html: dot,
-      iconSize: [20, 20],
-      tooltipAnchor: [0, -10],
-      popupAnchor: [0, -10],
+      iconSize: [diameter, diameter],
+      tooltipAnchor: [0, -diameter / 2],
+      popupAnchor: [0, -diameter / 2],
     }),
   });
-
-  const popup = document.createElement('div');
-  popup.className = 'relative grid gap-1 pr-5 text-sm text-gray-700';
-  const heading = document.createElement('strong');
-  heading.textContent = point.action;
-  const name = document.createElement(point.href ? 'a' : 'span');
-  name.className = 'font-semibold';
-  name.textContent = point.name;
-  if (name instanceof HTMLAnchorElement && point.href) {
-    name.href = point.href;
-    name.classList.add('underline', 'underline-offset-2');
-  }
-  const details = document.createElement('span');
-  details.textContent = [point.code, travel].filter(Boolean).join(' · ');
-  details.className = 'text-xs';
 
   const close = document.createElement('button');
   close.type = 'button';
@@ -66,7 +82,7 @@ function addKeyPoint(leaflet: Leaflet, group: ReturnType<Leaflet['layerGroup']>,
       closePopup();
     }
   });
-  popup.append(heading, name, details, close);
+  popup.append(list, close);
 
   marker
     .bindTooltip(tooltip, { direction: 'top', opacity: 1 })
@@ -74,22 +90,22 @@ function addKeyPoint(leaflet: Leaflet, group: ReturnType<Leaflet['layerGroup']>,
     .on('popupopen', () => marker.closeTooltip())
     .on('add', () => {
       const icon = marker.getElement();
-      icon?.setAttribute('aria-label', label);
+      icon?.setAttribute('aria-label', points.map(({ action, name }) => `${action} ${name}`).join(' · '));
       icon?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           marker.openPopup();
-          (point.href ? name : close).focus();
+          (list.querySelector('a') ?? close).focus();
         }
       });
     })
     .addTo(group);
 }
 
-export default function TransitRouteMap({ itinerary, size, selectedAlternative }: TransitRouteMapProps) {
+export default function TransitRouteMap({ itinerary, size, selectedAlternative, selectedStep }: TransitRouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const legendId = useId();
-  const model = useMemo(() => buildTransitMapModel(itinerary), [itinerary]);
+  const model = useMemo(() => buildTransitMapModel(itinerary, selectedStep), [itinerary, selectedStep]);
   const hasBounds = model.bounds !== null;
   const [mapState, setMapState] = useState<{ leaflet: Leaflet; map: LeafletMap } | 'unavailable' | null>(null);
 
@@ -122,11 +138,17 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative }
     if (!mapState || mapState === 'unavailable' || !model.bounds) return;
     const { leaflet, map } = mapState;
     const group = leaflet.layerGroup();
-    for (const { coordinates, color, dashed } of model.segments) {
+    const activeSegment = model.segments.find(({ highlighted }) => highlighted);
+    const segments = activeSegment
+      ? [...model.segments.filter(({ highlighted }) => !highlighted), activeSegment]
+      : model.segments;
+    const weight = size === 'compact' ? 4 : 5;
+    for (const { coordinates, color, dashed, highlighted } of segments) {
       if (coordinates.length < 2) continue;
       leaflet.polyline(coordinates, {
         color,
-        weight: size === 'compact' ? 4 : 5,
+        weight: highlighted ? weight + 3 : weight,
+        opacity: highlighted ? 1 : activeSegment ? 0.35 : 0.85,
         dashArray: dashed ? '6 7' : undefined,
         interactive: false,
       }).addTo(group);

@@ -116,7 +116,7 @@ export interface PlannerEndpoint {
 export type PlannerRoute =
   | { kind: 'idle' }
   | ({ kind: 'loading'; id: number } & Omit<ShareablePlannerState, 'selectedAlternative'>)
-  | { kind: 'success'; departureAt: string; alternatives: TransitItinerary[]; selectedAlternative: number }
+  | { kind: 'success'; departureAt: string; alternatives: TransitItinerary[]; selectedAlternative: number; selectedStep: number | null }
   | { kind: 'error'; message: string };
 
 export interface PlannerState {
@@ -146,7 +146,8 @@ export type PlannerAction =
   | { type: 'route-failed'; id: number; message: string }
   | { type: 'cancel-route' }
   | { type: 'retry-route' }
-  | { type: 'select-alternative'; index: number };
+  | { type: 'select-alternative'; index: number }
+  | { type: 'select-step'; index: number };
 
 export function isPlannerLocation(value: PlannerLocation | undefined): boolean {
   return !!value && coordinatesInRouteSearchArea(value.latitude, value.longitude);
@@ -265,6 +266,7 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
           departureAt: action.departureAt,
           alternatives: action.alternatives,
           selectedAlternative: Number.isInteger(index) && action.alternatives[index] ? index : 0,
+          selectedStep: null,
         },
       };
     }
@@ -277,6 +279,13 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
       return route.kind === 'idle' || route.kind === 'error' ? calculateRoute(state) : state;
     case 'select-alternative':
       if (route.kind !== 'success' || !Number.isInteger(action.index) || !route.alternatives[action.index]) return state;
-      return { ...state, route: { ...route, selectedAlternative: action.index } };
+      if (route.selectedAlternative === action.index) return state;
+      return { ...state, route: { ...route, selectedAlternative: action.index, selectedStep: null } };
+    case 'select-step': {
+      if (route.kind !== 'success' || !Number.isInteger(action.index)
+        || !route.alternatives[route.selectedAlternative]?.steps[action.index]) return state;
+      const selectedStep = route.selectedStep === action.index ? null : action.index;
+      return { ...state, route: { ...route, selectedStep } };
+    }
   }
 }

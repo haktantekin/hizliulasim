@@ -361,6 +361,35 @@ test('restores the shared alternative after route failure and cancellation when 
   assert.equal(result.route.selectedAlternative, 1);
 });
 
+test('toggles the selected itinerary step and clears focus on an alternative or a new result', () => {
+  const initial = createPlannerState({ origin, destination });
+  assert.equal(initial.route.kind, 'loading');
+  const selectStep = { type: 'select-step', index: 1 } as const;
+  assert.equal(reducePlanner(initial, selectStep), initial);
+
+  const result = reducePlanner(initial, { type: 'route-succeeded', id: initial.route.id, departureAt, alternatives });
+  const focused = reducePlanner(result, selectStep);
+  assert.equal(focused.route.kind, 'success');
+  assert.equal(focused.route.selectedStep, 1);
+  for (const index of [-1, 0.5, itinerary.steps.length]) {
+    assert.equal(reducePlanner(focused, { type: 'select-step', index }), focused);
+  }
+  assert.equal(reducePlanner(focused, { type: 'select-alternative', index: 0 }), focused);
+
+  const cleared = reducePlanner(focused, selectStep);
+  assert.equal(cleared.route.kind, 'success');
+  assert.equal(cleared.route.selectedStep, null);
+  const changed = reducePlanner(focused, { type: 'select-alternative', index: 1 });
+  assert.equal(changed.route.kind, 'success');
+  assert.equal(changed.route.selectedStep, null);
+
+  const recalculated = reducePlanner(focused, { type: 'set-preference', preference: 'less-walking' });
+  assert.equal(recalculated.route.kind, 'loading');
+  const next = reducePlanner(recalculated, { type: 'route-succeeded', id: recalculated.route.id, departureAt, alternatives });
+  assert.equal(next.route.kind, 'success');
+  assert.equal(next.route.selectedStep, null);
+});
+
 test('uses the first alternative after the route inputs change', () => {
   const initial = createPlannerState({ origin, destination, departureAt, selectedAlternative: 1 });
   const changed = reducePlanner(initial, { type: 'set-preference', preference: 'fewer-transfers' });

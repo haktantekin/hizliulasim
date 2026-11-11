@@ -1,4 +1,4 @@
-import type { Coordinate, TransitBoardingPoint, TransitItinerary, TransitMode } from './contracts.ts';
+import type { Coordinate, TransitBoardingPoint, TransitItinerary, TransitLeg, TransitMode } from './contracts.ts';
 import { getCanonicalStopHref, getModePresentation } from './presentation.ts';
 
 type MarkerRole = TransitBoardingPoint['role'];
@@ -8,11 +8,11 @@ export interface TransitMapSegment {
   coordinates: Coordinate[];
   color: string;
   dashed: boolean;
+  highlighted: boolean;
 }
 
-export interface TransitMapMarker {
+export interface TransitMapPoint {
   role: MarkerRole;
-  coordinate: Coordinate;
   name: string;
   code?: string;
   action: string;
@@ -20,6 +20,12 @@ export interface TransitMapMarker {
   mode?: TransitMode;
   lineCode?: string;
   href?: string;
+}
+
+export interface TransitMapMarker {
+  coordinate: Coordinate;
+  points: TransitMapPoint[];
+  highlighted: boolean;
 }
 
 export interface TransitMapModel {
@@ -37,7 +43,7 @@ const markerActions: Record<MarkerRole, string> = {
   destination: 'Varış',
 };
 
-type MarkerDetails = Pick<TransitMapMarker, 'time' | 'mode' | 'lineCode'>;
+type MarkerDetails = Pick<TransitMapPoint, 'time' | 'mode' | 'lineCode'>;
 type StepEvent = {
   role: 'board' | 'alight' | 'transfer';
   coordinate: Coordinate;
@@ -72,7 +78,7 @@ function matchesEvent(point: TransitBoardingPoint, event: StepEvent): boolean {
     && point.coordinate[0] === event.coordinate[0] && point.coordinate[1] === event.coordinate[1];
 }
 
-function buildMarkers(itinerary: TransitItinerary): TransitMapMarker[] {
+function buildPoints(itinerary: TransitItinerary): (TransitMapPoint & { coordinate: Coordinate })[] {
   const events = getStepEvents(itinerary);
   let nextEvent = 0;
   return itinerary.keyPoints.map((point) => {
@@ -91,7 +97,31 @@ function buildMarkers(itinerary: TransitItinerary): TransitMapMarker[] {
   });
 }
 
-function getBounds(segments: TransitMapSegment[], markers: TransitMapMarker[]): TransitMapModel['bounds'] {
+function coordinateKey(coordinate: Coordinate): string {
+  return coordinate.join(',');
+}
+
+function buildMarkers(itinerary: TransitItinerary, endpoints: Coordinate[]): TransitMapMarker[] {
+  const markers = new Map<string, TransitMapMarker>();
+  const highlighted = new Set(endpoints.map(coordinateKey));
+  for (const { coordinate, ...point } of buildPoints(itinerary)) {
+    const key = coordinateKey(coordinate);
+    const marker = markers.get(key);
+    if (marker) marker.points.push(point);
+    else markers.set(key, { coordinate, points: [point], highlighted: highlighted.has(key) });
+  }
+  return [...markers.values()];
+}
+
+function stepEndpoints(step: TransitLeg | undefined): Coordinate[] {
+  if (!step) return [];
+  if (step.kind === 'ride') return [step.board.coordinate, step.alight.coordinate];
+  const start = step.geometry[0];
+  const end = step.geometry.at(-1);
+  return start && end ? [start, end] : [];
+}
+
+function getBounds(segments: TransitMapSegment[], points: Coordinate[]): TransitMapModel['bounds'] {
   let bounds: TransitMapModel['bounds'] = null;
   function extend([latitude, longitude]: Coordinate) {
     if (bounds === null) {
@@ -105,22 +135,26 @@ function getBounds(segments: TransitMapSegment[], markers: TransitMapMarker[]): 
     northEast[1] = Math.max(northEast[1], longitude);
   }
   for (const segment of segments) segment.coordinates.forEach(extend);
-  for (const marker of markers) extend(marker.coordinate);
+  points.forEach(extend);
   return bounds;
 }
 
-export function buildTransitMapModel(itinerary: TransitItinerary): TransitMapModel {
-  const segments = itinerary.steps.map(({ mode, geometry, geometryQuality }) => ({
+export function buildTransitMapModel(itinerary: TransitItinerary, selectedStep: number | null = null): TransitMapModel {
+  const segments = itinerary.steps.map(({ mode, geometry, geometryQuality }, index) => ({
     mode,
     coordinates: geometry,
     color: getModePresentation(mode).color,
     dashed: geometryQuality === 'approximate',
+    highlighted: index === selectedStep,
   }));
-  const markers = buildMarkers(itinerary);
+  const activeSegment = selectedStep === null ? undefined : segments[selectedStep];
+  const endpoints = selectedStep === null ? [] : stepEndpoints(itinerary.steps[selectedStep]);
+  const markers = buildMarkers(itinerary, endpoints);
+  const focusedBounds = activeSegment ? getBounds([activeSegment], endpoints) : null;
   return {
     segments,
     markers,
-    bounds: getBounds(segments, markers),
+    bounds: focusedBounds ?? getBounds(segments, markers.map(({ coordinate }) => coordinate)),
     hasApproximateGeometry: segments.some(({ dashed }) => dashed),
   };
 }

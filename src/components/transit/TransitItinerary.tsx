@@ -1,4 +1,4 @@
-import { Bus, CableCar, Footprints, Ship, TrainFront, TrainTrack, TramFront, Van } from 'lucide-react';
+import { Bus, CableCar, Footprints, MapPin, Ship, TrainFront, TrainTrack, TramFront, Van } from 'lucide-react';
 import type { TransitItinerary as Itinerary } from '@/lib/transit/contracts';
 import { buildTimelineItems, getModePresentation } from '@/lib/transit/presentation';
 import TransitStopLabel from './TransitStopLabel';
@@ -14,7 +14,14 @@ const modeIcons = {
   van: Van,
 };
 
-export default function TransitItinerary({ itinerary, compact }: { itinerary: Itinerary; compact: boolean }) {
+interface TransitItineraryProps {
+  itinerary: Itinerary;
+  compact: boolean;
+  selectedStep: number | null;
+  onSelectStep: (index: number) => void;
+}
+
+export default function TransitItinerary({ itinerary, compact, selectedStep, onSelectStep }: TransitItineraryProps) {
   const items = buildTimelineItems(itinerary);
 
   return (
@@ -26,11 +33,14 @@ export default function TransitItinerary({ itinerary, compact }: { itinerary: It
       {items.map((item) => {
         const mode = getModePresentation(item.mode);
         const Icon = modeIcons[mode.icon];
+        const selected = item.stepIndex === selectedStep;
+        const stopAction = item.kind === 'walk' ? item.instruction
+          : `${item.stop.name} ${item.kind === 'board' ? 'biniş' : 'iniş'}`;
 
         return (
           <li
             key={`${item.stepIndex}-${item.kind}`}
-            className={`relative flex items-start gap-3 before:absolute before:inset-y-0 before:left-3.5 before:w-px before:bg-gray-200 last:pb-0 last:before:hidden ${compact ? 'pb-2' : 'pb-3'}`}
+            className={`relative flex items-start gap-3 rounded-lg before:absolute before:inset-y-0 before:left-3.5 before:w-px before:bg-gray-200 last:pb-0 last:before:hidden ${compact ? 'pb-2' : 'pb-3'} ${selected ? 'bg-brand-light-blue/25' : ''}`}
           >
             <span
               aria-hidden="true"
@@ -63,6 +73,17 @@ export default function TransitItinerary({ itinerary, compact }: { itinerary: It
                 )}
               </p>
             </div>
+            <button
+              type="button"
+              aria-label={`${item.stepIndex + 1}. etabı haritada göster, ${stopAction}`}
+              aria-pressed={selected}
+              title={selected ? 'Tüm rotayı göster' : 'Haritada göster'}
+              onClick={() => onSelectStep(item.stepIndex)}
+              className="ml-auto inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium text-brand-soft-blue hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue aria-pressed:bg-brand-soft-blue aria-pressed:text-white"
+            >
+              <MapPin aria-hidden="true" className="size-4" />
+              {!compact && <span className="hidden sm:inline">{selected ? 'Tüm rota' : 'Haritada göster'}</span>}
+            </button>
           </li>
         );
       })}
