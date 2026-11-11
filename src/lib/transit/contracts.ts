@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 export const TRANSIT_SCHEMA_VERSION = 1;
 export const MAX_ROUTE_DEPARTURE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -201,6 +203,8 @@ export interface TransitItinerary {
 const versionIdPattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 const sha256Pattern = /^[a-f0-9]{64}$/;
 const filePathPattern = /^[A-Za-z0-9_-][A-Za-z0-9._-]*(?:\/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$/;
+const connectionBucketPattern = /^([a-f0-9]{64})-(?:[0-6]\d|7[01])$/;
+const gridCellPattern = /^(?:0|-?[1-9]\d*)_(?:0|-?[1-9]\d*)$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const instantPattern = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 const decimalPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
@@ -291,13 +295,12 @@ function isManifestSource(value: unknown): boolean {
 }
 
 function isFileInventory(value: unknown): value is Record<string, TransitFileMetadata> {
-  if (!isRecord(value)) return false;
-  const files = Object.entries(value);
-  return files.length > 0 && files.every(([path, file]) =>
+  if (!isRecord(value) || !Object.hasOwn(value, 'content-links.json.gz')) return false;
+  return Object.entries(value).every(([path, file]) =>
     filePathPattern.test(path) && isRecord(file) && isIntegerAtLeast(file.bytes, 1) && isSha256(file.sha256));
 }
 
-function isServiceClass(value: unknown): boolean {
+function isServiceClass(value: unknown): value is TransitServiceClass {
   if (!isRecord(value) || !Array.isArray(value.serviceIds) || !isRecord(value.calendar)) return false;
   const { weekdays, startDate, endDate, addedDates, removedDates } = value.calendar;
   return value.serviceIds.every((id) => typeof id === 'string' && id !== '')
@@ -312,12 +315,50 @@ function isReferenceMap(value: unknown, target: Record<string, unknown>): boolea
     typeof reference === 'string' && Object.hasOwn(target, reference));
 }
 
+function hasMatchingCalendarRules(classes: Record<string, unknown>, rules: unknown): boolean {
+  if (!isRecord(rules)) return false;
+  const seenServiceIds = new Set<string>();
+  for (const [classId, service] of Object.entries(classes)) {
+    if (!isSha256(classId) || !isServiceClass(service)) return false;
+    for (const serviceId of service.serviceIds) {
+      if (seenServiceIds.has(serviceId) || !Object.hasOwn(rules, serviceId) || rules[serviceId] !== classId) {
+        return false;
+      }
+      seenServiceIds.add(serviceId);
+    }
+  }
+  return seenServiceIds.size === Object.keys(rules).length;
+}
+
+function hasMatchingConnectionBuckets(buckets: unknown, classes: Record<string, unknown>): boolean {
+  return isRecord(buckets) && Object.entries(buckets).every(([bucket, path]) => {
+    const match = connectionBucketPattern.exec(bucket);
+    return match !== null && Object.hasOwn(classes, match[1]) && path === `connections/${bucket}.json.gz`;
+  });
+}
+
+function hasMatchingSpatialIndexes(indexes: Record<string, unknown>): boolean {
+  const { stopGrid, transfers, stops } = indexes;
+  if (!isRecord(stopGrid) || !isRecord(transfers) || !isRecord(stops)) return false;
+  const cells = Object.entries(stopGrid);
+  if (cells.length !== Object.keys(transfers).length) return false;
+
+  const stopPaths = new Set(Object.values(stopGrid));
+  return Object.values(stops).every((path) => stopPaths.has(path))
+    && cells.every(([cell, path]) => {
+      if (!gridCellPattern.test(cell) || !Object.hasOwn(transfers, cell)) return false;
+      const cellHash = createHash('sha256').update(cell).digest('hex');
+      return path === `stops-grid/${cellHash}.json.gz` && transfers[cell] === `transfers/${cellHash}.json.gz`;
+    });
+}
+
 function isManifestIndexes(value: unknown, files: Record<string, TransitFileMetadata>): boolean {
   if (!isRecord(value) || !isRecord(value.shapes) || !isRecord(value.serviceClasses)) return false;
   return pathIndexes.every((name) => isReferenceMap(value[name], files))
     && isReferenceMap(value.sourceShapes, value.shapes)
-    && Object.entries(value.serviceClasses).every(([id, service]) => isSha256(id) && isServiceClass(service))
-    && isReferenceMap(value.calendarRules, value.serviceClasses);
+    && hasMatchingCalendarRules(value.serviceClasses, value.calendarRules)
+    && hasMatchingConnectionBuckets(value.connectionBuckets, value.serviceClasses)
+    && hasMatchingSpatialIndexes(value);
 }
 
 export function parseSnapshotPointer(value: unknown): TransitSnapshotPointer {

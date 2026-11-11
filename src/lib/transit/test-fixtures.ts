@@ -1,5 +1,5 @@
 const serviceClass = 'a'.repeat(64);
-const cellHash = 'b'.repeat(64);
+const cellHash = '1b1f1cd671eff152af1dba464fd11c1bdc652c748e596f02047a0da020b7eb6c';
 const patternId = 'c'.repeat(64);
 const shapeId = 'd'.repeat(64);
 const routeHash = 'e'.repeat(64);

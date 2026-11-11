@@ -1,0 +1,2 @@
+Command: npx eslint src/lib/transit
+Exit code: 0

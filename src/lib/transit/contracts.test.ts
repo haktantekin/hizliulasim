@@ -116,6 +116,117 @@ test('rejects a path lookup outside the file inventory', () => {
   assert.throws(() => parseManifest({ ...manifestFixture, indexes }));
 });
 
+test('requires the content-link shard even when there are no linked stops', () => {
+  const files = { ...manifestFixture.files };
+  delete files['content-links.json.gz'];
+  assert.throws(() => parseManifest({ ...manifestFixture, files }));
+});
+
+test('rejects a connection bucket pointing to a different declared shard', () => {
+  const classId = manifestFixture.indexes.calendarRules['0'];
+  const otherHour = `connections/${classId}-26.json.gz`;
+  const files = {
+    ...manifestFixture.files,
+    [otherHour]: { bytes: 64, sha256: '2'.repeat(64) },
+  };
+
+  for (const path of [otherHour, manifestFixture.indexes.routes['0']]) {
+    const indexes = { ...manifestFixture.indexes, connectionBuckets: { [`${classId}-25`]: path } };
+    assert.throws(() => parseManifest({ ...manifestFixture, files, indexes }));
+  }
+});
+
+test('rejects connection buckets with malformed hours or undeclared service classes', () => {
+  const classId = manifestFixture.indexes.calendarRules['0'];
+
+  for (const bucket of [`${classId}-8`, `${classId}-72`, `${'f'.repeat(64)}-25`]) {
+    const path = `connections/${bucket}.json.gz`;
+    const files = { ...manifestFixture.files, [path]: { bytes: 64, sha256: '2'.repeat(64) } };
+    const indexes = { ...manifestFixture.indexes, connectionBuckets: { [bucket]: path } };
+    assert.throws(() => parseManifest({ ...manifestFixture, files, indexes }));
+  }
+});
+
+test('rejects calendar rules without matching class membership in both directions', () => {
+  const classId = manifestFixture.indexes.calendarRules['0'];
+
+  for (const calendarRules of [{}, { '1': classId }, { '0': classId, '1': classId }]) {
+    const indexes = { ...manifestFixture.indexes, calendarRules };
+    assert.throws(() => parseManifest({ ...manifestFixture, indexes }));
+  }
+});
+
+test('rejects repeated service IDs within or across calendar classes', () => {
+  const classId = manifestFixture.indexes.calendarRules['0'];
+  const serviceClass = manifestFixture.indexes.serviceClasses[classId];
+  const serviceClasses = manifestFixture.indexes.serviceClasses;
+
+  for (const classes of [
+    { [classId]: { ...serviceClass, serviceIds: ['0', '0'] } },
+    { ...serviceClasses, ['f'.repeat(64)]: serviceClass },
+  ]) {
+    const indexes = { ...manifestFixture.indexes, serviceClasses: classes };
+    assert.throws(() => parseManifest({ ...manifestFixture, indexes }));
+  }
+});
+
+test('rejects a stop-grid path hashed from a different cell', () => {
+  const wrongStopPath = 'stops-grid/856b3e39393f69c90a13084e625e7aaa8bc775723d85ea381ec738fe45e7a69d.json.gz';
+  const files = {
+    ...manifestFixture.files,
+    [wrongStopPath]: { bytes: 64, sha256: '2'.repeat(64) },
+  };
+  const indexes = {
+    ...manifestFixture.indexes,
+    stops: { '0': wrongStopPath, '1': wrongStopPath },
+    stopGrid: { '4100_2900': wrongStopPath },
+  };
+  assert.throws(() => parseManifest({ ...manifestFixture, files, indexes }));
+});
+
+test('rejects a transfer path hashed from a different cell', () => {
+  const wrongTransferPath = 'transfers/856b3e39393f69c90a13084e625e7aaa8bc775723d85ea381ec738fe45e7a69d.json.gz';
+  const files = {
+    ...manifestFixture.files,
+    [wrongTransferPath]: { bytes: 64, sha256: '2'.repeat(64) },
+  };
+  const indexes = { ...manifestFixture.indexes, transfers: { '4100_2900': wrongTransferPath } };
+  assert.throws(() => parseManifest({ ...manifestFixture, files, indexes }));
+});
+
+test('rejects a transfer cell pointing to a declared stop-grid path', () => {
+  const indexes = {
+    ...manifestFixture.indexes,
+    transfers: { '4100_2900': manifestFixture.indexes.stopGrid['4100_2900'] },
+  };
+  assert.throws(() => parseManifest({ ...manifestFixture, indexes }));
+});
+
+test('requires stop-grid and transfer indexes to cover the same cells', () => {
+  const indexes = { ...manifestFixture.indexes, transfers: {} };
+  assert.throws(() => parseManifest({ ...manifestFixture, indexes }));
+});
+
+test('rejects nonnumeric grid cells even when both paths match the key hash', () => {
+  const hash = '34dc2712113a3221c09102d3c1a33797376106dd3efc27e8641420ae91cbe682';
+  const stopPath = `stops-grid/${hash}.json.gz`;
+  const transferPath = `transfers/${hash}.json.gz`;
+  const metadata = { bytes: 64, sha256: '2'.repeat(64) };
+  const files = { ...manifestFixture.files, [stopPath]: metadata, [transferPath]: metadata };
+  const indexes = {
+    ...manifestFixture.indexes,
+    stops: { '0': stopPath, '1': stopPath },
+    stopGrid: { 'invalid-cell': stopPath },
+    transfers: { 'invalid-cell': transferPath },
+  };
+  assert.throws(() => parseManifest({ ...manifestFixture, files, indexes }));
+});
+
+test('rejects a stop lookup pointing outside the stop-grid index', () => {
+  const indexes = { ...manifestFixture.indexes, stops: { '0': manifestFixture.indexes.routes['0'] } };
+  assert.throws(() => parseManifest({ ...manifestFixture, indexes }));
+});
+
 test('rejects malformed service calendars in the indexes', () => {
   const indexes = structuredClone(manifestFixture.indexes);
   indexes.serviceClasses['a'.repeat(64)].calendar.weekdays[0] = 2;

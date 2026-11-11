@@ -20,3 +20,22 @@ The reduced TypeScript fixture follows the JSON emitted by `D:/git/cmshizliulasi
 | `node --test` | 70 passed, 2 failed. The tracked-test rerun reproduced both failures. [Suite output](task-1-suite.log) |
 
 The two baseline failures are the cache source-text assertion in `src/lib/minibusDirectory.test.ts` and the `fetch failed` error in `src/lib/wordpressCategories.test.ts`. Node 22 reports the repository's package-module warning during direct TypeScript tests.
+
+## Review fix round 1
+
+The publisher reconstructs calendar and spatial indexes and compares them with the manifest. The manifest parser now checks the relationships visible before reading shards.
+
+- Connection buckets require a declared service class, a two-digit GTFS hour from `00` through `71` and the exact `connections/<bucket>.json.gz` path in the inventory.
+- Calendar rules and service class memberships must agree in both directions. Repeated service IDs within or across classes are rejected.
+- Stop-grid and transfer indexes must cover the same numeric cell keys and use the SHA-256 of that cell in their respective shard paths. Stop IDs must reference indexed stop-grid paths. The fixture uses the producer's exact cell digest.
+- The file inventory must declare `content-links.json.gz`, including snapshots with zero links.
+
+The server-side manifest parser uses the built-in Node SHA-256 implementation. Shard contents and their byte digests are verified by the snapshot reader in Task 2.
+
+| Check | Result |
+| --- | --- |
+| Focused RED | 21 passed, 11 new regressions failed with `Missing expected exception`. [RED output](task-1-fix-round-1-red.log) |
+| Focused GREEN | 32 passed, 0 failed. [GREEN output](task-1-fix-round-1-green.log) |
+| `npx tsc --noEmit` | Exit 0. [TypeScript output](task-1-fix-round-1-typecheck.log) |
+| `npx eslint src/lib/transit` | Exit 0. [ESLint output](task-1-fix-round-1-lint.log) |
+| `node --test` | 81 passed, 2 failed. The same baseline failures recurred. [Suite summary](task-1-fix-round-1-green.log) |

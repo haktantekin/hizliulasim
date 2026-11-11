@@ -1,0 +1,221 @@
+Command: node --test src/lib/transit/contracts.test.ts
+TAP version 13
+# (node:14376) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/hakta/.codex/worktrees/local-transit-planner/hizliulasim/src/lib/transit/contracts.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\hakta\\.codex\\worktrees\\local-transit-planner\\hizliulasim\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: reads a CMS snapshot pointer with no schema version field
+ok 1 - reads a CMS snapshot pointer with no schema version field
+  ---
+  duration_ms: 1.1716
+  type: 'test'
+  ...
+# Subtest: rejects a pointer without both fields or with extra fields
+ok 2 - rejects a pointer without both fields or with extra fields
+  ---
+  duration_ms: 0.2282
+  type: 'test'
+  ...
+# Subtest: rejects unsafe version IDs and malformed manifest hashes in pointers
+ok 3 - rejects unsafe version IDs and malformed manifest hashes in pointers
+  ---
+  duration_ms: 0.1356
+  type: 'test'
+  ...
+# Subtest: reads the schema-1 producer indexes, exceptions-only calendars and provenance
+ok 4 - reads the schema-1 producer indexes, exceptions-only calendars and provenance
+  ---
+  duration_ms: 2.5791
+  type: 'test'
+  ...
+# Subtest: reads historical schema-1 snapshots without the source provenance marker
+ok 5 - reads historical schema-1 snapshots without the source provenance marker
+  ---
+  duration_ms: 0.2412
+  type: 'test'
+  ...
+# Subtest: rejects each missing required manifest field
+ok 6 - rejects each missing required manifest field
+  ---
+  duration_ms: 0.3798
+  type: 'test'
+  ...
+# Subtest: rejects unsupported manifest schema versions
+ok 7 - rejects unsupported manifest schema versions
+  ---
+  duration_ms: 0.1051
+  type: 'test'
+  ...
+# Subtest: rejects invalid manifest date ranges and bounds
+ok 8 - rejects invalid manifest date ranges and bounds
+  ---
+  duration_ms: 0.2701
+  type: 'test'
+  ...
+# Subtest: rejects declared source provenance without complete resource digests
+ok 9 - rejects declared source provenance without complete resource digests
+  ---
+  duration_ms: 0.2756
+  type: 'test'
+  ...
+# Subtest: rejects invalid inventory paths, sizes and hashes
+ok 10 - rejects invalid inventory paths, sizes and hashes
+  ---
+  duration_ms: 0.99
+  type: 'test'
+  ...
+# Subtest: rejects a path lookup outside the file inventory
+ok 11 - rejects a path lookup outside the file inventory
+  ---
+  duration_ms: 0.2063
+  type: 'test'
+  ...
+# Subtest: requires the content-link shard even when there are no linked stops
+ok 12 - requires the content-link shard even when there are no linked stops
+  ---
+  duration_ms: 0.1192
+  type: 'test'
+  ...
+# Subtest: rejects a connection bucket pointing to a different declared shard
+ok 13 - rejects a connection bucket pointing to a different declared shard
+  ---
+  duration_ms: 0.2205
+  type: 'test'
+  ...
+# Subtest: rejects connection buckets with malformed hours or undeclared service classes
+ok 14 - rejects connection buckets with malformed hours or undeclared service classes
+  ---
+  duration_ms: 0.31
+  type: 'test'
+  ...
+# Subtest: rejects calendar rules without matching class membership in both directions
+ok 15 - rejects calendar rules without matching class membership in both directions
+  ---
+  duration_ms: 0.2179
+  type: 'test'
+  ...
+# Subtest: rejects repeated service IDs within or across calendar classes
+ok 16 - rejects repeated service IDs within or across calendar classes
+  ---
+  duration_ms: 0.2049
+  type: 'test'
+  ...
+# Subtest: rejects a stop-grid path hashed from a different cell
+ok 17 - rejects a stop-grid path hashed from a different cell
+  ---
+  duration_ms: 0.1626
+  type: 'test'
+  ...
+# Subtest: rejects a transfer path hashed from a different cell
+ok 18 - rejects a transfer path hashed from a different cell
+  ---
+  duration_ms: 0.18
+  type: 'test'
+  ...
+# Subtest: rejects a transfer cell pointing to a declared stop-grid path
+ok 19 - rejects a transfer cell pointing to a declared stop-grid path
+  ---
+  duration_ms: 0.1383
+  type: 'test'
+  ...
+# Subtest: requires stop-grid and transfer indexes to cover the same cells
+ok 20 - requires stop-grid and transfer indexes to cover the same cells
+  ---
+  duration_ms: 0.117
+  type: 'test'
+  ...
+# Subtest: rejects nonnumeric grid cells even when both paths match the key hash
+ok 21 - rejects nonnumeric grid cells even when both paths match the key hash
+  ---
+  duration_ms: 0.1471
+  type: 'test'
+  ...
+# Subtest: rejects a stop lookup pointing outside the stop-grid index
+ok 22 - rejects a stop lookup pointing outside the stop-grid index
+  ---
+  duration_ms: 0.1177
+  type: 'test'
+  ...
+# Subtest: rejects malformed service calendars in the indexes
+ok 23 - rejects malformed service calendars in the indexes
+  ---
+  duration_ms: 0.1924
+  type: 'test'
+  ...
+# Subtest: parses the public route preferences, coordinates and an offset departure
+ok 24 - parses the public route preferences, coordinates and an offset departure
+  ---
+  duration_ms: 0.4248
+  type: 'test'
+  ...
+# Subtest: rejects requests missing any required route parameter
+ok 25 - rejects requests missing any required route parameter
+  ---
+  duration_ms: 0.272
+  type: 'test'
+  ...
+# Subtest: rejects duplicate route parameters
+ok 26 - rejects duplicate route parameters
+  ---
+  duration_ms: 0.0847
+  type: 'test'
+  ...
+# Subtest: accepts the edges of the İstanbul bounds
+ok 27 - accepts the edges of the İstanbul bounds
+  ---
+  duration_ms: 0.1246
+  type: 'test'
+  ...
+# Subtest: rejects out-of-bounds, nonfinite and malformed coordinates
+ok 28 - rejects out-of-bounds, nonfinite and malformed coordinates
+  ---
+  duration_ms: 0.2449
+  type: 'test'
+  ...
+# Subtest: rejects non-ISO, offset-free and impossible departure times
+ok 29 - rejects non-ISO, offset-free and impossible departure times
+  ---
+  duration_ms: 0.1642
+  type: 'test'
+  ...
+# Subtest: rejects unsupported route preferences
+ok 30 - rejects unsupported route preferences
+  ---
+  duration_ms: 0.1573
+  type: 'test'
+  ...
+# Subtest: accepts past, current and exactly seven-days-ahead departure instants
+ok 31 - accepts past, current and exactly seven-days-ahead departure instants
+  ---
+  duration_ms: 0.1138
+  type: 'test'
+  ...
+# Subtest: rejects a departure more than seven days ahead by absolute time
+ok 32 - rejects a departure more than seven days ahead by absolute time
+  ---
+  duration_ms: 0.0979
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 294.9848
+Exit code: 0
+
+Command: node --test
+not ok 37 - reads a line detail freshly from WordPress after an admin data sync
+not ok 83 - loads every WordPress category through bounded 50-item pages
+# tests 83
+# suites 0
+# pass 81
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2373.2377
+Exit code: 1
