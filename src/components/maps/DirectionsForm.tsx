@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import AutocompleteInput from './AutocompleteInput';
 import TravelModeSelector from './TravelModeSelector';
 import { ArrowRight } from 'lucide-react';
 
 type Mode = "driving" | "walking" | "bicycling" | "transit";
 
-export default function DirectionsForm({ onNavigate, onChange, onSubmit, showDetailsControl, detailsOpen, onToggleDetails }: { onNavigate?: (url: string) => void; onChange?: (s: { origin: string; destination: string; mode: Mode }) => void; onSubmit?: () => void; showDetailsControl?: boolean; detailsOpen?: boolean; onToggleDetails?: () => void }) {
+export default function DirectionsForm({ onNavigate }: { onNavigate?: (url: string) => void }) {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [mode, setMode] = useState<Mode>('driving');
@@ -34,12 +34,7 @@ export default function DirectionsForm({ onNavigate, onChange, onSubmit, showDet
     } else {
       window.open(standardUrl, '_blank', 'noopener,noreferrer');
     }
-    onSubmit?.();
   };
-
-  useEffect(() => {
-    onChange?.({ origin, destination, mode });
-  }, [origin, destination, mode, onChange]);
 
   return (
     <div className="space-y-3">
@@ -49,7 +44,7 @@ export default function DirectionsForm({ onNavigate, onChange, onSubmit, showDet
         <div className="text-xs text-gray-500">Adım adım tarif için başlangıç noktası gereklidir.</div>
       )}
       <div className="flex items-center justify-between gap-3">
-        <TravelModeSelector mode={mode} onChange={setMode} {...(showDetailsControl ? { detailsOpen, onToggleDetails } : {})} />
+        <TravelModeSelector mode={mode} onChange={setMode} />
         <button
           onClick={openDirections}
           title="Rota Oluştur"

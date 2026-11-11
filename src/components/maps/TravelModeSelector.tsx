@@ -2,10 +2,10 @@
 
 type Mode = "driving" | "walking" | "bicycling" | "transit";
 
-import { Bike, Car, Footprints, Train, ChevronDown, ChevronUp } from "lucide-react";
+import { Bike, Car, Footprints, Train } from "lucide-react";
 import type { ReactElement } from "react";
 
-export default function TravelModeSelector({ mode, onChange, detailsOpen, onToggleDetails }: { mode: Mode; onChange: (m: Mode) => void; detailsOpen?: boolean; onToggleDetails?: () => void }) {
+export default function TravelModeSelector({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
   const modes: { key: Mode; icon: ReactElement; label: string }[] = [
     { key: "driving", icon: <Car className="w-4 h-4" />, label: "Araba" },
     { key: "walking", icon: <Footprints className="w-4 h-4" />, label: "Yürüyüş" },
@@ -30,16 +30,6 @@ export default function TravelModeSelector({ mode, onChange, detailsOpen, onTogg
           <span className="sr-only">{label}</span>
         </button>
       ))}
-      {onToggleDetails && (
-        <button
-          onClick={onToggleDetails}
-          title={detailsOpen ? 'Detayları Gizle' : 'Detayları Göster'}
-          aria-label={detailsOpen ? 'Detayları Gizle' : 'Detayları Göster'}
-          className={`p-2 rounded-full border bg-white text-brand-dark-blue border-brand-light-blue hover:bg-gray-100`}
-        >
-          {detailsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-      )}
     </div>
   );
 }
