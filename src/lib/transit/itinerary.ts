@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { BROKEN_DURAK_SLUGS } from '../../broken-redirects.ts';
 import {
   TRANSIT_SCHEMA_VERSION, type Coordinate, type TransitBoardingPoint, type TransitContentLink, type TransitGeometry,
   type TransitItinerary, type TransitLeg, type TransitManifest, type TransitMode, type TransitPattern,
@@ -11,13 +13,18 @@ type Ride = Extract<JourneySegment, { kind: 'ride' }>;
 type Walk = Extract<JourneySegment, { kind: 'walk' }>;
 type RideMode = Exclude<TransitMode, 'walking'>;
 type PathIndex = Readonly<Record<string, string>>;
+const indexedAssetKinds = ['stops', 'routes', 'patterns', 'shapes'] as const;
+type IndexedAssetKind = (typeof indexedAssetKinds)[number];
 
 const contentLinksPath = 'content-links.json.gz';
 // Match the canonical stop route emitted by the CMS, including its numeric slug suffix.
-const stopUrl = /^https:\/\/hizliulasim\.com\/otobus-duraklari\/[a-z0-9]+(?:-[a-z0-9]+)*-[0-9]+$/;
+const stopUrl = /^https:\/\/hizliulasim\.com\/otobus-duraklari\/([a-z0-9]+(?:-[a-z0-9]+)*-[0-9]+)$/;
+const sha256Pattern = /^[a-f0-9]{64}$/;
 const radians = Math.PI / 180;
 const earthRadiusMeters = 6_371_000;
 const maxShapeStopOffsetMeters = 30;
+const maxExactShapePoints = 16_384;
+const maxExactProjectionChecksPerItinerary = 1_000_000;
 const istanbulClock = new Intl.DateTimeFormat('tr-TR', {
   timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
 });
@@ -108,9 +115,10 @@ function isShape(value: unknown): value is TransitGeometry {
 }
 
 function isContentLink(value: unknown): value is TransitContentLink {
-  return isRecord(value) && Object.keys(value).length === 2 && typeof value.title === 'string'
-    && typeof value.canonicalUrl === 'string' && value.canonicalUrl.trim() === value.canonicalUrl
-    && stopUrl.test(value.canonicalUrl);
+  if (!isRecord(value) || Object.keys(value).length !== 2 || typeof value.title !== 'string'
+    || typeof value.canonicalUrl !== 'string' || value.canonicalUrl.trim() !== value.canonicalUrl) return false;
+  const match = stopUrl.exec(value.canonicalUrl);
+  return match !== null && !BROKEN_DURAK_SLUGS.has(match[1]);
 }
 
 export function attachContentLink(stopId: string, links: ContentLinkIndex): TransitContentLink | undefined {
@@ -155,15 +163,51 @@ function readCollection<T>(values: unknown, guard: (value: unknown) => value is 
   return records;
 }
 
-async function loadIndexed<T>(ids: Iterable<string>, index: PathIndex,
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+function expectedRecordCounts(indexes: TransitManifest['indexes'], requests: Record<IndexedAssetKind, Iterable<string>>) {
+  const paths = new Map<string, { kind: IndexedAssetKind | 'links'; count: number }>([
+    [contentLinksPath, { kind: 'links', count: 0 }],
+  ]);
+  for (const kind of indexedAssetKinds) {
+    for (const id of requests[kind]) {
+      if (!Object.hasOwn(indexes[kind], id)) return invalidShard();
+      const path = indexes[kind][id];
+      const known = paths.get(path);
+      if (known && known.kind !== kind) return invalidShard();
+      if (!known) paths.set(path, { kind, count: 0 });
+    }
+  }
+
+  // Include indexed peers and kind aliases even if their IDs are outside the journey.
+  for (const kind of indexedAssetKinds) {
+    for (const [id, path] of Object.entries(indexes[kind])) {
+      const asset = paths.get(path);
+      if (!asset) continue;
+      if (asset.kind !== kind) return invalidShard();
+      if (kind !== 'stops') {
+        const digest = kind === 'routes' ? sha256(id) : id;
+        if (!sha256Pattern.test(digest) || path !== `${kind}/${digest}.json.gz`) return invalidShard();
+      }
+      asset.count++;
+    }
+  }
+  return paths;
+}
+
+async function loadIndexed<T>(ids: Iterable<string>, index: PathIndex, expected: ReturnType<typeof expectedRecordCounts>,
   readRecords: (path: string) => Promise<Map<string, T>>): Promise<Map<string, T>> {
   const byPath = new Map<string, Promise<Map<string, T>>>();
   const entries = await Promise.all([...new Set(ids)].map(async (id): Promise<[string, T]> => {
-    if (!Object.hasOwn(index, id)) return invalidShard();
     const path = index[id];
     let records = byPath.get(path);
     if (!records) {
-      records = readRecords(path);
+      records = readRecords(path).then((loaded) => {
+        if (loaded.size !== getRequired(expected, path).count) return invalidShard();
+        return loaded;
+      });
       byPath.set(path, records);
     }
     return [id, getRequired(await records, id)];
@@ -184,36 +228,32 @@ async function loadJourneyAssets(journey: JourneySegment[], rides: Ride[], snaps
     }
   }
 
-  const byPath = new Map<string, Promise<unknown>>();
-  function read(path: string): Promise<unknown> {
-    let shard = byPath.get(path);
-    if (!shard) {
-      shard = loadSnapshotShard<unknown>(snapshot, path);
-      byPath.set(path, shard);
-    }
-    return shard;
-  }
+  const requests = { stops: stopIds, routes: rides.map(({ routeId }) => routeId),
+    patterns: rides.map(({ patternId }) => patternId), shapes: rides.map(({ shapeId }) => shapeId) };
+  const expected = expectedRecordCounts(indexes, requests);
+  const read = (path: string) => loadSnapshotShard<unknown>(snapshot, path);
 
   const cells = new Map(Object.entries(indexes.stopGrid).map(([cell, path]) => [path, cell]));
   const [stops, routes, patterns, shapes, links] = await Promise.all([
-    loadIndexed(stopIds, indexes.stops, async (path) => {
-      const shard = await read(path);
+    loadIndexed(requests.stops, indexes.stops, expected, async (path) => {
       const cell = cells.get(path);
-      if (!cell || !isRecord(shard) || shard.cell !== cell || shard.precision !== 0.01) return invalidShard();
+      if (!cell || path !== `stops-grid/${sha256(cell)}.json.gz`) return invalidShard();
+      const shard = await read(path);
+      if (!isRecord(shard) || shard.cell !== cell || shard.precision !== 0.01) return invalidShard();
       const records = readCollection(shard.stops, isStop, (stop) => stop.stopId, indexes.stops, path);
       for (const stop of records.values()) {
         if (getStopGridCell(stopCoordinate(stop)) !== cell) return invalidShard();
       }
       return records;
     }),
-    loadIndexed(rides.map(({ routeId }) => routeId), indexes.routes, async (path) => {
+    loadIndexed(requests.routes, indexes.routes, expected, async (path) => {
       const route = await read(path);
       if (!isRoute(route) || !hasPath(indexes.routes, route.routeId, path)
         || !route.patternIds.every((id) => Object.hasOwn(indexes.patterns, id))
         || !Object.hasOwn(rideModes, route.routeType)) return invalidShard();
       return new Map([[route.routeId, route]]);
     }),
-    loadIndexed(rides.map(({ patternId }) => patternId), indexes.patterns, async (path) => {
+    loadIndexed(requests.patterns, indexes.patterns, expected, async (path) => {
       const shard = await read(path);
       const records = readCollection(isRecord(shard) ? shard.patterns : undefined,
         isPattern, (pattern) => pattern.patternId, indexes.patterns, path);
@@ -224,7 +264,7 @@ async function loadJourneyAssets(journey: JourneySegment[], rides: Ride[], snaps
       }
       return records;
     }),
-    loadIndexed(rides.map(({ shapeId }) => shapeId), indexes.shapes, async (path) => {
+    loadIndexed(requests.shapes, indexes.shapes, expected, async (path) => {
       const shard = await read(path);
       const records = readCollection(isRecord(shard) ? shard.shapes : undefined,
         isShape, (shape) => shape.shapeId, indexes.shapes, path);
@@ -373,6 +413,13 @@ function trimShape(points: Coordinate[], stops: Coordinate[]): Coordinate[] | un
   const to = stops[stops.length - 1];
   const clipped = [pointAlongShape(distinct, start),
     ...distinct.slice(Math.floor(start) + 1, Math.ceil(end)), pointAlongShape(distinct, end)];
+  // An entire loop can fit inside one stop's projection radius.
+  const seen = new Set<string>();
+  for (const [latitude, longitude] of clipped) {
+    const key = `${latitude},${longitude}`;
+    if (seen.has(key)) return undefined;
+    seen.add(key);
+  }
   // Published stop coordinates may sit a few metres from the verified track or road.
   if (distanceMeters(from, clipped[0]) < 0.001) clipped[0] = from;
   else clipped.unshift(from);
@@ -398,15 +445,20 @@ function walkPoints(segment: Walk, stops: ShapeIndex['stops']): Coordinate[] {
 
 /** Return one geometry per segment, in the same order as the segments. */
 export function mergeLegGeometry(segments: JourneySegment[], { stops, shapes }: ShapeIndex): TransitGeometry[] {
+  let remainingProjectionChecks = maxExactProjectionChecksPerItinerary;
   return segments.map((segment) => {
     if (segment.kind === 'walk') {
       return { shapeId: '', sourceShapeId: null, geometryQuality: 'approximate', points: walkPoints(segment, stops) };
     }
     const relevantStops = segment.stopIds.map((id) => stopCoordinate(getRequired(stops, id)));
     const shape = shapes.get(segment.shapeId);
-    if (shape?.geometryQuality === 'exact') {
-      const points = trimShape(shape.points, relevantStops);
-      if (points) return { ...shape, points };
+    if (shape?.geometryQuality === 'exact' && shape.points.length <= maxExactShapePoints) {
+      const projectionChecks = (shape.points.length - 1) * relevantStops.length;
+      if (projectionChecks <= remainingProjectionChecks) {
+        remainingProjectionChecks -= projectionChecks;
+        const points = trimShape(shape.points, relevantStops);
+        if (points) return { ...shape, points };
+      }
     }
     return { shapeId: segment.shapeId, sourceShapeId: null, geometryQuality: 'approximate', points: relevantStops };
   });
@@ -465,14 +517,14 @@ export async function buildItinerary(journey: JourneySegment[], snapshot: Loaded
   let rideLegs = 0;
   const steps = legs.map((leg, index): TransitLeg => {
     const { points: geometry, geometryQuality } = geometries[index];
-    const times = { departureTime: istanbulClock.format(leg.departureEpochMs), arrivalTime: istanbulClock.format(leg.arrivalEpochMs) };
+    const times = { departureTime: istanbulClock.format(leg.departureEpochMs), arrivalTime: istanbulClock.format(leg.arrivalEpochMs),
+      durationMinutes: Math.ceil((leg.arrivalEpochMs - leg.departureEpochMs) / 60_000) };
     if (leg.kind === 'walk') {
       walkingSeconds += leg.walkingSeconds;
       if (leg.role === 'transfer' && legs[index + 1]?.kind !== 'ride') {
         keyPoints.push(boardingPoint('transfer', getRequired(assets.stops, leg.toStopId), assets.links));
       }
-      return { kind: 'walk', mode: 'walking', durationMinutes: Math.ceil(leg.walkingSeconds / 60),
-        distanceMeters: leg.distanceMeters, geometry, geometryQuality, ...times };
+      return { kind: 'walk', mode: 'walking', distanceMeters: leg.distanceMeters, geometry, geometryQuality, ...times };
     }
 
     if (leg.fromStopId === leg.toStopId || leg.arrivalEpochMs <= leg.departureEpochMs) return invalidShard();
@@ -483,7 +535,7 @@ export async function buildItinerary(journey: JourneySegment[], snapshot: Loaded
       kind: 'ride', mode, color: rideColors[mode], lineCode: route.shortName || route.longName || route.routeId,
       board: boardingPoint('board', getRequired(assets.stops, leg.fromStopId), assets.links),
       alight: boardingPoint('alight', getRequired(assets.stops, leg.toStopId), assets.links),
-      stopCount: leg.stopIds.length - 1, durationMinutes: Math.ceil((leg.arrivalEpochMs - leg.departureEpochMs) / 60_000),
+      stopCount: leg.stopIds.length - 1,
       distanceMeters: stepDistance(geometry), geometry, geometryQuality, ...times,
     };
   });

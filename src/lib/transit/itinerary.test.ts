@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test, type TestContext } from 'node:test';
 import { gzipSync } from 'node:zlib';
-import { parseManifest, type Coordinate, type TransitGeometry, type TransitStop } from './contracts.ts';
+import { parseManifest, type Coordinate, type TransitGeometry, type TransitManifest, type TransitStop } from './contracts.ts';
 import { attachContentLink, buildItinerary, collectKeyPoints, mergeLegGeometry } from './itinerary.ts';
 import type { JourneySegment } from './router.ts';
 import { clearTransitSnapshotCacheForTests, loadActiveSnapshot, TransitSnapshotError } from './snapshot-source.ts';
@@ -111,7 +111,8 @@ function snapshotStorage(t: TestContext) {
     return data === undefined ? new Response(null, { status: 404 }) : new Response(new Uint8Array(data));
   });
 
-  function publish(version: string, overrides: Record<string, unknown> = {}, omit?: string) {
+  function publish(version: string, overrides: Record<string, unknown> = {}, omit?: string,
+    changeIndexes?: (indexes: TransitManifest['indexes']) => void) {
     const manifest = structuredClone(parseManifest(manifestFixture));
     manifest.version = version;
     manifest.indexes.stops = Object.fromEntries(stops.map(({ stopId }) => [stopId, stopPath]));
@@ -119,6 +120,7 @@ function snapshotStorage(t: TestContext) {
     manifest.indexes.patterns = { [busPattern]: busPatternPath, [metroPattern]: metroPatternPath };
     manifest.indexes.shapes = { [busShape]: busShapePath, [metroShape]: metroShapePath };
     manifest.indexes.sourceShapes = { 'source-bus': busShape };
+    changeIndexes?.(manifest.indexes);
     manifest.counts.contentLinks = 1;
     for (const [path, payload] of Object.entries({ ...payloads(), ...overrides })) {
       const data = gzipSync(JSON.stringify(payload));
@@ -217,6 +219,41 @@ test('keeps the official segment between projected endpoints for slightly offset
   assert.deepEqual(geometry.points, [board, coordinate(29.0015, 41.0001), coordinate(29.003, 41.0001), middle]);
 });
 
+test('falls back for a loop entirely inside the boarding projection radius', () => {
+  const [, first] = journey();
+  const p = coordinate(29.0016);
+  const q = coordinate(29.0017, 41.0001);
+  const r = coordinate(29.00162, 41.0001);
+  const shape = { ...exactBusGeometry, points: [before, board, p, q, r, p, middle, after] };
+  const [geometry] = mergeLegGeometry([first], { stops: stopsById, shapes: new Map([[busShape, shape]]) });
+  assert.equal(geometry.geometryQuality, 'approximate');
+  assert.deepEqual(geometry.points, [board, middle]);
+});
+
+test('bounds the number of exact stop projections and falls back to the complete ridden stop order', () => {
+  const [, first] = journey();
+  assert.ok(first.kind === 'ride');
+  const points = Array.from({ length: 2_001 }, (_, index) => coordinate(29 + index * 0.000004));
+  const ridden = points.filter((_, index) => index % 4 === 0).map((point, index) => stop(`large-${index}`, point));
+  const stopIds = ridden.map(({ stopId }) => stopId);
+  const ride = { ...first, stopIds, fromStopId: stopIds[0], toStopId: stopIds[stopIds.length - 1] };
+  const shape = { ...exactBusGeometry, points };
+  const [geometry] = mergeLegGeometry([ride], {
+    stops: new Map(ridden.map((record) => [record.stopId, record])), shapes: new Map([[busShape, shape]]),
+  });
+  assert.equal(geometry.geometryQuality, 'approximate');
+  assert.deepEqual(geometry.points, ridden.map(({ latitude, longitude }) => [latitude, longitude]));
+});
+
+test('falls back for a very long exact shape even with only two ridden stops', () => {
+  const [, first] = journey();
+  const points = Array.from({ length: 16_385 }, (_, index) => coordinate(29 + index * 0.0000005));
+  const shape = { ...exactBusGeometry, points };
+  const [geometry] = mergeLegGeometry([first], { stops: stopsById, shapes: new Map([[busShape, shape]]) });
+  assert.equal(geometry.geometryQuality, 'approximate');
+  assert.deepEqual(geometry.points, [board, middle]);
+});
+
 for (const [name, points] of Object.entries({
   reversed: [...exactBusGeometry.points].reverse(),
   loop: [before, board, bend, middle, alight, after, coordinate(29.007, 41.005), board, middle],
@@ -238,13 +275,31 @@ test('uses Istanbul wall times, explicit overnight service date, per-mode colors
   assert.deepEqual(result.metadata, { dataVersion: 'itinerary_v1', generatedAt: '2026-11-11T12:34:56.000Z',
     serviceDate: '2026-11-10', approximateWalking: true, geometryQuality: 'approximate' });
   assert.deepEqual(result.steps.map(({ durationMinutes, departureTime, arrivalTime }) => [durationMinutes, departureTime, arrivalTime]), [
-    [1, '00:05', '00:05'], [9, '00:07', '00:16'], [1, '00:16', '00:17'], [6, '00:19', '00:25'], [1, '00:25', '00:25'],
+    [1, '00:05', '00:05'], [9, '00:07', '00:16'], [2, '00:16', '00:17'], [6, '00:19', '00:25'], [1, '00:25', '00:25'],
   ]);
   const rides = result.steps.filter((step) => step.kind === 'ride');
   assert.deepEqual(rides.map(({ mode, color }) => [mode, color]), [['bus', '#f59e0b'], ['metro', '#dc2626']]);
   assert.ok(rides[0].distanceMeters > 250 && rides[0].distanceMeters < 300);
   assert.equal(result.keyPoints[0].name, 'Başlangıç');
   assert.equal(result.keyPoints.at(-1)?.name, 'Hedef');
+});
+
+test('uses elapsed transfer time on the step and physical walking time in the itinerary total', async (t) => {
+  snapshotStorage(t).publish('itinerary_v1');
+  const segments = journey();
+  const transfer = segments[3];
+  assert.ok(transfer.kind === 'walk' && transfer.role === 'transfer');
+  transfer.arrivalEpochMs = transfer.departureEpochMs + 3_600_000;
+  transfer.distanceMeters = 350;
+  transfer.walkingSeconds = 319;
+  for (const segment of segments.slice(4)) {
+    segment.departureEpochMs += 3_500_000;
+    segment.arrivalEpochMs += 3_500_000;
+  }
+  const result = await buildItinerary(segments, await loadActiveSnapshot());
+  const step = result.steps[2];
+  assert.deepEqual([step.distanceMeters, step.durationMinutes, step.departureTime, step.arrivalTime], [350, 60, '00:16', '01:16']);
+  assert.equal(result.walkingMinutes, 7);
 });
 
 test('recognizes rail, tram, ferry, funicular and dolmuş route types from snapshot routes', async (t) => {
@@ -262,6 +317,7 @@ const pattern = busPatternRecord;
 const integrityCases: [string, string, unknown][] = [
   ['a stop grid with a wrong cell', stopPath, { ...fixture[stopPath], cell: '4101_2900' }],
   ['a requested stop missing from its indexed grid', stopPath, { ...fixture[stopPath], stops: stops.slice(2) }],
+  ['an unrelated indexed stop missing from its loaded grid', stopPath, { ...fixture[stopPath], stops: stops.slice(0, -1) }],
   ['a duplicate stop in the same grid', stopPath, { ...fixture[stopPath], stops: [...stops, stops[1]] }],
   ['a stop with invalid coordinates', stopPath, { ...fixture[stopPath], stops: [...stops.slice(0, -1), { ...stops.at(-1), longitude: 30 }] }],
   ['a route with the wrong ID', busRoutePath, { ...fixture[busRoutePath], routeId: 'metro' }],
@@ -283,6 +339,8 @@ const integrityCases: [string, string, unknown][] = [
   ['a content link with a different host', contentPath, { schemaVersion: 1, links: { '0': { ...stationLink, canonicalUrl: 'https://other.test/otobus-duraklari/ornek-123456' } } }],
   ['a content link keyed by a code instead of an internal ID', contentPath, { schemaVersion: 1, links: { alias: stationLink } }],
   ['a content link with a malformed title', contentPath, { schemaVersion: 1, links: { '0': { ...stationLink, title: 0 } } }],
+  ['a content link with a known-broken frontend slug', contentPath,
+    { schemaVersion: 1, links: { '0': { ...stationLink, canonicalUrl: 'https://hizliulasim.com/otobus-duraklari/beylerbeyi-219312' } } }],
 ];
 
 for (const [name, path, payload] of integrityCases) {
@@ -292,6 +350,60 @@ for (const [name, path, payload] of integrityCases) {
     await assert.rejects(buildItinerary(journey(), snapshot), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
   });
 }
+
+test('rejects a route index redirected to a composite content-links shard', async (t) => {
+  snapshotStorage(t).publish('itinerary_v1', {
+    [contentPath]: { ...fixture[contentPath], ...fixture[busRoutePath] },
+  }, undefined, (indexes) => { indexes.routes['0'] = contentPath; });
+  await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+});
+
+test('rejects a cross-kind alias on a loaded grid even when the aliased route is outside the journey', async (t) => {
+  snapshotStorage(t).publish('itinerary_v1', {}, undefined, (indexes) => { indexes.routes.other = stopPath; });
+  await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+});
+
+test('rejects a shape shard that also claims to be an indexed pattern collection', async (t) => {
+  snapshotStorage(t).publish('itinerary_v1', {
+    [busShapePath]: { ...fixture[busShapePath], ...fixture[busPatternPath] },
+  }, undefined, (indexes) => { indexes.patterns[busPattern] = busShapePath; });
+  await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+});
+
+for (const [kind, id, path, wrongPath] of [
+  ['routes', '0', busRoutePath, `routes/${sha256('wrong route ID')}.json.gz`],
+  ['patterns', busPattern, busPatternPath, `patterns/${sha256('wrong pattern ID')}.json.gz`],
+  ['shapes', busShape, busShapePath, `shapes/${sha256('wrong shape ID')}.json.gz`],
+] as const) {
+  test(`rejects a ${kind} path with a filename derived from a different ID`, async (t) => {
+    snapshotStorage(t).publish('itinerary_v1', { [wrongPath]: fixture[path] }, undefined,
+      (indexes) => { indexes[kind][id] = wrongPath; });
+    await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+  });
+}
+
+test('rejects an indexed pattern peer omitted from a loaded collection', async (t) => {
+  snapshotStorage(t).publish('itinerary_v1', {}, undefined, (indexes) => { indexes.patterns[sha256('omitted')] = busPatternPath; });
+  await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+});
+
+test('rejects an indexed route peer omitted from a loaded singleton', async (t) => {
+  snapshotStorage(t).publish('itinerary_v1', {}, undefined, (indexes) => { indexes.routes.other = busRoutePath; });
+  await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+});
+
+test('rejects an indexed shape peer omitted from a loaded collection', async (t) => {
+  snapshotStorage(t).publish('itinerary_v1', {}, undefined, (indexes) => { indexes.shapes[sha256('omitted')] = busShapePath; });
+  await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+});
+
+test('rejects an extra shape sharing a different ID’s exact indexed path', async (t) => {
+  const otherShape = sha256('another shape');
+  snapshotStorage(t).publish('itinerary_v1', {
+    [busShapePath]: { shapes: [exactBusGeometry, { ...approximateMetroGeometry, shapeId: otherShape }] },
+  }, undefined, (indexes) => { indexes.shapes[otherShape] = busShapePath; });
+  await assert.rejects(buildItinerary(journey(), await loadActiveSnapshot()), { name: 'TransitSnapshotError', code: 'INVALID_SHARD' });
+});
 
 test('propagates a missing inventoried shard without returning a partial itinerary', async (t) => {
   snapshotStorage(t).publish('itinerary_v1', {}, busShapePath);
