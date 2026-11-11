@@ -539,7 +539,7 @@ test('builds the city landing directory without loading the full line catalog', 
 test('reads a line detail freshly from WordPress after an admin data sync', () => {
   const serviceSource = readFileSync(new URL('../services/minibus.ts', import.meta.url), 'utf8');
   const detailFetcher = serviceSource.match(
-    /export async function fetchMinibusCachedLine[\s\S]*?\n}\n/,
+    /export async function fetchMinibusCachedLine[\s\S]*?\r?\n}\r?\n/,
   )?.[0] ?? '';
 
   assert.match(detailFetcher, /cache:\s*'no-store'/);
