@@ -1,11 +1,12 @@
 import type { Coordinate, RoutePreference, TransitConnection, TransitManifest, TransitTransfer } from './contracts.ts';
 import { getServiceContext, isServiceActive, serviceTimeToEpochMs, type ServiceDay } from './service-calendar.ts';
 import { loadSnapshotShard, TransitSnapshotError, type LoadedSnapshot } from './snapshot-source.ts';
-import { estimateWalk, loadTransferCandidates } from './spatial.ts';
+import { createTransferCandidateLoader, estimateWalk } from './spatial.ts';
 
 export interface RouterLimits {
   horizonSeconds: number;
   maxBuckets: number;
+  /** Unique transfer and endpoint stop-grid shard paths. */
   maxTransferShards: number;
   maxBoardings: number;
   maxLabelsPerStop: number;
@@ -106,6 +107,7 @@ export type SnapshotRouterResult = RouterResult & {
   diagnostics: {
     connectionBuckets: number;
     connectionShards: number;
+    /** Unique transfer and endpoint stop-grid shard reads started. */
     transferShards: number;
   };
 };
@@ -289,8 +291,13 @@ function assertStopWalk(walk: StopWalk): void {
     || !Number.isFinite(walk.distanceMeters) || walk.distanceMeters < 0) throw new RangeError('Invalid stop walk');
 }
 
+interface RideProgress {
+  readonly startEpochMs: number;
+  readonly moved: boolean;
+}
+
 interface ScanLabel extends ArrivalLabel {
-  rideStartEpochMs: number | null;
+  readonly ride: RideProgress | null;
 }
 
 class ConnectionScan {
@@ -354,11 +361,11 @@ class ConnectionScan {
   }
 
   private addLabel(stopId: string, readyEpochMs: number, boardings: number, walkingSeconds: number,
-    predecessor: ArrivalLabel | null, segment: JourneySegment, rideStartEpochMs: number | null = null): ScanLabel {
+    predecessor: ArrivalLabel | null, segment: JourneySegment, ride: RideProgress | null = null): ScanLabel {
     if (this.labels.length >= this.limits.maxTotalLabels) throw new BudgetExceeded('total-labels');
     const label = {
       index: this.labels.length, stopId, arrivalEpochMs: segment.arrivalEpochMs, readyEpochMs,
-      boardings, walkingSeconds, predecessor: predecessor?.index ?? null, segment, rideStartEpochMs,
+      boardings, walkingSeconds, predecessor: predecessor?.index ?? null, segment, ride,
     };
     this.labels.push(label);
     return label;
@@ -439,26 +446,27 @@ class ConnectionScan {
     const { connection, serviceDate, departureEpochMs, arrivalEpochMs } = instance;
     const { tripId, fromStopId, toStopId, stopSequence } = connection;
     const stationary = fromStopId === toStopId;
-    if (departureEpochMs < this.departureEpochMs || arrivalEpochMs > this.endEpochMs
-      || (stationary && departureEpochMs !== arrivalEpochMs)) return [];
-    // A zero-time sequence entry for the current stop does not move the rider.
+    if (departureEpochMs < this.departureEpochMs || arrivalEpochMs > this.endEpochMs) return [];
+    // A consecutive entry at the current stop advances the trip sequence without a physical revisit.
     const nextStop = stationary ? undefined : toStopId;
 
     const key = tripKey(serviceDate, tripId);
     const continuation = this.onboard.get(key) ?? [];
-    const candidates: { parent: ScanLabel; boardings: number; rideStart: number }[] = [];
+    const candidates: { parent: ScanLabel; boardings: number; ride: RideProgress }[] = [];
     for (const label of continuation) {
       const last = label.segment;
-      if (last.kind === 'ride' && label.stopId === fromStopId && last.arrivalStopSequence === stopSequence
+      if (label.ride && last.kind === 'ride' && label.stopId === fromStopId && last.arrivalStopSequence === stopSequence
         && label.arrivalEpochMs <= departureEpochMs && sameVehicle(last, connection) && this.canVisit(label, nextStop)) {
-        candidates.push({ parent: label, boardings: label.boardings, rideStart: label.rideStartEpochMs! });
+        candidates.push({ parent: label, boardings: label.boardings,
+          ride: { startEpochMs: label.ride.startEpochMs, moved: label.ride.moved || !stationary } });
       }
     }
     if (connection.pickupType === 0) {
       for (const label of this.byStop.get(fromStopId) ?? []) {
         if (label.boardings < this.limits.maxBoardings && label.readyEpochMs <= departureEpochMs
           && this.canVisit(label, nextStop, instance)) {
-          candidates.push({ parent: label, boardings: label.boardings + 1, rideStart: departureEpochMs });
+          candidates.push({ parent: label, boardings: label.boardings + 1,
+            ride: { startEpochMs: departureEpochMs, moved: !stationary } });
         }
       }
     }
@@ -469,17 +477,18 @@ class ConnectionScan {
     }
     const next: ScanLabel[] = [];
     const segment = rideSegment(instance);
-    const hasPositiveRide = (label: ScanLabel) => label.arrivalEpochMs > label.rideStartEpochMs!;
-    for (const { parent, boardings, rideStart } of candidates) {
+    const hasPositiveDuration = (label: ScanLabel) => label.ride !== null && label.arrivalEpochMs > label.ride.startEpochMs;
+    for (const { parent, boardings, ride } of candidates) {
       const label = this.addLabel(toStopId, arrivalEpochMs + transferBufferSeconds * 1000,
-        boardings, parent.walkingSeconds, parent, segment, rideStart);
-      // Until a ride has positive duration, a passenger can only stay aboard.
+        boardings, parent.walkingSeconds, parent, segment, ride);
+      // A rider needs both movement and elapsed time before an alighting can enter a journey.
       retainLabel(next, label, candidates.length, (first, second) =>
-        (!hasPositiveRide(second) || hasPositiveRide(first)) && this.dominatesForContinuation(first, second));
+        (first.ride?.moved || !second.ride?.moved) && (!hasPositiveDuration(second) || hasPositiveDuration(first))
+        && this.dominatesForContinuation(first, second));
     }
     if (next.length > this.limits.maxLabelsPerStop) throw new BudgetExceeded('stop-labels');
     this.onboard.set(key, next);
-    return connection.dropOffType === 0 ? next.filter(hasPositiveRide) : [];
+    return connection.dropOffType === 0 ? next.filter((label) => label.ride?.moved && hasPositiveDuration(label)) : [];
   }
 
   canImprove(nextDepartureEpochMs: number): boolean {
@@ -639,11 +648,18 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
     const reused = new Map<string, unknown>();
     const previousByTrip = new Map<string, TransitConnection>();
     const loadedTransferCells = new Set<string>();
+    const transferReadPaths = new Set<string>();
+    const readTransfers = createTransferCandidateLoader(snapshot, (path) => {
+      checkTime();
+      if (transferReadPaths.has(path)) return;
+      if (transferReadPaths.size >= limits.maxTransferShards) throw new BudgetExceeded('transfer-shards');
+      transferReadPaths.add(path);
+      diagnostics.transferShards = transferReadPaths.size;
+    });
     let stopsByGridPath: Map<string, string[]> | undefined;
     let pending: ConnectionInstance[] = [];
 
     async function loadTransfers(gridPath: string) {
-      if (diagnostics.transferShards >= limits.maxTransferShards) throw new BudgetExceeded('transfer-shards');
       if (!stopsByGridPath) {
         stopsByGridPath = new Map<string, string[]>();
         for (const [id, path] of Object.entries(snapshot.manifest.indexes.stops)) {
@@ -656,8 +672,7 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
       checkTime();
       // Load the entire origin cell on its first reached alighting stop, so later stops
       // in this cell can expand synchronously without another transfer shard read.
-      diagnostics.transferShards++;
-      const transfers = await loadTransferCandidates(stopsByGridPath.get(gridPath)!, snapshot);
+      const transfers = await readTransfers(stopsByGridPath.get(gridPath)!);
       checkTime();
       scan.addTransfers(transfers);
       loadedTransferCells.add(gridPath);

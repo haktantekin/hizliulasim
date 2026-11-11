@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { test, type TestContext } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { parseManifest, type TransitConnection, type TransitManifest, type TransitStop, type TransitTransfer } from './contracts.ts';
 import type { ServiceDay } from './service-calendar.ts';
-import { loadActiveSnapshot } from './snapshot-source.ts';
+import { clearTransitSnapshotCacheForTests, loadActiveSnapshot } from './snapshot-source.ts';
 import { manifestFixture } from './test-fixtures.ts';
 import {
   rankJourneys,
@@ -215,6 +216,29 @@ test('preserves a zero-time stop-sequence advance at the same physical stop', ()
   assert.ok(segment.kind === 'ride');
   assert.deepEqual(segment.stopIds, ['A', 'B', 'Z']);
   assert.equal(segment.arrivalStopSequence, 3);
+});
+
+test('preserves dated-vehicle continuity during a positive same-stop dwell', () => {
+  const connections = [ride('T', 'A', 'B', 30, 100, { dropOffType: 1 }),
+    ride('T', 'B', 'B', 100, 110, { pickupType: 1, dropOffType: 1, stopSequence: 1, arrivalStopSequence: 2 }),
+    ride('T', 'B', 'Z', 110, 200, { pickupType: 1, stopSequence: 2, arrivalStopSequence: 3 })];
+  const segment = journey(connections)[1];
+  assert.ok(segment.kind === 'ride');
+  assert.deepEqual(segment.stopIds, ['A', 'B', 'Z']);
+  assert.equal(segment.arrivalEpochMs - segment.departureEpochMs, 170_000);
+});
+
+test('requires transit to change stops as well as have a positive duration', () => {
+  noRoute([ride('T', 'A', 'A', 30, 110)], { egress: [walk('A')] });
+  noRoute([ride('T', 'A', 'Z', 30, 30)]);
+});
+
+test('keeps a rider who moved aboard before a dwell alongside a new stationary boarding', () => {
+  const connections = [ride('T', 'X', 'A', 30, 30, { dropOffType: 1 }),
+    ride('T', 'A', 'A', 30, 100, { stopSequence: 1, arrivalStopSequence: 2 })];
+  const segment = journey(connections, { access: [walk('A'), walk('X')], egress: [walk('A')] })[1];
+  assert.ok(segment.kind === 'ride');
+  assert.deepEqual(segment.stopIds, ['X', 'A']);
 });
 
 test('allows a through passenger to alight after a zero-time edge at the horizon', () => {
@@ -501,20 +525,26 @@ const transferConnections = { [bucket(serviceClass, 8)]: { connections: [
 
 test('loads the intermediate transfer and its stop grids from the captured snapshot', async (t) => {
   const storage = publishedStorage(t);
-  storage.publish(publishedManifest(), 'pinned_transfer', transferConnections, [stationTransfer]);
+  const reverse = { ...stationTransfer, fromStopId: 'C', toStopId: 'B' };
+  storage.publish(publishedManifest(), 'pinned_transfer', transferConnections, [stationTransfer, reverse]);
   const snapshot = await loadActiveSnapshot();
   storage.publish(publishedManifest(), 'new_pointer', transferConnections);
-  const result = await routeTransitSnapshot(snapshot, query());
+  storage.onRead((path) => {
+    if (path.endsWith(`/transfers/${hash('4101_2900')}.json.gz`)) clearTransitSnapshotCacheForTests();
+  });
+  const result = await routeTransitSnapshot(snapshot, query({ limits: { maxTransferShards: 4 } }));
   assert.equal(result.status, 'ok');
   assert.deepEqual(trips(result.journeys[0]), ['T1', 'T2']);
   assert.deepEqual(result.journeys[0][2], {
     kind: 'walk', role: 'transfer', fromStopId: 'B', toStopId: 'C', distanceMeters: 56, walkingSeconds: 51,
     departureEpochMs: +departureAt + 100_000, arrivalEpochMs: +departureAt + 211_000, evidence: stationTransfer.evidence,
   });
-  const transferReads = storage.reads.filter((path) => path.includes('/transfers/'));
+  const transferReads = storage.reads.filter((path) => /\/(transfers|stops-grid)\//.test(path));
   assert.deepEqual(transferReads, [`versions/pinned_transfer/transfers/${hash('4100_2900')}.json.gz`,
+    `versions/pinned_transfer/stops-grid/${hash('4100_2900')}.json.gz`,
+    `versions/pinned_transfer/stops-grid/${hash('4101_2900')}.json.gz`,
     `versions/pinned_transfer/transfers/${hash('4101_2900')}.json.gz`]);
-  assert.equal(result.diagnostics.transferShards, 2);
+  assert.equal(result.diagnostics.transferShards, 4);
 });
 
 test('ignores a caller-provided transfer absent from the pinned snapshot', async (t) => {
@@ -524,14 +554,48 @@ test('ignores a caller-provided transfer absent from the pinned snapshot', async
   assert.equal(result.status, 'no-route');
 });
 
-test('returns a transfer-shard budget result when an intermediate expansion needs another cell', async (t) => {
+test('checks the transfer-read cap before loading an endpoint stop-grid path', async (t) => {
   const storage = publishedStorage(t);
   storage.publish(publishedManifest(), 'transfer_budget', transferConnections, [stationTransfer]);
-  const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ limits: { maxTransferShards: 1 } }));
+  const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ limits: { maxTransferShards: 2 } }));
   assert.equal(result.status, 'budget-exceeded');
   assert.equal(result.status === 'budget-exceeded' && result.budget, 'transfer-shards');
-  assert.equal(result.diagnostics.transferShards, 1);
-  assert.equal(storage.reads.filter((path) => path.includes('/transfers/')).length, 1);
+  assert.equal(result.diagnostics.transferShards, 2);
+  assert.deepEqual(storage.reads.filter((path) => /\/(transfers|stops-grid)\//.test(path)),
+    [`versions/transfer_budget/transfers/${hash('4100_2900')}.json.gz`,
+      `versions/transfer_budget/stops-grid/${hash('4100_2900')}.json.gz`]);
+});
+
+test('starts no endpoint stop-grid reads after a stalled transfer shard outlives the route', async (t) => {
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'stalled_transfer', transferConnections, [stationTransfer]);
+  const snapshot = await loadActiveSnapshot();
+  let release: () => void = () => {};
+  const stalled = new Promise<void>((resolve) => { release = resolve; });
+  let transferStarted: () => void = () => {};
+  const started = new Promise<void>((resolve) => { transferStarted = resolve; });
+  let endpointStarted: () => void = () => {};
+  const endpoint = new Promise<void>((resolve) => { endpointStarted = resolve; });
+  storage.onRead((path) => {
+    if (path.includes('/stops-grid/')) endpointStarted();
+    if (path.includes('/transfers/')) {
+      transferStarted();
+      return stalled;
+    }
+  });
+  try {
+    const route = routeTransitSnapshot(snapshot, query({ limits: { wallTimeMs: 100 } }));
+    assert.equal(await Promise.race([started.then(() => true), route.then(() => false)]), true);
+    const result = await route;
+    assert.equal(result.status, 'budget-exceeded');
+    assert.equal(result.status === 'budget-exceeded' && result.budget, 'timeout');
+    assert.equal(result.diagnostics.transferShards, 1);
+    release();
+    const readAfterTimeout = await Promise.race([endpoint.then(() => true), delay(50, false)]);
+    assert.equal(readAfterTimeout, false);
+  } finally {
+    release();
+  }
 });
 
 test('counts intersecting dated buckets and aborts a request with a depleted bucket budget', async (t) => {

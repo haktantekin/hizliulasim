@@ -142,7 +142,11 @@ function isTransfer(value: unknown, stopPath: string, stops: Record<string, stri
     && Buffer.byteLength(evidence.reference) <= maxEvidenceReferenceBytes;
 }
 
-async function loadIndexedStopGrid(snapshot: LoadedSnapshot, cell: string, path: string): Promise<Map<string, TransitStop>> {
+type BeforeShardRead = (path: string) => void;
+
+async function loadIndexedStopGrid(snapshot: LoadedSnapshot, cell: string, path: string,
+  beforeShardRead?: BeforeShardRead): Promise<Map<string, TransitStop>> {
+  beforeShardRead?.(path);
   const shard = await loadSnapshotShard<unknown>(snapshot, path);
   if (!isRecord(shard) || shard.cell !== cell || shard.precision !== 0.01
     || !Array.isArray(shard.stops) || shard.stops.length === 0) {
@@ -160,21 +164,32 @@ async function loadIndexedStopGrid(snapshot: LoadedSnapshot, cell: string, path:
   return records;
 }
 
-export async function loadTransferCandidates(stopIds: string[], snapshot: LoadedSnapshot): Promise<TransitTransfer[]> {
+/** Reuse endpoint grids verified against this pinned snapshot throughout one request. */
+export function createTransferCandidateLoader(snapshot: LoadedSnapshot, beforeShardRead?: BeforeShardRead) {
+  const loadedStopGrids = new Map<string, Map<string, TransitStop>>();
+  return (stopIds: string[]) => readTransferCandidates(stopIds, snapshot, loadedStopGrids, beforeShardRead);
+}
+
+export function loadTransferCandidates(stopIds: string[], snapshot: LoadedSnapshot,
+  beforeShardRead?: BeforeShardRead): Promise<TransitTransfer[]> {
+  return createTransferCandidateLoader(snapshot, beforeShardRead)(stopIds);
+}
+
+async function readTransferCandidates(stopIds: string[], snapshot: LoadedSnapshot,
+  loadedStopGrids: Map<string, Map<string, TransitStop>>, beforeShardRead?: BeforeShardRead): Promise<TransitTransfer[]> {
   const { stops, stopGrid, transfers } = snapshot.manifest.indexes;
   const requested = new Set(stopIds.filter((id) => Object.hasOwn(stops, id)));
   if (requested.size === 0) return [];
 
   const stopPaths = new Set([...requested].map((id) => stops[id]));
   const loadedPaths = new Set<string>();
-  const loadedStopGrids = new Map<string, Map<string, TransitStop>>();
   const edges: TransitTransfer[] = [];
 
   async function readEndpoint(stopId: string, cell: string): Promise<TransitStop> {
     const path = stops[stopId];
     let records = loadedStopGrids.get(path);
     if (!records) {
-      records = await loadIndexedStopGrid(snapshot, cell, path);
+      records = await loadIndexedStopGrid(snapshot, cell, path, beforeShardRead);
       loadedStopGrids.set(path, records);
     }
     const stop = records.get(stopId);
@@ -187,6 +202,7 @@ export async function loadTransferCandidates(stopIds: string[], snapshot: Loaded
     const path = transfers[cell];
     if (loadedPaths.has(path)) continue;
     loadedPaths.add(path);
+    beforeShardRead?.(path);
     const shard = await loadSnapshotShard<unknown>(snapshot, path);
     if (!isRecord(shard) || shard.cell !== cell || !Array.isArray(shard.transfers)) {
       throw new TransitSnapshotError('INVALID_SHARD');
