@@ -230,6 +230,22 @@ test('falls back for a loop entirely inside the boarding projection radius', () 
   assert.deepEqual(geometry.points, [board, middle]);
 });
 
+test('falls back for distinct alighting projections in one radius run with unique shape vertices', () => {
+  const [, first] = journey();
+  assert.ok(first.kind === 'ride');
+  const a: Coordinate = [41, 28.997];
+  const b: Coordinate = [41.000009, 29];
+  const shape: TransitGeometry = { ...exactBusGeometry, points: [
+    a, [41.00007, 28.99988], [40.99993, 29.00012], [41.00007, 29.00012], [40.99993, 28.99988], b,
+  ] };
+  const ride = { ...first, fromStopId: 'a', toStopId: 'b', stopIds: ['a', 'b'] };
+  const [geometry] = mergeLegGeometry([ride], {
+    stops: new Map([['a', stop('a', a)], ['b', stop('b', b)]]), shapes: new Map([[busShape, shape]]),
+  });
+  assert.equal(geometry.geometryQuality, 'approximate');
+  assert.deepEqual(geometry.points, [a, b]);
+});
+
 test('bounds the number of exact stop projections and falls back to the complete ridden stop order', () => {
   const [, first] = journey();
   assert.ok(first.kind === 'ride');

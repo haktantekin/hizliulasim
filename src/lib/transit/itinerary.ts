@@ -368,11 +368,11 @@ function projectOntoShape(stop: Coordinate, points: Coordinate[]): number | unde
   const metersPerDegree = earthRadiusMeters * radians;
   const longitudeScale = metersPerDegree * Math.cos(stop[0] * radians);
   const toleranceSquared = maxShapeStopOffsetMeters ** 2;
-  let nearest: { position: number; distanceSquared: number } | undefined;
-  let previousNearbyEdge = -1;
-  let tied = false;
+  const lastEdge = points.length - 2;
+  let projection: number | undefined;
+  let previousAlong: number | undefined;
 
-  for (let edge = 0; edge < points.length - 1; edge++) {
+  for (let edge = 0; edge <= lastEdge; edge++) {
     const [fromLat, fromLng] = points[edge];
     const [toLat, toLng] = points[edge + 1];
     const x = (fromLng - stop[1]) * longitudeScale;
@@ -380,22 +380,20 @@ function projectOntoShape(stop: Coordinate, points: Coordinate[]): number | unde
     const dx = (toLng - fromLng) * longitudeScale;
     const dy = (toLat - fromLat) * metersPerDegree;
     const along = Math.max(0, Math.min(1, -(x * dx + y * dy) / (dx * dx + dy * dy)));
-    const distanceSquared = (x + along * dx) ** 2 + (y + along * dy) ** 2;
-    if (distanceSquared > toleranceSquared) continue;
 
-    // A second pass through the stop radius makes the relevant traversal ambiguous.
-    if (nearest && (edge !== previousNearbyEdge + 1 || x * x + y * y > toleranceSquared)) return undefined;
-    previousNearbyEdge = edge;
+    // Each edge has a convex distance profile. At a shared vertex, both adjacent
+    // edges must put their closest point at that vertex for it to be a local minimum.
+    const isLocalMinimum = (along > 0 && along < 1)
+      || (along === 0 && (edge === 0 || previousAlong === 1)) || (along === 1 && edge === lastEdge);
+    previousAlong = along;
+    if (!isLocalMinimum || (x + along * dx) ** 2 + (y + along * dy) ** 2 > toleranceSquared) continue;
+
     const position = edge + along;
-    if (!nearest || distanceSquared < nearest.distanceSquared - 1e-6) {
-      nearest = { position, distanceSquared };
-      tied = false;
-    } else if (Math.abs(distanceSquared - nearest.distanceSquared) <= 1e-6
-      && Math.abs(position - nearest.position) > 1e-6) {
-      tied = true;
-    }
+    // Multiple passes can fit inside the same stop radius, even when one is closer.
+    if (projection !== undefined && Math.abs(position - projection) > 1e-6) return undefined;
+    projection ??= position;
   }
-  return tied ? undefined : nearest?.position;
+  return projection;
 }
 
 function trimShape(points: Coordinate[], stops: Coordinate[]): Coordinate[] | undefined {
