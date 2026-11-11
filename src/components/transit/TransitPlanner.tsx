@@ -19,6 +19,7 @@ import TransitItinerary from './TransitItinerary';
 import TransitLocationField from './TransitLocationField';
 import TransitPlannerOptions from './TransitPlannerOptions';
 import TransitPlannerStatus from './TransitPlannerStatus';
+import TransitRouteMapLoader from './TransitRouteMapLoader';
 import TransitSummary from './TransitSummary';
 
 export interface TransitPlannerProps {
@@ -208,6 +209,11 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
             </div>
           )}
           <TransitItinerary itinerary={activeItinerary} compact={compact} />
+          <TransitRouteMapLoader
+            itinerary={activeItinerary}
+            size={compact ? 'compact' : 'full'}
+            selectedAlternative={route.selectedAlternative}
+          />
         </div>
       )}
     </div>
