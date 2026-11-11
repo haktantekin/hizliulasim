@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { TransitItinerary, TransitMode } from './contracts.ts';
+import { buildTransitMapModel } from './map-model.ts';
 import * as presentation from './presentation.ts';
 
 const { buildTimelineItems, createPlannerState, getModePresentation, isPlannerLocation, reducePlanner } = presentation;
@@ -289,6 +290,31 @@ test('discards autocomplete, place details, and geolocation responses superseded
 
 const departureAt = '2026-11-10T07:00:00.000Z';
 const alternatives = [itinerary, { ...itinerary, durationMinutes: 28 }];
+
+test('labels every fixed destination map marker with the article title without changing the API response', () => {
+  const fixedDestination = { name: 'Kadıköy İskelesi Nasıl Gidilir?', latitude: 41.0201, longitude: 29.03 };
+  const initial = createPlannerState({ origin }, fixedDestination);
+  assert.equal(initial.route.kind, 'loading');
+  const result = reducePlanner(initial, { type: 'route-succeeded', id: initial.route.id, departureAt, alternatives });
+  assert.equal(result.route.kind, 'success');
+
+  for (const alternative of result.route.alternatives) {
+    const arrivalMarker = buildTransitMapModel(alternative).markers.find(({ points }) =>
+      points.some(({ role }) => role === 'destination'));
+    assert.deepEqual(arrivalMarker?.coordinate, [41.0201, 29.03]);
+    assert.equal(arrivalMarker?.points.find(({ role }) => role === 'destination')?.name, 'Kadıköy İskelesi Nasıl Gidilir?');
+    assert.deepEqual(buildTimelineItems(alternative), buildTimelineItems(itinerary));
+  }
+  assert.equal(itinerary.keyPoints.find(({ role }) => role === 'destination')?.name, 'Hedef');
+});
+
+test('leaves route results for an editable destination as received from the API', () => {
+  const initial = createPlannerState({ origin, destination });
+  assert.equal(initial.route.kind, 'loading');
+  const result = reducePlanner(initial, { type: 'route-succeeded', id: initial.route.id, departureAt, alternatives });
+  assert.equal(result.route.kind, 'success');
+  assert.equal(result.route.alternatives, alternatives);
+});
 
 test('rejects a cancelled route response and retries with a new request ID', () => {
   const initial = createPlannerState({ origin, destination });

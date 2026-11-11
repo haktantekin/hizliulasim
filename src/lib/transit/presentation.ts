@@ -259,13 +259,20 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
     case 'route-succeeded': {
       if (route.kind !== 'loading' || route.id !== action.id) return state;
       const index = state.requestedAlternative;
+      const alternatives = state.destinationLocked
+        ? action.alternatives.map((itinerary) => ({
+          ...itinerary,
+          keyPoints: itinerary.keyPoints.map((point) =>
+            point.role === 'destination' ? { ...point, name: route.destination.name } : point),
+        }))
+        : action.alternatives;
       return {
         ...state,
         route: {
           kind: 'success',
           departureAt: action.departureAt,
-          alternatives: action.alternatives,
-          selectedAlternative: Number.isInteger(index) && action.alternatives[index] ? index : 0,
+          alternatives,
+          selectedAlternative: Number.isInteger(index) && alternatives[index] ? index : 0,
           selectedStep: null,
         },
       };
