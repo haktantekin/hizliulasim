@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { TransitItinerary, TransitMode } from './contracts.ts';
-import { buildTimelineItems, createPlannerState, getModePresentation, isPlannerLocation, reducePlanner } from './presentation.ts';
+import * as presentation from './presentation.ts';
+
+const { buildTimelineItems, createPlannerState, getModePresentation, isPlannerLocation, reducePlanner } = presentation;
 
 const modes = [
   ['walking', 'Yürüme', '#6b7280', 'footprints'],
@@ -59,11 +61,51 @@ const itinerary: TransitItinerary = {
 
 test('produces one walk item per walk and only boarding and alighting items for a ride', () => {
   assert.deepEqual(buildTimelineItems(itinerary), [
-    { kind: 'walk', mode: 'walking', stepIndex: 0, durationMinutes: 7 },
-    { kind: 'board', mode: 'bus', stepIndex: 1, lineCode: '25G', stop: { name: 'Çarşı', href: boardUrl } },
-    { kind: 'alight', mode: 'bus', stepIndex: 1, stop: { name: 'İskele' } },
-    { kind: 'walk', mode: 'walking', stepIndex: 2, durationMinutes: 4 },
+    { kind: 'walk', mode: 'walking', stepIndex: 0, durationMinutes: 7, instruction: '7 dk yürü', time: '10:00' },
+    {
+      kind: 'board', mode: 'bus', stepIndex: 1, lineCode: '25G', vehicle: 'otobüsüne', stop: { name: 'Çarşı', href: boardUrl },
+      action: 'durağında bin', time: '10:10', stopCountLabel: '4 durak',
+    },
+    { kind: 'alight', mode: 'bus', stepIndex: 1, stop: { name: 'İskele' }, action: 'durağında in', time: '10:20' },
+    { kind: 'walk', mode: 'walking', stepIndex: 2, durationMinutes: 4, instruction: '4 dk yürü', time: '10:20' },
   ]);
+});
+
+test('uses Turkish vehicle suffixes and singular stop count across transfers', () => {
+  const bus = itinerary.steps[1];
+  assert.equal(bus.kind, 'ride');
+  const modes = [
+    ['bus', 'otobüsüne'], ['metro', 'metrosuna'], ['tram', 'tramvayına'], ['rail', 'trenine'],
+    ['ferry', 'vapuruna'], ['funicular', 'fünikülerine'], ['minibus', 'minibüsüne'],
+  ] as const;
+  for (const [mode, vehicle] of modes) {
+    const items = buildTimelineItems({
+      ...itinerary,
+      transferCount: 1,
+      steps: [bus, {
+        ...bus, mode, lineCode: 'B2', stopCount: 1, departureTime: '10:22', arrivalTime: '10:28',
+        board: { ...bus.alight, role: 'board' },
+        alight: { role: 'alight', name: 'Merkez', coordinate: [41.025, 29.025] },
+      }],
+    });
+    assert.deepEqual(items.slice(2), [
+      {
+        kind: 'board', mode, stepIndex: 1, lineCode: 'B2', vehicle, stop: { name: 'İskele' },
+        action: 'durağında bin', time: '10:22', stopCountLabel: '1 durak',
+      },
+      { kind: 'alight', mode, stepIndex: 1, stop: { name: 'Merkez' }, action: 'durağında in', time: '10:28' },
+    ]);
+  }
+});
+
+test('summarizes duration, walking, transfers and scheduled times for each alternative', () => {
+  const { getItinerarySummary } = presentation;
+  assert.equal(typeof getItinerarySummary, 'function');
+  assert.deepEqual(getItinerarySummary(itinerary), {
+    duration: '24 dk', walking: '11 dk yürüme', transfers: 'Aktarmasız', departureTime: '10:00', arrivalTime: '10:24',
+  });
+  assert.equal(getItinerarySummary({ ...itinerary, transferCount: 1 }).transfers, '1 aktarma');
+  assert.equal(getItinerarySummary({ ...itinerary, transferCount: 2 }).transfers, '2 aktarma');
 });
 
 test('uses plain stop names for external or invalid canonical URLs', () => {
@@ -72,14 +114,17 @@ test('uses plain stop names for external or invalid canonical URLs', () => {
   for (const canonicalUrl of [
     'https://elsewhere.example/durak', '//hizliulasim.com/durak', '/\\elsewhere.example/durak',
     'javascript:alert(1)', 'https://hizliulasim.com@elsewhere.example/durak',
+    'https://hizliulasim.com/otobus-duraklari/carsi', '/otobus-duraklari/%2Fcarsi-123456',
+    '/otobus-duraklari/carsi-123456?redirect=/yol-tarifi',
+    'https://hizliulasim.com/otobus-duraklari/beylerbeyi-219312',
+    'https://hizliulasim.com/otobus-hatlari/25g',
   ]) {
     const items = buildTimelineItems({
       ...itinerary,
       steps: [{ ...step, board: { ...step.board, contentLink: { title: 'Çarşı Durağı', canonicalUrl } } }],
     });
-    assert.deepEqual(items[0], {
-      kind: 'board', mode: 'bus', stepIndex: 0, lineCode: '25G', stop: { name: 'Çarşı' },
-    }, canonicalUrl);
+    assert.equal(items[0].kind, 'board');
+    assert.deepEqual(items[0].stop, { name: 'Çarşı' }, canonicalUrl);
   }
 });
 

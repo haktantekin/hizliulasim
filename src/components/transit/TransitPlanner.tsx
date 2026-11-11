@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useReducer, type Dispatch } from 'react';
-import { ArrowLeftRight, Clock } from 'lucide-react';
+import { ArrowLeftRight } from 'lucide-react';
 import { requestTransitRoutes, TransitRouteError } from '@/lib/transit/client';
 import {
   createPlannerState,
@@ -14,9 +14,12 @@ import {
   type PlannerRoute,
 } from '@/lib/transit/presentation';
 import type { PlannerLocation, ShareablePlannerState } from '@/lib/transit/share-url';
+import TransitAlternatives from './TransitAlternatives';
+import TransitItinerary from './TransitItinerary';
 import TransitLocationField from './TransitLocationField';
 import TransitPlannerOptions from './TransitPlannerOptions';
 import TransitPlannerStatus from './TransitPlannerStatus';
+import TransitSummary from './TransitSummary';
 
 export interface TransitPlannerProps {
   variant: 'full' | 'home' | 'detail';
@@ -192,27 +195,19 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
         onRetry={() => dispatch({ type: 'retry-route' })}
       />
       {route.kind === 'success' && activeItinerary && (
-        <div className="space-y-2">
-          {route.alternatives.length > 1 && (
-            <div role="group" aria-label="Rota alternatifleri" className="flex flex-wrap gap-2">
-              {route.alternatives.map((itinerary, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  aria-pressed={index === route.selectedAlternative}
-                  onClick={() => dispatch({ type: 'select-alternative', index })}
-                  className="min-h-10 rounded-lg border border-gray-200 px-3 text-sm focus-visible:outline-2 focus-visible:outline-brand-soft-blue aria-pressed:border-brand-soft-blue aria-pressed:bg-brand-light-blue/40"
-                >
-                  {index + 1}. rota · {itinerary.durationMinutes} dk
-                </button>
-              ))}
+        <div className="grid gap-2">
+          {route.alternatives.length > 1 ? (
+            <TransitAlternatives
+              alternatives={route.alternatives}
+              selectedAlternative={route.selectedAlternative}
+              onSelect={(index) => dispatch({ type: 'select-alternative', index })}
+            />
+          ) : (
+            <div className="rounded-xl bg-brand-light-blue/30 p-3">
+              <TransitSummary itinerary={activeItinerary} />
             </div>
           )}
-          <p className="flex flex-wrap items-center gap-2 rounded-xl bg-brand-light-blue/30 p-3 text-sm text-brand-soft-blue">
-            <Clock aria-hidden="true" className="size-4" />
-            <strong>{activeItinerary.durationMinutes} dk</strong>
-            <span>{activeItinerary.departureTime} → {activeItinerary.arrivalTime}</span>
-          </p>
+          <TransitItinerary itinerary={activeItinerary} compact={compact} />
         </div>
       )}
     </div>

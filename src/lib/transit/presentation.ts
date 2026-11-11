@@ -1,3 +1,4 @@
+import { BROKEN_DURAK_SLUGS } from '../../broken-redirects.ts';
 import type { RoutePreference, TransitBoardingPoint, TransitItinerary, TransitMode } from './contracts.ts';
 import { coordinatesInRouteSearchArea } from './route-search-area.ts';
 import type { PlannerLocation, ShareablePlannerState } from './share-url.ts';
@@ -16,43 +17,76 @@ const modes = {
 export type ModePresentation = (typeof modes)[TransitMode];
 
 type RideMode = Exclude<TransitMode, 'walking'>;
-type TimelineStop = { name: string; href?: string };
+export type TimelineStop = { name: string; href?: string };
 
-export type TimelineItem = { stepIndex: number } & (
-  | { kind: 'walk'; mode: 'walking'; durationMinutes: number }
-  | { kind: 'board'; mode: RideMode; lineCode: string; stop: TimelineStop }
-  | { kind: 'alight'; mode: RideMode; stop: TimelineStop }
+export type TimelineItem = { stepIndex: number; time: string } & (
+  | { kind: 'walk'; mode: 'walking'; durationMinutes: number; instruction: string }
+  | { kind: 'board'; mode: RideMode; lineCode: string; vehicle: string; stop: TimelineStop; action: string; stopCountLabel: string }
+  | { kind: 'alight'; mode: RideMode; stop: TimelineStop; action: string }
 );
 
+const boardingVehicles: Record<RideMode, string> = {
+  bus: 'otobüsüne',
+  metro: 'metrosuna',
+  tram: 'tramvayına',
+  rail: 'trenine',
+  ferry: 'vapuruna',
+  funicular: 'fünikülerine',
+  minibus: 'minibüsüne',
+};
+
 const siteOrigin = 'https://hizliulasim.com';
+const canonicalStopPath = /^\/otobus-duraklari\/([a-z0-9]+(?:-[a-z0-9]+)*-[0-9]+)$/;
 
 export function getModePresentation(mode: TransitMode): ModePresentation {
   return modes[mode];
 }
 
-function getStopLabel(point: TransitBoardingPoint): TimelineStop {
-  const label: TimelineStop = { name: point.name };
-  const href = point.contentLink?.canonicalUrl;
-  if (typeof href !== 'string' || /[\s\\\p{Cc}?#]/u.test(href)) return label;
+export function getCanonicalStopHref(href: string | undefined): string | undefined {
+  if (typeof href !== 'string' || href.trim() !== href) return undefined;
 
   const path = href.startsWith(`${siteOrigin}/`) ? href.slice(siteOrigin.length) : href;
-  if (!path.startsWith('/') || path.startsWith('//')) return label;
-  const url = new URL(path, siteOrigin);
-  if (url.origin === siteOrigin && url.pathname === path && url.pathname !== '/') label.href = href;
-  return label;
+  const match = canonicalStopPath.exec(path);
+  return match && !BROKEN_DURAK_SLUGS.has(match[1]) ? href : undefined;
+}
+
+function getStopLabel(point: TransitBoardingPoint): TimelineStop {
+  const href = getCanonicalStopHref(point.contentLink?.canonicalUrl);
+  return href ? { name: point.name, href } : { name: point.name };
 }
 
 export function buildTimelineItems(itinerary: TransitItinerary): TimelineItem[] {
   return itinerary.steps.flatMap<TimelineItem>((step, stepIndex) => {
     if (step.kind === 'walk') {
-      return { kind: 'walk', mode: step.mode, stepIndex, durationMinutes: step.durationMinutes };
+      return {
+        kind: 'walk', mode: step.mode, stepIndex, durationMinutes: step.durationMinutes,
+        time: step.departureTime, instruction: `${step.durationMinutes} dk yürü`,
+      };
     }
 
     return [
-      { kind: 'board', mode: step.mode, stepIndex, lineCode: step.lineCode, stop: getStopLabel(step.board) },
-      { kind: 'alight', mode: step.mode, stepIndex, stop: getStopLabel(step.alight) },
+      {
+        kind: 'board', mode: step.mode, stepIndex, lineCode: step.lineCode, stop: getStopLabel(step.board),
+        vehicle: boardingVehicles[step.mode], action: 'durağında bin', time: step.departureTime,
+        stopCountLabel: `${step.stopCount} durak`,
+      },
+      {
+        kind: 'alight', mode: step.mode, stepIndex, stop: getStopLabel(step.alight),
+        action: 'durağında in', time: step.arrivalTime,
+      },
     ];
   });
+}
+
+export function getItinerarySummary(itinerary: TransitItinerary) {
+  const { durationMinutes, walkingMinutes, transferCount, departureTime, arrivalTime } = itinerary;
+  return {
+    duration: `${durationMinutes} dk`,
+    walking: `${walkingMinutes} dk yürüme`,
+    transfers: transferCount === 0 ? 'Aktarmasız' : `${transferCount} aktarma`,
+    departureTime,
+    arrivalTime,
+  };
 }
 
 export type PlannerEndpointRole = 'origin' | 'destination';
