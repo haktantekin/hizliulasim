@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { test, type TestContext } from 'node:test';
-import { parseManifest, type TransitConnection, type TransitManifest, type TransitTransfer } from './contracts.ts';
+import { parseManifest, type TransitConnection, type TransitManifest, type TransitStop, type TransitTransfer } from './contracts.ts';
 import type { ServiceDay } from './service-calendar.ts';
 import { loadActiveSnapshot } from './snapshot-source.ts';
 import { manifestFixture } from './test-fixtures.ts';
@@ -12,7 +12,7 @@ import {
   scanTransitConnections,
   type DatedConnection,
   type JourneySegment,
-  type RouterQuery,
+  type RouterInput,
 } from './router.ts';
 
 const serviceClass = 'a'.repeat(64);
@@ -44,14 +44,16 @@ function walk(stopId: string, distanceMeters = 0, walkingSeconds = 0) {
   return { stopId, distanceMeters, walkingSeconds };
 }
 
-function query(overrides: Partial<RouterQuery> = {}): RouterQuery {
+type QueryFixture = Omit<RouterInput, 'connections'>;
+
+function query(overrides: Partial<QueryFixture> = {}): QueryFixture {
   return {
     departureAt, origin: [41, 29], destination: [41.01, 29],
     access: [walk('A')], egress: [walk('Z')], ...overrides,
   };
 }
 
-function journey(connections: DatedConnection[], overrides?: Partial<RouterQuery>): JourneySegment[] {
+function journey(connections: DatedConnection[], overrides?: Partial<QueryFixture>): JourneySegment[] {
   const result = scanTransitConnections({ ...query(overrides), connections });
   assert.equal(result.status, 'ok');
   return result.journeys[0];
@@ -61,7 +63,7 @@ function trips(segments: JourneySegment[]) {
   return segments.flatMap((segment) => segment.kind === 'ride' ? [segment.tripId] : []);
 }
 
-function noRoute(connections: DatedConnection[], overrides?: Partial<RouterQuery>) {
+function noRoute(connections: DatedConnection[], overrides?: Partial<QueryFixture>) {
   assert.equal(scanTransitConnections({ ...query(overrides), connections }).status, 'no-route');
 }
 
@@ -166,6 +168,63 @@ test('preserves incomparable arrival labels whose walking and readiness differ',
   })), ['walk-less', 'change']);
 });
 
+test('keeps an offboard arrival that can visit a stop another arrival already visited', () => {
+  const connections = [ride('early', 'A', 'B', 30, 80), ride('via-X', 'X', 'B', 40, 90),
+    ride('middle', 'B', 'A', 150, 200, { dropOffType: 1 }),
+    ride('middle', 'A', 'Z', 200, 300, { pickupType: 1, stopSequence: 1, arrivalStopSequence: 2 })];
+  assert.deepEqual(trips(journey(connections, { access: [walk('A'), walk('X')] })), ['via-X', 'middle']);
+  assert.deepEqual(scanTransitConnections({ ...query({ access: [walk('A'), walk('X')], limits: { maxLabelsPerStop: 1 } }),
+    connections }), { status: 'budget-exceeded', budget: 'stop-labels' });
+});
+
+test('keeps a tied onboard arrival that can ride through a stop another arrival already visited', () => {
+  const connections = [ride('T', 'A', 'B', 30, 60),
+    ride('T', 'B', 'C', 70, 110, { dropOffType: 1, stopSequence: 1, arrivalStopSequence: 2 }),
+    ride('T', 'C', 'A', 120, 150, { pickupType: 1, dropOffType: 1, stopSequence: 2, arrivalStopSequence: 3 }),
+    ride('T', 'A', 'Z', 160, 200, { pickupType: 1, stopSequence: 3, arrivalStopSequence: 4 })];
+  const segments = journey(connections, { access: [walk('A'), walk('B')] });
+  const segment = segments[1];
+  assert.ok(segment.kind === 'ride');
+  assert.deepEqual(segment.stopIds, ['B', 'C', 'A', 'Z']);
+});
+
+test('keeps equal stop histories when the dated trips already boarded differ', () => {
+  const connections = [ride('T', 'A', 'B', 30, 80), ride('other', 'A', 'B', 40, 90),
+    ride('T', 'B', 'A', 85, 110, { pickupType: 1, stopSequence: 1, arrivalStopSequence: 2 }),
+    ride('T', 'A', 'C', 110, 290, { pickupType: 1, stopSequence: 2, arrivalStopSequence: 3 }),
+    ride('connector', 'B', 'C', 150, 200),
+    ride('T', 'C', 'Z', 290, 350, { stopSequence: 3, arrivalStopSequence: 4 })];
+  assert.deepEqual(trips(journey(connections)), ['other', 'connector', 'T']);
+});
+
+test('preserves zero-time dated edges through restricted stops within a positive-duration ride', () => {
+  const connections = [ride('T', 'A', 'B', 30, 100, { dropOffType: 1 }),
+    ride('T', 'B', 'C', 100, 100, { pickupType: 1, dropOffType: 1, stopSequence: 1, arrivalStopSequence: 2 }),
+    ride('T', 'C', 'Z', 100, 200, { pickupType: 1, stopSequence: 2, arrivalStopSequence: 3 })];
+  const segment = journey(connections)[1];
+  assert.ok(segment.kind === 'ride');
+  assert.deepEqual(segment.stopIds, ['A', 'B', 'C', 'Z']);
+  assert.equal(segment.arrivalEpochMs - segment.departureEpochMs, 170_000);
+});
+
+test('preserves a zero-time stop-sequence advance at the same physical stop', () => {
+  const connections = [ride('T', 'A', 'B', 30, 100, { dropOffType: 1 }),
+    ride('T', 'B', 'B', 100, 100, { pickupType: 1, dropOffType: 1, stopSequence: 1, arrivalStopSequence: 2 }),
+    ride('T', 'B', 'Z', 100, 200, { pickupType: 1, stopSequence: 2, arrivalStopSequence: 3 })];
+  const segment = journey(connections)[1];
+  assert.ok(segment.kind === 'ride');
+  assert.deepEqual(segment.stopIds, ['A', 'B', 'Z']);
+  assert.equal(segment.arrivalStopSequence, 3);
+});
+
+test('allows a through passenger to alight after a zero-time edge at the horizon', () => {
+  const connections = [ride('T', 'A', 'B', 30, 100, { dropOffType: 1 }),
+    ride('T', 'B', 'Z', 100, 100, { pickupType: 1, stopSequence: 1, arrivalStopSequence: 2 })];
+  const segment = journey(connections, { limits: { horizonSeconds: 100 } })[1];
+  assert.ok(segment.kind === 'ride');
+  assert.deepEqual(segment.stopIds, ['A', 'B', 'Z']);
+});
+
 test('ranks the same capped set by each preference and deduplicates repeated connections', () => {
   const connections = [ride('fast', 'A', 'F', 100, 200), ride('fast-change', 'F', 'Z', 260, 300),
     ride('walk-less', 'X', 'L', 30, 200), ride('walk-less-change', 'L', 'M', 260, 300),
@@ -197,7 +256,7 @@ test('exposes per-stop and total label budget exhaustion', () => {
 });
 
 test('rejects over-cap limit overrides', () => {
-  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxLabelsPerStop: 9 },
+  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 65 }, { maxLabelsPerStop: 9 },
     { maxTotalLabels: 100001 }, { maxAlternatives: 4 }, { wallTimeMs: 1501 }]) {
     assert.throws(() => scanTransitConnections({ ...query({ limits }), connections: [] }), RangeError);
   }
@@ -211,10 +270,27 @@ function bucket(id: string, serviceHour: number) {
   return `${id}-${String(serviceHour).padStart(2, '0')}`;
 }
 
+const stopGrids: Record<string, TransitStop[]> = {
+  '4100_2900': [
+    { stopId: 'A', latitude: 41, longitude: 29, name: 'A', stopCode: null },
+    { stopId: 'B', latitude: 41.0097, longitude: 29, name: 'B', stopCode: null },
+    { stopId: 'X', latitude: 41.003, longitude: 29, name: 'X', stopCode: null },
+    { stopId: 'Y', latitude: 41.005, longitude: 29, name: 'Y', stopCode: null },
+  ],
+  '4101_2900': [
+    { stopId: 'C', latitude: 41.0102, longitude: 29, name: 'C', stopCode: null },
+    { stopId: 'Z', latitude: 41.012, longitude: 29, name: 'Z', stopCode: null },
+  ],
+};
+
 function publishedManifest(): TransitManifest {
   const fixture = parseManifest(structuredClone(manifestFixture));
-  const path = fixture.indexes.stops['0'];
-  fixture.indexes.stops = Object.fromEntries(['A', 'B', 'C', 'X', 'Y', 'Z'].map((id) => [id, path]));
+  fixture.indexes.stops = {};
+  for (const [cell, stops] of Object.entries(stopGrids)) {
+    const stopPath = fixture.indexes.stopGrid[cell] = `stops-grid/${hash(cell)}.json.gz`;
+    fixture.indexes.transfers[cell] = `transfers/${hash(cell)}.json.gz`;
+    for (const stop of stops) fixture.indexes.stops[stop.stopId] = stopPath;
+  }
   fixture.indexes.connectionBuckets = {};
   delete fixture.files[`connections/${bucket(serviceClass, 25)}.json.gz`];
   fixture.serviceDateRange = { start: '2026-11-08', end: '2026-11-15' };
@@ -247,13 +323,21 @@ function publishedStorage(t: TestContext) {
     return file === undefined ? new Response(null, { status: 404 }) : new Response(new Blob([typeof file === 'string' ? file : new Uint8Array(file)]));
   });
 
-  function publish(manifest: TransitManifest, version: string, payloads: Record<string, unknown>) {
+  function publish(manifest: TransitManifest, version: string, payloads: Record<string, unknown>,
+    transferEdges: readonly TransitTransfer[] = []) {
     manifest.version = version;
     const payloadsByPath = { ...Object.fromEntries(Object.entries(payloads).map(([key, payload]) => {
       const path = `connections/${key}.json.gz`;
       manifest.indexes.connectionBuckets[key] = path;
       return [path, payload];
-    })), 'content-links.json.gz': { schemaVersion: 1, links: {} } };
+    })), 'content-links.json.gz': { schemaVersion: 1, links: {} } } as Record<string, unknown>;
+    for (const [cell, stops] of Object.entries(stopGrids)) {
+      const stopPath = manifest.indexes.stopGrid[cell];
+      payloadsByPath[stopPath] = { cell, precision: 0.01, stops };
+      payloadsByPath[manifest.indexes.transfers[cell]] = {
+        cell, transfers: transferEdges.filter((edge) => manifest.indexes.stops[edge.fromStopId] === stopPath),
+      };
+    }
     for (const [path, payload] of Object.entries(payloadsByPath)) {
       const data = gzipSync(JSON.stringify(payload));
       files.set(`versions/${version}/${path}`, data);
@@ -368,6 +452,88 @@ test('rejects overlapping edges for the same dated trip across buckets', async (
   await assert.rejects(routeTransitSnapshot(await loadActiveSnapshot(), query()), { code: 'INVALID_SHARD' });
 });
 
+test('validates pre-query edges of a loaded dated trip before clipping to the request', async (t) => {
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'clipped_overlap', {
+    [bucket(serviceClass, 8)]: { connections: [
+      connection('T', 'A', 'B', 8 * hour + 14 * 60, 8 * hour + 17 * 60),
+      connection('T', 'B', 'Z', 8 * hour + 16 * 60, 8 * hour + 20 * 60, { stopSequence: 1, arrivalStopSequence: 2 }),
+    ] },
+  });
+  await assert.rejects(routeTransitSnapshot(await loadActiveSnapshot(), query({
+    departureAt: new Date('2026-11-11T05:15:00Z'), access: [walk('B')],
+  })), { code: 'INVALID_SHARD' });
+});
+
+test('reads a horizon-boundary bucket for a zero-time alighting edge', async (t) => {
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'horizon_alighting', {
+    [bucket(serviceClass, 8)]: { connections: [connection('T', 'A', 'B', 9 * hour - 120, 9 * hour, { dropOffType: 1 })] },
+    [bucket(serviceClass, 9)]: { connections: [connection('T', 'B', 'Z', 9 * hour, 9 * hour,
+      { pickupType: 1, stopSequence: 1, arrivalStopSequence: 2 })] },
+  });
+  const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ limits: { horizonSeconds: hour } }));
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(trips(result.journeys[0]), ['T']);
+  assert.equal(result.journeys[0].at(-1)?.arrivalEpochMs, +departureAt + hour * 1000);
+});
+
+test('requires the producer bucket sort tuple before routing or clipping records', async (t) => {
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'unordered_bucket', {
+    [bucket(serviceClass, 8)]: { connections: [
+      connection('Z-first', 'A', 'Z', 8 * hour + 30, 8 * hour + 60),
+      connection('A-second', 'A', 'Z', 8 * hour + 30, 8 * hour + 60),
+    ] },
+  });
+  await assert.rejects(routeTransitSnapshot(await loadActiveSnapshot(), query()), { code: 'INVALID_SHARD' });
+});
+
+const stationTransfer: TransitTransfer = {
+  fromStopId: 'B', toStopId: 'C', distanceMeters: 56, seconds: 111,
+  evidence: { type: 'source', reference: 'fixture-station' },
+};
+
+const transferConnections = { [bucket(serviceClass, 8)]: { connections: [
+  connection('T1', 'A', 'B', 8 * hour + 30, 8 * hour + 100),
+  connection('T2', 'C', 'Z', 8 * hour + 211, 8 * hour + 300),
+] } };
+
+test('loads the intermediate transfer and its stop grids from the captured snapshot', async (t) => {
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'pinned_transfer', transferConnections, [stationTransfer]);
+  const snapshot = await loadActiveSnapshot();
+  storage.publish(publishedManifest(), 'new_pointer', transferConnections);
+  const result = await routeTransitSnapshot(snapshot, query());
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(trips(result.journeys[0]), ['T1', 'T2']);
+  assert.deepEqual(result.journeys[0][2], {
+    kind: 'walk', role: 'transfer', fromStopId: 'B', toStopId: 'C', distanceMeters: 56, walkingSeconds: 51,
+    departureEpochMs: +departureAt + 100_000, arrivalEpochMs: +departureAt + 211_000, evidence: stationTransfer.evidence,
+  });
+  const transferReads = storage.reads.filter((path) => path.includes('/transfers/'));
+  assert.deepEqual(transferReads, [`versions/pinned_transfer/transfers/${hash('4100_2900')}.json.gz`,
+    `versions/pinned_transfer/transfers/${hash('4101_2900')}.json.gz`]);
+  assert.equal(result.diagnostics.transferShards, 2);
+});
+
+test('ignores a caller-provided transfer absent from the pinned snapshot', async (t) => {
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'no_published_transfer', transferConnections);
+  const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ transfers: [stationTransfer] }));
+  assert.equal(result.status, 'no-route');
+});
+
+test('returns a transfer-shard budget result when an intermediate expansion needs another cell', async (t) => {
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'transfer_budget', transferConnections, [stationTransfer]);
+  const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ limits: { maxTransferShards: 1 } }));
+  assert.equal(result.status, 'budget-exceeded');
+  assert.equal(result.status === 'budget-exceeded' && result.budget, 'transfer-shards');
+  assert.equal(result.diagnostics.transferShards, 1);
+  assert.equal(storage.reads.filter((path) => path.includes('/transfers/')).length, 1);
+});
+
 test('counts intersecting dated buckets and aborts a request with a depleted bucket budget', async (t) => {
   const storage = publishedStorage(t);
   storage.publish(publishedManifest(), 'bucket_budget', {
@@ -377,7 +543,7 @@ test('counts intersecting dated buckets and aborts a request with a depleted buc
   });
   const snapshot = await loadActiveSnapshot();
   assert.deepEqual(await routeTransitSnapshot(snapshot, query({ limits: { maxBuckets: 1, horizonSeconds: 2 * hour } })),
-    { status: 'budget-exceeded', budget: 'buckets' });
+    { status: 'budget-exceeded', budget: 'buckets', diagnostics: { connectionBuckets: 1, connectionShards: 1, transferShards: 1 } });
   const result = await routeTransitSnapshot(snapshot, query({ limits: { maxBuckets: 2, horizonSeconds: 2 * hour } }));
   assert.equal(result.status, 'ok');
   assert.deepEqual(trips(result.journeys[0]), ['T', 'T2']);
@@ -394,7 +560,8 @@ test('applies the monotonic deadline across shard reads', async (t) => {
   storage.onRead((path) => { if (path.endsWith(`${key}.json.gz`)) elapsed = 20; });
   const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ limits: { wallTimeMs: 20 } }),
     { clock: () => elapsed });
-  assert.deepEqual(result, { status: 'budget-exceeded', budget: 'timeout' });
+  assert.deepEqual(result, { status: 'budget-exceeded', budget: 'timeout',
+    diagnostics: { connectionBuckets: 1, connectionShards: 1, transferShards: 0 } });
 });
 
 test('returns on timeout even while a shard read is pending', async (t) => {
@@ -407,8 +574,9 @@ test('returns on timeout even while a shard read is pending', async (t) => {
   const stalled = new Promise<void>((resolve) => { release = resolve; });
   storage.onRead((path) => path.endsWith(`${key}.json.gz`) ? stalled : undefined);
   try {
-    assert.deepEqual(await routeTransitSnapshot(await loadActiveSnapshot(), query({ limits: { wallTimeMs: 10 } })),
-      { status: 'budget-exceeded', budget: 'timeout' });
+    const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ limits: { wallTimeMs: 50 } }));
+    assert.equal(result.status, 'budget-exceeded');
+    assert.equal(result.status === 'budget-exceeded' && result.budget, 'timeout');
   } finally {
     release();
   }
