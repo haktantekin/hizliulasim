@@ -102,6 +102,35 @@ test('uses local noon on the spring offset change date to anchor GTFS times', ()
   assert.equal(serviceTimeToEpochMs(serviceDay, 12 * 3600), Date.parse('2015-03-29T09:00:00Z'));
 });
 
+test('includes Sunday service on Saturday night once the spring-transition anchor has occurred', () => {
+  const historical = { ...manifest, serviceDateRange: { start: '2015-01-01', end: '2015-12-31' } };
+  const before = getServiceContext(new Date('2015-03-28T20:59:59.999Z'), historical);
+  assert.equal(before.serviceDays.some((day) => day.serviceDate === '2015-03-29'), false);
+
+  const atAnchor = getServiceContext(new Date('2015-03-28T21:00:00Z'), historical);
+  assert.equal(atAnchor.serviceDays[0].serviceDate, '2015-03-29');
+  assert.equal(atAnchor.serviceDays[0].departureSeconds, 0);
+
+  const context = getServiceContext(new Date('2015-03-28T21:30:00Z'), historical);
+  assert.equal(context.serviceDate, '2015-03-28');
+  assert.equal(context.localDepartureSeconds, 23.5 * 3600);
+  assert.deepEqual(context.serviceDays.map(({ serviceDate, departureSeconds }) => [serviceDate, departureSeconds]), [
+    ['2015-03-29', 1800],
+    ['2015-03-28', 84600],
+    ['2015-03-27', 171000],
+    ['2015-03-26', 257400],
+  ]);
+  assert.equal(serviceTimeToEpochMs(context.serviceDays[0], 1800), context.departureEpochMs);
+});
+
+test('excludes an anchored next service date past the manifest coverage end', () => {
+  const historical = { ...manifest, serviceDateRange: { start: '2015-01-01', end: '2015-03-28' } };
+  const context = getServiceContext(new Date('2015-03-28T21:30:00Z'), historical);
+  assert.deepEqual(context.serviceDays.map(({ serviceDate }) => serviceDate), [
+    '2015-03-28', '2015-03-27', '2015-03-26',
+  ]);
+});
+
 test('includes Friday 71:30 service at Monday 00:30 after the spring offset change', () => {
   const historical = { ...manifest, serviceDateRange: { start: '2015-01-01', end: '2015-12-31' } };
   const context = getServiceContext(new Date('2015-03-29T21:30:00Z'), historical);

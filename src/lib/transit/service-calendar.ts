@@ -77,10 +77,12 @@ export function getServiceContext(departureAt: Date, manifest: TransitManifest):
   if (local.date < start || local.date > end) return context;
 
   const departureCivilDate = civilDateNumber(local.date);
-  // An offset increase can bring late service from three civil dates ago inside 72 elapsed hours.
-  for (let daysAgo = 0; daysAgo <= maxServiceSeconds / secondsPerDay; daysAgo++) {
-    const civilDate = new Date(departureCivilDate - daysAgo * millisecondsPerDay);
+  // An offset increase can anchor the next date before midnight.
+  // It can also bring service from three civil dates ago inside 72 elapsed hours.
+  for (let dayOffset = 1; dayOffset >= -maxServiceSeconds / secondsPerDay; dayOffset--) {
+    const civilDate = new Date(departureCivilDate + dayOffset * millisecondsPerDay);
     const serviceDate = civilDate.toISOString().slice(0, 10);
+    if (serviceDate > end) continue;
     if (serviceDate < start) break;
     const anchorEpochMs = gtfsDayAnchor(civilDate.getTime());
     const departureSeconds = (departureEpochMs - anchorEpochMs) / 1000;
