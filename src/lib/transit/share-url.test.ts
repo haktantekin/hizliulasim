@@ -28,6 +28,17 @@ test('shares both endpoints with Turkish labels, bounded precision and the selec
   });
 });
 
+test('preserves the planner state when URLSearchParams has no size value', (t) => {
+  t.mock.getter(URLSearchParams.prototype, 'size', () => undefined);
+
+  const url = new URL(buildTransitPlannerUrl(state), 'https://hizliulasim.com');
+  assert.deepEqual(parseTransitPlannerUrl(url.searchParams), {
+    ...state,
+    origin: { ...state.origin, latitude: 41.06079, longitude: 28.98765 },
+    destination: { ...state.destination, latitude: 40.99069, longitude: 29.02123 },
+  });
+});
+
 test('serializes only the known share fields and bounds display labels', () => {
   const url = buildTransitPlannerUrl({
     ...state,

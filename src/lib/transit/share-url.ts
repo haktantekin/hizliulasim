@@ -86,7 +86,8 @@ export function buildTransitPlannerUrl(state: ShareablePlannerState): string {
   if (departureAt) params.set('t', departureAt);
   if (isPreference(state.preference)) params.set('p', state.preference);
   if (isAlternativeIndex(state.selectedAlternative)) params.set('a', String(state.selectedAlternative));
-  return params.size ? `/yol-tarifi?${params}` : '/yol-tarifi';
+  const query = params.toString();
+  return query ? `/yol-tarifi?${query}` : '/yol-tarifi';
 }
 
 export function parseTransitPlannerUrl(params: URLSearchParams): Partial<ShareablePlannerState> {
