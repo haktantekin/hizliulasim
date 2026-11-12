@@ -5,6 +5,7 @@ import { DEFAULT_ROUTER_LIMITS, getStartupConnectionPaths, routeTransitSnapshot,
 import { loadActiveSnapshotWithPreflight, TransitSnapshotError } from '../../../../lib/transit/snapshot-source.ts';
 import { estimateWalk, findNearbyStops, getNearbyStopGridPaths, loadNearbyStopGrid,
   type NearbyStop } from '../../../../lib/transit/spatial.ts';
+import { requestGoogleWalkingItinerary, WalkingRouteError } from '../../../../lib/transit/walking-route.ts';
 
 const errors = {
   INVALID_REQUEST: { status: 400, message: 'Konum, kalkış zamanı veya rota tercihi geçersiz.' },
@@ -45,6 +46,7 @@ interface RouteHandlerOptions {
   clock?: () => number;
   limits?: Partial<RouterLimits>;
   log?: (entry: object) => void;
+  walkingRoute?: (query: ReturnType<typeof parseRouteRequest>, signal: AbortSignal) => Promise<TransitItinerary>;
 }
 
 export function createTransitRouteHandler({
@@ -52,6 +54,7 @@ export function createTransitRouteHandler({
   clock = () => performance.now(),
   limits = {},
   log = (entry) => { process.stdout.write(`${JSON.stringify(entry)}\n`); },
+  walkingRoute = (query, signal) => requestGoogleWalkingItinerary(query, { signal }),
 }: RouteHandlerOptions = {}) {
   const wallTimeMs = limits.wallTimeMs === undefined ? DEFAULT_ROUTER_LIMITS.wallTimeMs : limits.wallTimeMs;
   const maxAlternatives = limits.maxAlternatives ?? DEFAULT_ROUTER_LIMITS.maxAlternatives;
@@ -103,6 +106,15 @@ export function createTransitRouteHandler({
       }
 
       checkTime();
+      if (query.travelMode === 'walking') {
+        const itinerary = await walkingRoute(query, abort.signal);
+        checkTime();
+        version = itinerary.metadata.dataVersion;
+        alternatives = 1;
+        return json({ itineraries: [itinerary], metadata: { dataVersion: version, usedFallback: false },
+          diagnostics: { ...diagnostics, originCandidates: 0, destinationCandidates: 0 } });
+      }
+
       const points = [query.origin, query.destination];
       const snapshot = await loadActiveSnapshotWithPreflight((manifest) => [
         ...getNearbyStopGridPaths(manifest, points).values(),
@@ -154,6 +166,7 @@ export function createTransitRouteHandler({
       return await Promise.race([run(), timeout]);
     } catch (error) {
       if (error === deadlineError || expired()) return fail('ROUTE_TIMEOUT', 'timeout');
+      if (error instanceof WalkingRouteError) return fail(error.code, error.code);
       if (error instanceof TransitSnapshotError) return fail('DATA_UNAVAILABLE', error.code);
       return fail('DATA_UNAVAILABLE', 'INTERNAL_ERROR');
     } finally {

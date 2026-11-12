@@ -123,6 +123,29 @@ test('filters static alternatives by the requested vehicle family', async (t) =>
   await expectError(await get(routeRequest((body) => { body.travelMode = 'metro'; })), 404, 'NO_ROUTE');
 });
 
+test('delegates walking requests without reading the transit snapshot', async (t) => {
+  const { reads } = fixtureStorage(t);
+  const walkingItinerary = {
+    durationMinutes: 10, walkingMinutes: 10, transferCount: 0, departureTime: '10:00', arrivalTime: '10:10',
+    steps: [{ kind: 'walk' as const, mode: 'walking' as const, durationMinutes: 10, distanceMeters: 800,
+      departureTime: '10:00', arrivalTime: '10:10', geometryQuality: 'exact' as const,
+      geometry: [[41, 29], [41.01, 29.01]] as [number, number][] }],
+    keyPoints: [{ role: 'origin' as const, name: 'Başlangıç', coordinate: [41, 29] as [number, number] },
+      { role: 'destination' as const, name: 'Hedef', coordinate: [41.01, 29.01] as [number, number] }],
+    metadata: { dataVersion: 'google-directions', generatedAt: checkedAt, serviceDate: '2026-11-10',
+      approximateWalking: false, geometryQuality: 'exact' as const },
+  };
+  const walkingRoute = t.mock.fn(async () => walkingItinerary);
+  const { get } = routeHandler({ walkingRoute });
+
+  const response = await get(routeRequest((body) => { body.travelMode = 'walking'; }));
+
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).itineraries, [walkingItinerary]);
+  assert.equal(walkingRoute.mock.callCount(), 1);
+  assert.deepEqual(reads, []);
+});
+
 test('default route continues after the former wall-clock deadline', async (t) => {
   const storage = fixtureStorage(t);
   storage.publish('current', 'current_test');
