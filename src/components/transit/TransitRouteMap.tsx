@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Map as LeafletMap } from 'leaflet';
 import type { TransitItinerary } from '@/lib/transit/contracts';
 import { buildTransitMapModel, type TransitMapMarker } from '@/lib/transit/map-model';
+import { getTransitPathStyle, TRANSIT_BASEMAP_OPACITY } from '@/lib/transit/map-style';
 import { getModePresentation } from '@/lib/transit/presentation';
 
 export interface TransitRouteMapProps {
@@ -50,7 +51,7 @@ function addKeyPoint(leaflet: Leaflet, group: ReturnType<Leaflet['layerGroup']>,
   }
 
   const firstMode = points[0]?.mode;
-  const diameter = highlighted ? 24 : 20;
+  const diameter = highlighted ? 20 : 16;
   const dot = document.createElement('span');
   dot.className = `pointer-events-none block size-full rounded-full border-2 border-white shadow-md ${highlighted ? 'ring-2 ring-brand-soft-blue' : ''}`;
   dot.style.backgroundColor = firstMode ? getModePresentation(firstMode).color : '#304269';
@@ -121,6 +122,7 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative, 
       map = leaflet.map(container, { scrollWheelZoom: false });
       leaflet.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
+        opacity: TRANSIT_BASEMAP_OPACITY,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
       setMapState({ leaflet, map });
@@ -142,14 +144,16 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative, 
     const segments = activeSegment
       ? [...model.segments.filter(({ highlighted }) => !highlighted), activeSegment]
       : model.segments;
-    const weight = size === 'compact' ? 4 : 5;
     for (const { coordinates, color, dashed, highlighted } of segments) {
       if (coordinates.length < 2) continue;
+      const style = getTransitPathStyle({ size, dashed, highlighted, dimmed: Boolean(activeSegment) && !highlighted });
+      leaflet.polyline(coordinates, {
+        ...style.casing,
+        interactive: false,
+      }).addTo(group);
       leaflet.polyline(coordinates, {
         color,
-        weight: highlighted ? weight + 3 : weight,
-        opacity: highlighted ? 1 : activeSegment ? 0.35 : 0.85,
-        dashArray: dashed ? '6 7' : undefined,
+        ...style.route,
         interactive: false,
       }).addTo(group);
     }
