@@ -227,13 +227,14 @@ function dominates(first: ArrivalLabel, second: ArrivalLabel): boolean {
 }
 
 function retainLabel<T extends ArrivalLabel>(frontier: T[], label: T, cap: number | null,
-  canDominate: (first: T, second: T) => boolean = dominates): void {
-  if (frontier.some((other) => canDominate(other, label))) return;
+  canDominate: (first: T, second: T) => boolean = dominates): boolean {
+  if (frontier.some((other) => canDominate(other, label))) return false;
   for (let i = frontier.length - 1; i >= 0; i--) {
     if (canDominate(label, frontier[i])) frontier.splice(i, 1);
   }
   if (cap !== null && frontier.length >= cap) throw new BudgetExceeded('stop-labels');
   frontier.push(label);
+  return true;
 }
 
 interface ConnectionInstance extends SegmentTime {
@@ -371,21 +372,33 @@ class ConnectionScan {
     for (const edges of touched) edges.sort((a, b) => compareIds(a.toStopId, b.toStopId));
   }
 
-  private addLabel(stopId: string, readyEpochMs: number, boardings: number, walkingSeconds: number,
-    predecessor: ArrivalLabel | null, segment: JourneySegment, ride: RideProgress | null = null): ScanLabel {
-    if (this.labels.length >= this.limits.maxTotalLabels) throw new BudgetExceeded('total-labels');
-    const label = {
-      index: this.labels.length, stopId, arrivalEpochMs: segment.arrivalEpochMs, readyEpochMs,
+  private createLabel(stopId: string, readyEpochMs: number, boardings: number, walkingSeconds: number,
+    predecessor: ArrivalLabel | null, segment: JourneySegment, ride: RideProgress | null = null,
+    index = this.labels.length): ScanLabel {
+    return {
+      index, stopId, arrivalEpochMs: segment.arrivalEpochMs, readyEpochMs,
       boardings, walkingSeconds, predecessor: predecessor?.index ?? null, segment, ride,
     };
+  }
+
+  private commitLabel(label: ScanLabel): void {
+    if (label.index !== this.labels.length) throw new Error('Transit label index is out of sequence');
+    if (this.labels.length >= this.limits.maxTotalLabels) throw new BudgetExceeded('total-labels');
     this.labels.push(label);
+  }
+
+  private addLabel(stopId: string, readyEpochMs: number, boardings: number, walkingSeconds: number,
+    predecessor: ArrivalLabel | null, segment: JourneySegment, ride: RideProgress | null = null): ScanLabel {
+    const label = this.createLabel(stopId, readyEpochMs, boardings, walkingSeconds, predecessor, segment, ride);
+    this.commitLabel(label);
     return label;
   }
 
-  private retainAtStop(label: ScanLabel): void {
+  private retainAtStop(label: ScanLabel): boolean {
     const frontier = this.byStop.get(label.stopId) ?? [];
-    retainLabel(frontier, label, this.limits.maxLabelsPerStop, this.dominatesForContinuation);
+    const retained = retainLabel(frontier, label, this.limits.maxLabelsPerStop, this.dominatesForContinuation);
     this.byStop.set(label.stopId, frontier);
+    return retained;
   }
 
   private readonly dominatesForContinuation = (first: ScanLabel, second: ScanLabel): boolean => {
@@ -433,9 +446,9 @@ class ConnectionScan {
     retainLabel(this.destinations, label, this.limits.maxTotalLabels);
   }
 
-  alight(label: ScanLabel): void {
+  alight(label: ScanLabel): boolean {
     this.considerEgress(label);
-    this.retainAtStop(label);
+    return this.retainAtStop(label);
   }
 
   expandTransfers(label: ScanLabel): void {
@@ -486,17 +499,22 @@ class ConnectionScan {
       this.onboard.delete(key);
       return [];
     }
-    const next: ScanLabel[] = [];
+    const staged: ScanLabel[] = [];
     const segment = rideSegment(instance);
     const hasPositiveDuration = (label: ScanLabel) => label.ride !== null && label.arrivalEpochMs > label.ride.startEpochMs;
-    for (const { parent, boardings, ride } of candidates) {
-      const label = this.addLabel(toStopId, arrivalEpochMs + transferBufferSeconds * 1000,
-        boardings, parent.walkingSeconds, parent, segment, ride);
+    for (const [index, { parent, boardings, ride }] of candidates.entries()) {
+      const label = this.createLabel(toStopId, arrivalEpochMs + transferBufferSeconds * 1000,
+        boardings, parent.walkingSeconds, parent, segment, ride, -index - 1);
       // A rider needs both movement and elapsed time before an alighting can enter a journey.
-      retainLabel(next, label, candidates.length, (first, second) =>
+      retainLabel(staged, label, candidates.length, (first, second) =>
         (first.ride?.moved || !second.ride?.moved) && (!hasPositiveDuration(second) || hasPositiveDuration(first))
         && this.dominatesForContinuation(first, second));
     }
+    const next = staged.map((label) => {
+      const committed = { ...label, index: this.labels.length };
+      this.commitLabel(committed);
+      return committed;
+    });
     if (this.limits.maxLabelsPerStop !== null && next.length > this.limits.maxLabelsPerStop) {
       throw new BudgetExceeded('stop-labels');
     }
@@ -545,8 +563,7 @@ export function scanTransitConnections(input: RouterInput): RouterResult {
       if (!scan.canImprove(instance.departureEpochMs)) break;
       if (!previous || compareConnections(previous, instance) !== 0) {
         for (const label of scan.advance(instance)) {
-          scan.alight(label);
-          scan.expandTransfers(label);
+          if (scan.alight(label)) scan.expandTransfers(label);
         }
       }
       previous = instance;
@@ -747,11 +764,11 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
         const instance = pending[offset];
         if (!scan.canImprove(instance.departureEpochMs)) continue;
         const alighted = scan.advance(instance);
-        for (const label of alighted) scan.alight(label);
-        if (alighted.length > 0 && instance.arrivalEpochMs < scan.endEpochMs && scan.canImprove(instance.arrivalEpochMs)) {
+        const expandable = alighted.filter((label) => scan.alight(label));
+        if (expandable.length > 0 && instance.arrivalEpochMs < scan.endEpochMs && scan.canImprove(instance.arrivalEpochMs)) {
           const gridPath = snapshot.manifest.indexes.stops[instance.connection.toStopId];
           if (!loadedTransferCells.has(gridPath)) await loadTransfers(gridPath);
-          for (const label of alighted) scan.expandTransfers(label);
+          for (const label of expandable) scan.expandTransfers(label);
         }
       }
       pending = pending.slice(offset);

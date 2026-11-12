@@ -103,6 +103,27 @@ test('uses the producer transfer duration once and preserves the walking evidenc
   noRoute([first, ride('T2', 'C', 'Z', 210, 300)], { transfers: [transfer] });
 });
 
+test('does not spend the label budget expanding a dominated alight', () => {
+  const transfer: TransitTransfer = {
+    fromStopId: 'B', toStopId: 'C', seconds: 111, distanceMeters: 56,
+    evidence: { type: 'source', reference: 'fixture-station' },
+  };
+  const connections = [
+    ride('T', 'A', 'B', 30, 100),
+    ride('T', 'B', 'B', 110, 120, { stopSequence: 1, arrivalStopSequence: 2 }),
+    ride('T', 'B', 'B', 130, 140, { stopSequence: 2, arrivalStopSequence: 3 }),
+    ride('E', 'C', 'Z', 221, 300),
+  ];
+
+  const result = scanTransitConnections({
+    ...query({ transfers: [transfer], limits: { maxTotalLabels: 8 } }),
+    connections,
+  });
+
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(result.status === 'ok' ? trips(result.journeys[0]) : [], ['T', 'E']);
+});
+
 test('allows two changes and enforces tighter and absolute boarding caps', () => {
   const network = [ride('T1', 'A', 'B', 30, 100), ride('T2', 'B', 'C', 160, 200),
     ride('T3', 'C', 'Z', 260, 300), ride('T4', 'Z', 'Y', 360, 400)];
@@ -196,6 +217,27 @@ test('keeps equal stop histories when the dated trips already boarded differ', (
     ride('connector', 'B', 'C', 150, 200),
     ride('T', 'C', 'Z', 290, 350, { stopSequence: 3, arrivalStopSequence: 4 })];
   assert.deepEqual(trips(journey(connections)), ['other', 'connector', 'T']);
+});
+
+test('does not spend the label budget on an onboard candidate removed by dominance', () => {
+  const transfer: TransitTransfer = {
+    fromStopId: 'C', toStopId: 'D', seconds: 60, distanceMeters: 0,
+    evidence: { type: 'manual', reference: 'fixture-shortcut' },
+  };
+  const connections = [
+    ride('P', 'A', 'C', 30, 60),
+    ride('Q', 'D', 'B', 120, 150),
+    ride('P', 'C', 'B', 200, 300, { stopSequence: 1, arrivalStopSequence: 2 }),
+    ride('R', 'B', 'Z', 400, 500),
+  ];
+
+  const result = scanTransitConnections({
+    ...query({ transfers: [transfer], limits: { maxTotalLabels: 7 } }),
+    connections,
+  });
+
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(result.status === 'ok' ? trips(result.journeys[0]) : [], ['P', 'R']);
 });
 
 test('preserves zero-time dated edges through restricted stops within a positive-duration ride', () => {
