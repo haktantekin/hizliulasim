@@ -2,7 +2,7 @@ import type { TransitItinerary, TransitRouteRequest } from './contracts.ts';
 import { canonicalizeRouteCoordinates } from './route-search-area.ts';
 
 const errorMessages = {
-  INVALID_REQUEST: 'Konum, kalkış zamanı veya rota tercihi geçersiz.',
+  INVALID_REQUEST: 'Konum veya rota seçeneği geçersiz.',
   NO_ROUTE: 'Bu yolculuk için toplu taşıma rotası bulunamadı. Başlangıç veya hedefi değiştirmeyi deneyin.',
   DATA_UNAVAILABLE: 'Toplu taşıma verileri şu anda kullanılamıyor.',
   ROUTE_TIMEOUT: 'Rota araması zaman sınırına ulaştı. Tekrar deneyin.',

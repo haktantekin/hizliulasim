@@ -58,6 +58,7 @@ export default function TransitLocationField({
   }
 
   const locating = lookup.kind === 'geolocation';
+  const trailingPadding = allowCurrentLocation ? (query ? 'pr-20' : 'pr-10') : (query ? 'pr-10' : 'pr-3');
   let message = '';
   if (lookup.kind === 'search' && open) message = 'Yer aranıyor…';
   if (lookup.kind === 'suggestions' && open && suggestions.length === 0) message = 'Yer bulunamadı.';
@@ -100,18 +101,34 @@ export default function TransitLocationField({
               onFocus={() => setOpen(true)}
               onBlur={closeSuggestions}
               onKeyDown={handleKeyDown}
-              className="min-h-10 w-full rounded-xl border border-gray-200 bg-white pr-10 pl-9 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-2 focus-visible:outline-brand-soft-blue"
+              className={`min-h-10 w-full rounded-xl border border-gray-200 bg-white ${trailingPadding} pl-9 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-2 focus-visible:outline-brand-soft-blue`}
             />
-            {query && (
-              <button
-                type="button"
-                aria-label={`${label} alanını temizle`}
-                className="absolute inset-y-0 right-0 grid w-10 place-items-center rounded-xl text-gray-500 hover:text-gray-800 focus-visible:outline-2 focus-visible:outline-brand-soft-blue"
-                onClick={() => { input.current?.focus(); editLocation(''); }}
-              >
-                <X aria-hidden="true" className="size-4" />
-              </button>
-            )}
+            <div className="absolute inset-y-0 right-0 flex items-center">
+              {allowCurrentLocation && (
+                <button
+                  type="button"
+                  aria-label={`Konumum (${label})`}
+                  title="Konumumu kullan"
+                  disabled={locating}
+                  onClick={() => dispatch({ type: 'locate', role })}
+                  className="grid h-full w-10 place-items-center text-brand-soft-blue hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-brand-soft-blue disabled:opacity-60"
+                >
+                  {locating
+                    ? <Loader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+                    : <LocateFixed aria-hidden="true" className="size-4" />}
+                </button>
+              )}
+              {query && (
+                <button
+                  type="button"
+                  aria-label={`${label} alanını temizle`}
+                  className="grid h-full w-10 place-items-center rounded-r-xl text-gray-500 hover:text-gray-800 focus-visible:outline-2 focus-visible:outline-brand-soft-blue"
+                  onClick={() => { input.current?.focus(); editLocation(''); }}
+                >
+                  <X aria-hidden="true" className="size-4" />
+                </button>
+              )}
+            </div>
             {expanded && (
               <ul
                 id={listId}
@@ -140,20 +157,6 @@ export default function TransitLocationField({
           </>
         )}
       </div>
-      {allowCurrentLocation && !locked && (
-        <button
-          type="button"
-          aria-label={`Konumum (${label})`}
-          disabled={locating}
-          onClick={() => dispatch({ type: 'locate', role })}
-          className="mt-1 inline-flex min-h-8 items-center gap-1.5 rounded text-sm font-medium text-brand-soft-blue hover:underline focus-visible:outline-2 focus-visible:outline-brand-soft-blue disabled:opacity-60"
-        >
-          {locating
-            ? <Loader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
-            : <LocateFixed aria-hidden="true" className="size-4" />}
-          Konumum
-        </button>
-      )}
       <p id={statusId} role="status" className={lookup.kind === 'error' ? 'text-sm text-red-700' : 'text-sm text-gray-600'}>
         {message}
       </p>

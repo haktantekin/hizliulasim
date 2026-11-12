@@ -7,6 +7,7 @@ const state: ShareablePlannerState = {
   destination: { name: 'Kadıköy İskelesi + Rıhtım', latitude: 40.99068888, longitude: 29.02123333 },
   departureAt: '2026-11-10T07:00:00.000Z',
   preference: 'fewer-transfers',
+  travelMode: 'metro',
   selectedAlternative: 2,
 };
 
@@ -19,12 +20,12 @@ test('shares both endpoints with Turkish labels, bounded precision and the selec
   assert.deepEqual(Object.fromEntries(searchParams), {
     o: '41.06079,28.98765', on: 'Şişli & Çağlayan',
     d: '40.99069,29.02123', dn: 'Kadıköy İskelesi + Rıhtım',
-    t: '2026-11-10T07:00:00.000Z', p: 'fewer-transfers', a: '2',
+    p: 'fewer-transfers', m: 'metro', a: '2',
   });
   assert.deepEqual(parseTransitPlannerUrl(searchParams), {
     origin: { name: 'Şişli & Çağlayan', latitude: 41.06079, longitude: 28.98765 },
     destination: { name: 'Kadıköy İskelesi + Rıhtım', latitude: 40.99069, longitude: 29.02123 },
-    departureAt: '2026-11-10T07:00:00.000Z', preference: 'fewer-transfers', selectedAlternative: 2,
+    preference: 'fewer-transfers', travelMode: 'metro', selectedAlternative: 2,
   });
 });
 
@@ -33,9 +34,9 @@ test('preserves the planner state when URLSearchParams has no size value', (t) =
 
   const url = new URL(buildTransitPlannerUrl(state), 'https://hizliulasim.com');
   assert.deepEqual(parseTransitPlannerUrl(url.searchParams), {
-    ...state,
     origin: { ...state.origin, latitude: 41.06079, longitude: 28.98765 },
     destination: { ...state.destination, latitude: 40.99069, longitude: 29.02123 },
+    preference: 'fewer-transfers', travelMode: 'metro', selectedAlternative: 2,
   });
 });
 
@@ -48,7 +49,7 @@ test('serializes only the known share fields and bounds display labels', () => {
     ...{ placeId: 'opaque-upstream-id', apiKey: 'hidden' },
   });
   const params = new URL(url, 'https://hizliulasim.com').searchParams;
-  assert.deepEqual([...params.keys()].sort(), ['d', 'o', 'on', 'p', 't']);
+  assert.deepEqual([...params.keys()].sort(), ['d', 'm', 'o', 'on', 'p']);
   assert.equal(params.get('on'), 'İ🚉'.repeat(60));
   assert.equal(parseTransitPlannerUrl(params).destination?.name, 'Hedef');
 });
@@ -58,7 +59,7 @@ test('ignores missing, duplicate or invalid parameters independently', () => {
     ['o', '41,29'], ['o', '41.1,29.1'], ['on', 'Başka başlangıç'],
     ['d', '41.01,29.02'], ['dn', 'A'], ['dn', 'B'],
     ['t', state.departureAt], ['t', state.departureAt],
-    ['p', 'fastest'], ['p', 'fastest'], ['a', '1'], ['a', '1'],
+    ['p', 'fastest'], ['p', 'fastest'], ['m', 'bus'], ['m', 'bus'], ['a', '1'], ['a', '1'],
     ['key', 'opaque'],
   ]);
   assert.deepEqual(parseTransitPlannerUrl(params), {
@@ -73,11 +74,9 @@ for (const coordinate of ['41', '41,29,30', ' 41,29', '41,', 'NaN,29', '4.1e1,29
   });
 }
 
-for (const departure of ['tomorrow', '2026-11-10', '2026-11-10T07:00:00', '2026-11-31T07:00:00Z', '2099-11-10T07:00:00.000Z']) {
-  test(`rejects an invalid or unsupported departure ${departure}`, () => {
-    assert.deepEqual(parseTransitPlannerUrl(new URLSearchParams({ t: departure })), {});
-  });
-}
+test('ignores legacy departure parameters because searches always use the button click time', () => {
+  assert.deepEqual(parseTransitPlannerUrl(new URLSearchParams({ t: state.departureAt })), {});
+});
 
 test('ignores unsupported preferences and malformed or out-of-range alternative indices', () => {
   for (const a of ['-1', '3', '1.0', '01', ' 1', '1e0', '9007199254740992']) {
@@ -86,6 +85,11 @@ test('ignores unsupported preferences and malformed or out-of-range alternative 
   assert.deepEqual(parseTransitPlannerUrl(new URLSearchParams({ p: 'less-walking', a: '0' })), {
     preference: 'less-walking', selectedAlternative: 0,
   });
+});
+
+test('ignores unsupported travel modes and restores supported ones', () => {
+  assert.deepEqual(parseTransitPlannerUrl(new URLSearchParams({ m: 'car' })), {});
+  assert.deepEqual(parseTransitPlannerUrl(new URLSearchParams({ m: 'walking' })), { travelMode: 'walking' });
 });
 
 test('falls back to the endpoint label when a query label is overlong or contains a control character', () => {

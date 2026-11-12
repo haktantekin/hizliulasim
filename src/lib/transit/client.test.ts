@@ -68,11 +68,13 @@ test('requests the same coordinates before and after sharing a route near a boar
   const destination = { name: 'Hedef', latitude: 42.4999951, longitude: 30.9999949 };
   const departureAt = input.departureAt.toISOString();
   const preference = input.preference;
-  const sharedUrl = new URL(buildTransitPlannerUrl({ origin, destination, departureAt, preference }), 'https://hizliulasim.com');
+  const sharedUrl = new URL(buildTransitPlannerUrl({
+    origin, destination, departureAt, preference, travelMode: input.travelMode,
+  }), 'https://hizliulasim.com');
   assert.equal(sharedUrl.searchParams.get('o'), '41,29');
   assert.equal(sharedUrl.searchParams.get('d'), '42.5,30.99999');
   const restored = parseTransitPlannerUrl(sharedUrl.searchParams);
-  assert.ok(restored.origin && restored.destination && restored.departureAt && restored.preference);
+  assert.ok(restored.origin && restored.destination && restored.preference && restored.travelMode);
 
   await requestTransitRoutes({
     origin: [origin.latitude, origin.longitude], destination: [destination.latitude, destination.longitude],
@@ -81,7 +83,7 @@ test('requests the same coordinates before and after sharing a route near a boar
   await requestTransitRoutes({
     origin: [restored.origin.latitude, restored.origin.longitude],
     destination: [restored.destination.latitude, restored.destination.longitude],
-    departureAt: new Date(restored.departureAt), preference: restored.preference, travelMode: input.travelMode,
+    departureAt: input.departureAt, preference: restored.preference, travelMode: restored.travelMode,
   });
 
   const requestBodies = fetchRoute.mock.calls.map(({ arguments: [, init] }) => JSON.parse(String(init?.body)));

@@ -8,7 +8,7 @@ import { estimateWalk, findNearbyStops, getNearbyStopGridPaths, loadNearbyStopGr
 import { requestGoogleWalkingItinerary, WalkingRouteError } from '../../../../lib/transit/walking-route.ts';
 
 const errors = {
-  INVALID_REQUEST: { status: 400, message: 'Konum, kalkış zamanı veya rota tercihi geçersiz.' },
+  INVALID_REQUEST: { status: 400, message: 'Konum veya rota seçeneği geçersiz.' },
   NO_ROUTE: { status: 404, message: 'Bu yolculuk için toplu taşıma rotası bulunamadı.' },
   DATA_UNAVAILABLE: { status: 503, message: 'Toplu taşıma verileri şu anda kullanılamıyor.' },
   ROUTE_TIMEOUT: { status: 504, message: 'Rota araması zaman veya işlem sınırına ulaştı.' },

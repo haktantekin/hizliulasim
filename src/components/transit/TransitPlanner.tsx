@@ -118,7 +118,7 @@ function useRouteRequest(route: PlannerRoute, dispatch: Dispatch<PlannerAction>)
     if (!request) return;
     const controller = new AbortController();
     const { signal } = controller;
-    const { id, origin, destination, preference } = request;
+    const { id, origin, destination, preference, travelMode } = request;
 
     // A deferred start lets the development effect replay cancel the first setup before it sends a request.
     queueMicrotask(async () => {
@@ -130,7 +130,7 @@ function useRouteRequest(route: PlannerRoute, dispatch: Dispatch<PlannerAction>)
           destination: [destination.latitude, destination.longitude],
           departureAt,
           preference,
-          travelMode: 'transit',
+          travelMode,
         }, signal);
         if (!signal.aborted) dispatch({ type: 'route-succeeded', id, departureAt: departureAt.toISOString(), alternatives: itineraries });
       } catch (error) {
@@ -150,7 +150,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
     reducePlanner, { initialState, fixedDestination },
     (props) => createPlannerState(props.initialState, props.fixedDestination),
   );
-  const { origin, destination, destinationLocked, preference, route } = state;
+  const { origin, destination, destinationLocked, preference, travelMode, route } = state;
   useLocationLookup('origin', origin.lookup, dispatch);
   useLocationLookup('destination', destination.lookup, dispatch);
   useRouteRequest(route, dispatch);
@@ -194,12 +194,15 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
       <TransitPlannerOptions
         compact={compact}
         preference={preference}
+        travelMode={travelMode}
         onPreferenceChange={(value) => dispatch({ type: 'set-preference', preference: value })}
+        onTravelModeChange={(value) => dispatch({ type: 'set-travel-mode', travelMode: value })}
       />
       <TransitPlannerStatus
         route={route}
         canCalculate={canCalculate}
         onCancel={() => dispatch({ type: 'cancel-route' })}
+        onSubmit={() => dispatch({ type: 'submit-route', departureAt: getCurrentDepartureAt() })}
         onRetry={() => dispatch({ type: 'retry-route', departureAt: getCurrentDepartureAt() })}
       />
       {route.kind === 'success' && activeItinerary && (
@@ -235,6 +238,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
                 destination: destination.value,
                 departureAt: route.departureAt,
                 preference,
+                travelMode,
                 selectedAlternative: route.selectedAlternative,
               })}
               className="inline-flex min-h-10 items-center gap-1.5 justify-self-start rounded text-sm font-semibold text-brand-soft-blue hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue"

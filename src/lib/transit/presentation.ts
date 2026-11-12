@@ -1,5 +1,5 @@
 import { BROKEN_DURAK_SLUGS } from '../../broken-redirects.ts';
-import type { RoutePreference, TransitBoardingPoint, TransitItinerary, TransitMode } from './contracts.ts';
+import type { RoutePreference, RouteTravelMode, TransitBoardingPoint, TransitItinerary, TransitMode } from './contracts.ts';
 import { coordinatesInRouteSearchArea } from './route-search-area.ts';
 import type { PlannerLocation, ShareablePlannerState } from './share-url.ts';
 
@@ -126,6 +126,7 @@ export interface PlannerState {
   destinationLocked: boolean;
   departureAt: string;
   preference: RoutePreference;
+  travelMode: RouteTravelMode;
   requestedAlternative: number;
   route: PlannerRoute;
   serial: number;
@@ -142,6 +143,7 @@ export type PlannerAction =
   ))
   | { type: 'swap-locations' }
   | { type: 'set-preference'; preference: RoutePreference }
+  | { type: 'set-travel-mode'; travelMode: RouteTravelMode }
   | { type: 'submit-route'; departureAt: string }
   | { type: 'route-succeeded'; id: number; departureAt: string; alternatives: TransitItinerary[] }
   | { type: 'route-failed'; id: number; message: string }
@@ -183,14 +185,14 @@ function selectedEndpoint(location?: PlannerLocation, usesCurrentLocation = loca
 }
 
 function calculateRoute(state: PlannerState, departureAt: string): PlannerState {
-  const { origin, destination, preference } = state;
+  const { origin, destination, preference, travelMode } = state;
   if (!origin.value || !destination.value) return { ...state, route: { kind: 'idle' } };
   const id = state.serial + 1;
   return {
     ...state,
     serial: id,
     departureAt,
-    route: { kind: 'loading', id, origin: origin.value, destination: destination.value, departureAt, preference },
+    route: { kind: 'loading', id, origin: origin.value, destination: destination.value, departureAt, preference, travelMode },
   };
 }
 
@@ -208,6 +210,7 @@ export function createPlannerState(
     destinationLocked: fixedDestination !== undefined,
     departureAt: initialState.departureAt ?? '',
     preference: initialState.preference ?? 'fastest',
+    travelMode: initialState.travelMode ?? 'transit',
     requestedAlternative: initialState.selectedAlternative ?? 0,
     route: { kind: 'idle' },
     serial: 0,
@@ -281,6 +284,8 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
       return invalidateRoute({ ...state, origin: destination, destination: origin });
     case 'set-preference':
       return state.preference === action.preference ? state : invalidateRoute({ ...state, preference: action.preference });
+    case 'set-travel-mode':
+      return state.travelMode === action.travelMode ? state : invalidateRoute({ ...state, travelMode: action.travelMode });
     case 'submit-route':
       return calculateRoute(state, action.departureAt);
     case 'route-succeeded': {

@@ -392,6 +392,17 @@ test('changing route options invalidates results and waits for another submit', 
   assert.equal(requested.route.preference, 'less-walking');
 });
 
+test('keeps the selected travel mode idle until submit and captures it in the request', () => {
+  const initial = createPlannerState({ origin, destination });
+  assert.equal(initial.travelMode, 'transit');
+  const changed = reducePlanner(initial, { type: 'set-travel-mode', travelMode: 'metro' });
+  assert.equal(changed.route.kind, 'idle');
+  assert.equal(changed.travelMode, 'metro');
+  const requested = submit(changed);
+  assert.equal(requested.route.kind, 'loading');
+  assert.equal(requested.route.travelMode, 'metro');
+});
+
 test('exposes a current route error and clears it when retrying', () => {
   const initial = submit(createPlannerState({ origin, destination }));
   assert.equal(initial.route.kind, 'loading');
