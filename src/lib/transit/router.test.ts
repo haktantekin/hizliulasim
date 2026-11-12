@@ -240,6 +240,24 @@ test('does not spend the label budget on an onboard candidate removed by dominan
   assert.deepEqual(result.status === 'ok' ? trips(result.journeys[0]) : [], ['P', 'R']);
 });
 
+test('counts retained search labels instead of every dominated through-ride edge', () => {
+  const dwell = Array.from({ length: 20 }, (_, index) => ride('T', 'B', 'B', 110 + index * 10, 120 + index * 10, {
+    stopSequence: index + 1,
+    arrivalStopSequence: index + 2,
+  }));
+  const result = scanTransitConnections({
+    ...query({ limits: { maxTotalLabels: 5 } }),
+    connections: [
+      ride('T', 'A', 'B', 30, 100),
+      ...dwell,
+      ride('T', 'B', 'Z', 310, 400, { stopSequence: 21, arrivalStopSequence: 22 }),
+    ],
+  });
+
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(result.status === 'ok' ? trips(result.journeys[0]) : [], ['T']);
+});
+
 test('preserves zero-time dated edges through restricted stops within a positive-duration ride', () => {
   const connections = [ride('T', 'A', 'B', 30, 100, { dropOffType: 1 }),
     ride('T', 'B', 'C', 100, 100, { pickupType: 1, dropOffType: 1, stopSequence: 1, arrivalStopSequence: 2 }),
@@ -319,6 +337,19 @@ test('default scan keeps more than 32 incomparable labels at one stop', () => {
   const access = Array.from({ length: 33 }, (_, index) => walk(`X${index}`, 32 - index, 32 - index));
   const result = scanTransitConnections({
     ...query({ access }),
+    connections: [...alternatives, ride('end', 'B', 'Z', 300, 400)],
+  });
+
+  assert.equal(result.status, 'ok');
+});
+
+test('bounds metric-dominated history variants without pruning a true Pareto frontier', () => {
+  const alternatives = Array.from({ length: 40 }, (_, index) => (
+    ride(`choice-${index}`, `X${index}`, 'B', 100, 150 + index)
+  ));
+  const access = Array.from({ length: 40 }, (_, index) => walk(`X${index}`));
+  const result = scanTransitConnections({
+    ...query({ access, limits: { maxTotalLabels: 100 } }),
     connections: [...alternatives, ride('end', 'B', 'Z', 300, 400)],
   });
 
@@ -595,11 +626,36 @@ test('loads the intermediate transfer and its stop grids from the captured snaps
     departureEpochMs: +departureAt + 100_000, arrivalEpochMs: +departureAt + 211_000, evidence: stationTransfer.evidence,
   });
   const transferReads = storage.reads.filter((path) => /\/(transfers|stops-grid)\//.test(path));
-  assert.deepEqual(transferReads, [`versions/pinned_transfer/transfers/${hash('4100_2900')}.json.gz`,
+  assert.deepEqual(new Set(transferReads), new Set([
+    `versions/pinned_transfer/transfers/${hash('4100_2900')}.json.gz`,
     `versions/pinned_transfer/stops-grid/${hash('4100_2900')}.json.gz`,
     `versions/pinned_transfer/stops-grid/${hash('4101_2900')}.json.gz`,
-    `versions/pinned_transfer/transfers/${hash('4101_2900')}.json.gz`]);
+    `versions/pinned_transfer/transfers/${hash('4101_2900')}.json.gz`,
+  ]));
   assert.equal(result.diagnostics.transferShards, 4);
+});
+
+test('starts neighboring transfer cells together instead of serializing remote shard latency', async (t) => {
+  const storage = publishedStorage(t);
+  const reverse = { ...stationTransfer, fromStopId: 'C', toStopId: 'B' };
+  storage.publish(publishedManifest(), 'parallel_transfers', transferConnections, [stationTransfer, reverse]);
+  const snapshot = await loadActiveSnapshot();
+  const gate = Promise.withResolvers<void>();
+  const started = new Set<string>();
+  const bothStarted = Promise.withResolvers<void>();
+  storage.onRead((path) => {
+    if (!path.includes('/transfers/')) return;
+    started.add(path);
+    if (started.size === 2) bothStarted.resolve();
+    return gate.promise;
+  });
+
+  const route = routeTransitSnapshot(snapshot, query());
+  const parallel = await Promise.race([bothStarted.promise.then(() => true), delay(50, false)]);
+  gate.resolve();
+  const result = await route;
+  assert.equal(parallel, true);
+  assert.equal(result.status, 'ok');
 });
 
 test('ignores a caller-provided transfer absent from the pinned snapshot', async (t) => {
@@ -656,7 +712,7 @@ test('checks the transfer-read cap before loading an endpoint stop-grid path', a
   assert.equal(result.diagnostics.transferShards, 2);
   assert.deepEqual(storage.reads.filter((path) => /\/(transfers|stops-grid)\//.test(path)),
     [`versions/transfer_budget/transfers/${hash('4100_2900')}.json.gz`,
-      `versions/transfer_budget/stops-grid/${hash('4100_2900')}.json.gz`]);
+      `versions/transfer_budget/transfers/${hash('4101_2900')}.json.gz`]);
 });
 
 test('starts no endpoint stop-grid reads after a stalled transfer shard outlives the route', async (t) => {
@@ -682,7 +738,7 @@ test('starts no endpoint stop-grid reads after a stalled transfer shard outlives
     const result = await route;
     assert.equal(result.status, 'budget-exceeded');
     assert.equal(result.status === 'budget-exceeded' && result.budget, 'timeout');
-    assert.equal(result.diagnostics.transferShards, 1);
+    assert.equal(result.diagnostics.transferShards, 2);
     release();
     const readAfterTimeout = await Promise.race([endpoint.then(() => true), delay(50, false)]);
     assert.equal(readAfterTimeout, false);
@@ -700,7 +756,7 @@ test('counts intersecting dated buckets and aborts a request with a depleted buc
   });
   const snapshot = await loadActiveSnapshot();
   assert.deepEqual(await routeTransitSnapshot(snapshot, query({ limits: { maxBuckets: 1, horizonSeconds: 2 * hour } })),
-    { status: 'budget-exceeded', budget: 'buckets', diagnostics: { connectionBuckets: 1, connectionShards: 1, transferShards: 1 } });
+    { status: 'budget-exceeded', budget: 'buckets', diagnostics: { connectionBuckets: 1, connectionShards: 1, transferShards: 2 } });
   const result = await routeTransitSnapshot(snapshot, query({ limits: { maxBuckets: 2, horizonSeconds: 2 * hour } }));
   assert.equal(result.status, 'ok');
   assert.deepEqual(trips(result.journeys[0]), ['T', 'T2']);

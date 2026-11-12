@@ -32,7 +32,7 @@ const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 const inflateRaw = promisify(zlib.inflateRaw);
 const manifestBytesCache = new SnapshotCache<Buffer>(4, 32 * mib);
 const compressedShardCache = new SnapshotCache<Buffer>(8, 64 * mib);
-const shardCache = new SnapshotCache<Buffer>(128, 64 * mib);
+const shardCache = new SnapshotCache<Buffer>(2_048, 64 * mib);
 const snapshotStorage = Symbol('snapshotStorage');
 
 type PointerName = 'current' | 'previous';
@@ -40,7 +40,7 @@ type StartupShardSelector = (manifest: TransitManifest) => readonly string[];
 
 type SnapshotErrorCode = 'DATA_UNAVAILABLE' | 'INVALID_STORAGE_CONFIGURATION' | 'READ_FAILED' | 'SIZE_LIMIT' | 'INVALID_POINTER'
   | 'MANIFEST_HASH' | 'INVALID_MANIFEST' | 'UNDECLARED_SHARD' | 'SHARD_HASH' | 'INVALID_GZIP' | 'INVALID_SHARD'
-  | 'JSON_COMPLEXITY';
+  | 'JSON_COMPLEXITY' | 'CONNECTION_STREAM_REQUIRED';
 
 const snapshotErrorMessages: Partial<Record<SnapshotErrorCode, string>> = {
   DATA_UNAVAILABLE: 'Transit snapshot data is unavailable',
@@ -72,6 +72,7 @@ export type SnapshotConnectionStreamOptions = SnapshotReadOptions;
 
 interface SnapshotPreflightOptions extends SnapshotReadOptions {
   onFallback?: (reason: SnapshotErrorCode) => void;
+  connectionPreflight?: 'full' | 'compressed';
 }
 
 export interface LoadedSnapshot {
@@ -584,7 +585,9 @@ async function* parseConnectionChunks(chunks: AsyncIterable<Buffer>): AsyncGener
     throw new TransitSnapshotError('INVALID_SHARD');
   }
   complexity.finish();
-  if (phase !== 'done' || recordDepth !== 0) throw new TransitSnapshotError('INVALID_SHARD');
+  // The nested generator advances this state; widen here because TypeScript does not
+  // propagate closure assignments back into its outer-flow narrowing.
+  if ((phase as string) !== 'done' || recordDepth !== 0) throw new TransitSnapshotError('INVALID_SHARD');
 }
 
 /** Read one validated connection at a time without retaining the expanded shard. */
@@ -598,6 +601,7 @@ export async function* streamSnapshotConnections(snapshot: LoadedSnapshot, relat
 }
 
 export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePath: string): Promise<T> {
+  if (relativePath.startsWith('connections/')) throw new TransitSnapshotError('CONNECTION_STREAM_REQUIRED');
   const storage = snapshot[snapshotStorage];
   storage.checkTime?.();
   // The captured manifest's own inventory keys have already passed the relative-path validator.
@@ -638,14 +642,26 @@ function snapshotFailure(error: unknown): TransitSnapshotError {
   throw error;
 }
 
-async function attemptSnapshot(storage: SnapshotStorage, name: PointerName, selectShards: StartupShardSelector) {
+async function attemptSnapshot(storage: SnapshotStorage, name: PointerName, selectShards: StartupShardSelector,
+  connectionPreflight: SnapshotPreflightOptions['connectionPreflight']) {
   const snapshot = await readSnapshot(storage, name).catch(snapshotFailure);
   if (snapshot instanceof TransitSnapshotError) return snapshot;
 
   // The selector runs outside the storage error handling, even when it throws a snapshot error.
   const paths = new Set([contentLinksPath, ...selectShards(snapshot.manifest)]);
   try {
-    for (const path of paths) await loadSnapshotShard(snapshot, path);
+    for (const path of paths) {
+      if (path.startsWith('connections/')) {
+        if (connectionPreflight === 'compressed') {
+          await readCompressedShard(snapshot, path, { checkTime: storage.checkTime });
+        } else {
+          for await (const _record of streamSnapshotConnections(snapshot, path, { checkTime: storage.checkTime })) {
+            // Full preflight validates the complete startup shard without retaining its records.
+            void _record;
+          }
+        }
+      } else await loadSnapshotShard(snapshot, path);
+    }
     return snapshot;
   } catch (error) {
     return snapshotFailure(error);
@@ -656,10 +672,10 @@ async function attemptSnapshot(storage: SnapshotStorage, name: PointerName, sele
 export async function loadActiveSnapshotWithPreflight(selectShards: StartupShardSelector,
   options: SnapshotPreflightOptions = {}): Promise<LoadedSnapshot> {
   const storage = await getStorage(options);
-  const current = await attemptSnapshot(storage, 'current', selectShards);
+  const current = await attemptSnapshot(storage, 'current', selectShards, options.connectionPreflight);
   if (!(current instanceof TransitSnapshotError)) return current;
 
-  const fallback = await attemptSnapshot(storage, 'previous', selectShards);
+  const fallback = await attemptSnapshot(storage, 'previous', selectShards, options.connectionPreflight);
   if (fallback instanceof TransitSnapshotError) throw new TransitSnapshotError('DATA_UNAVAILABLE');
   if (options.onFallback) options.onFallback(current.code);
   else console.warn({ event: 'transit_snapshot_fallback', version: fallback.version, reason: current.code });
@@ -673,4 +689,5 @@ export async function loadActiveSnapshot(): Promise<LoadedSnapshot> {
 export function clearTransitSnapshotCacheForTests(): void {
   manifestBytesCache.clear();
   shardCache.clear();
+  compressedShardCache.clear();
 }

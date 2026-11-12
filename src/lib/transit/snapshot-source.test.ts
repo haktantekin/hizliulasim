@@ -114,7 +114,16 @@ test('loads a legacy connection shard slightly larger than 64 MiB when expanded'
   });
   await writePointer(root, 'current', pointer);
 
-  assert.deepEqual(await loadSnapshotShard(await loadActiveSnapshot(), connectionPath), { connections: [] });
+  assert.deepEqual(await collectConnections(await loadActiveSnapshot()), []);
+});
+
+test('requires connection shards to use the streaming reader', async (t) => {
+  const root = await setupStorage(t);
+  await writePointer(root, 'current', await stageVersion(root, 'current_v1'));
+
+  await assert.rejects(loadSnapshotShard(await loadActiveSnapshot(), connectionPath), {
+    code: 'CONNECTION_STREAM_REQUIRED',
+  });
 });
 
 test('streams connection records split across inflate chunks without treating escaped JSON as structure', async (t) => {
@@ -154,10 +163,27 @@ test('connection streaming fails closed for malformed envelopes, hash mismatches
   const snapshot = await loadActiveSnapshot();
   const consume = async () => {
     for await (const _record of streamSnapshotConnections(snapshot, connectionPath, { signal: abort.signal })) {
+      void _record;
       assert.fail('an aborted stream must not yield records');
     }
   };
   await assert.rejects(consume(), { code: 'READ_FAILED' });
+});
+
+test('can preflight only immutable connection bytes before the router performs the single semantic stream', async (t) => {
+  const root = await setupStorage(t);
+  const current = await stageVersion(root, 'current_v1', {
+    fileBytes: { [connectionPath]: gzipSync('{"connections":{}}') },
+  });
+  await writePointer(root, 'current', current);
+  await writePointer(root, 'previous', await stageVersion(root, 'previous_v1'));
+
+  const snapshot = await snapshotSource.loadActiveSnapshotWithPreflight(() => [connectionPath], {
+    connectionPreflight: 'compressed',
+  });
+
+  assert.equal(snapshot.version, 'current_v1');
+  await assert.rejects(collectConnections(snapshot), { code: 'INVALID_SHARD' });
 });
 
 test('fails closed when a local snapshot root is configured in production', async (t) => {
@@ -463,7 +489,7 @@ test('loads 70,000 producer-layout connection records in one hour bucket', async
   await writePointer(root, 'current', pointer);
 
   const snapshot = await loadActiveSnapshot();
-  const { connections } = await loadSnapshotShard<{ connections: TransitConnection[] }>(snapshot, path);
+  const connections = await collectConnections(snapshot, path) as TransitConnection[];
   assert.equal(connections.length, count);
   assert.deepEqual(connections.at(-1), record);
 });

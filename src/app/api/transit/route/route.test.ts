@@ -100,14 +100,15 @@ test('preflights adjacent stop grids and the first connection hour before routin
   assert.equal(itineraries[0].steps[1].lineCode, 'T1');
   assert.equal(itineraries[0].steps[1].board.contentLink.title, 'Başlangıç durağı');
   assert.equal(itineraries[0].metadata.serviceDate, '2026-11-10');
-  assert.deepEqual(diagnostics, { connectionBuckets: 1, connectionShards: 1, transferShards: 1,
+  assert.deepEqual(diagnostics, { connectionBuckets: 1, connectionShards: 1, transferShards: 2,
     originCandidates: 1, destinationCandidates: 1 });
   assert.deepEqual(new Set(storage.reads.slice(3, 7)), new Set(
     [originStopPath, destinationStopPath, decoyStopPath, connectionPath(10)].map((path) => `versions/current_test/${path}`),
   ));
   assert.equal(storage.reads.includes(`versions/current_test/${connectionPath(11)}`), false);
+  assert.equal(storage.reads.filter((path) => path === `versions/current_test/${connectionPath(10)}`).length, 1);
   assert.deepEqual(logs, [{ event: 'transit_route', outcome: 'ok', elapsedMs: 0, version: 'current_test',
-    usedFallback: false, connectionShards: 1, transferShards: 1, originCandidates: 1,
+    usedFallback: false, connectionShards: 1, transferShards: 2, originCandidates: 1,
     destinationCandidates: 1, alternatives: 1 }]);
   assert.doesNotMatch(JSON.stringify(logs), /41\.000987|29\.021234|originLat|Başlangıç|hizliulasim|internal-assets/u);
 });

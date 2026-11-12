@@ -198,7 +198,7 @@ export async function loadNearbyStopGrid(snapshot: LoadedSnapshot, points: reado
 
 /** Reuse endpoint grids verified against this pinned snapshot throughout one request. */
 export function createTransferCandidateLoader(snapshot: LoadedSnapshot, beforeShardRead?: BeforeShardRead) {
-  const loadedStopGrids = new Map<string, Map<string, TransitStop>>();
+  const loadedStopGrids = new Map<string, Promise<Map<string, TransitStop>>>();
   return (stopIds: string[]) => readTransferCandidates(stopIds, snapshot, loadedStopGrids, beforeShardRead);
 }
 
@@ -208,7 +208,7 @@ export function loadTransferCandidates(stopIds: string[], snapshot: LoadedSnapsh
 }
 
 async function readTransferCandidates(stopIds: string[], snapshot: LoadedSnapshot,
-  loadedStopGrids: Map<string, Map<string, TransitStop>>, beforeShardRead?: BeforeShardRead): Promise<TransitTransfer[]> {
+  loadedStopGrids: Map<string, Promise<Map<string, TransitStop>>>, beforeShardRead?: BeforeShardRead): Promise<TransitTransfer[]> {
   const { stops, stopGrid, transfers } = snapshot.manifest.indexes;
   const requested = new Set(stopIds.filter((id) => Object.hasOwn(stops, id)));
   if (requested.size === 0) return [];
@@ -219,21 +219,33 @@ async function readTransferCandidates(stopIds: string[], snapshot: LoadedSnapsho
 
   async function readEndpoint(stopId: string, cell: string): Promise<TransitStop> {
     const path = stops[stopId];
-    let records = loadedStopGrids.get(path);
-    if (!records) {
-      records = await loadIndexedStopGrid(snapshot, cell, path, beforeShardRead);
-      loadedStopGrids.set(path, records);
+    let pending = loadedStopGrids.get(path);
+    if (!pending) {
+      pending = loadIndexedStopGrid(snapshot, cell, path, beforeShardRead);
+      loadedStopGrids.set(path, pending);
+    }
+    let records: Map<string, TransitStop>;
+    try {
+      records = await pending;
+    } catch (error) {
+      if (loadedStopGrids.get(path) === pending) loadedStopGrids.delete(path);
+      throw error;
     }
     const stop = records.get(stopId);
     if (!stop) throw new TransitSnapshotError('INVALID_SHARD');
     return stop;
   }
 
+  const selected: { cell: string; stopPath: string; path: string }[] = [];
   for (const [cell, stopPath] of Object.entries(stopGrid)) {
     if (!stopPaths.has(stopPath)) continue;
     const path = transfers[cell];
     if (loadedPaths.has(path)) continue;
     loadedPaths.add(path);
+    selected.push({ cell, stopPath, path });
+  }
+
+  const groups = await Promise.all(selected.map(async ({ cell, stopPath, path }) => {
     beforeShardRead?.(path);
     const shard = await loadSnapshotShard<unknown>(snapshot, path);
     if (!isRecord(shard) || shard.cell !== cell || !Array.isArray(shard.transfers)) {
@@ -246,6 +258,8 @@ async function readTransferCandidates(stopIds: string[], snapshot: LoadedSnapsho
     }
 
     const destinationsByOrigin = new Map<string, Set<string>>();
+    const endpointCells = new Map<string, string>();
+    const validated: TransitTransfer[] = [];
     for (const transfer of shard.transfers) {
       if (!isTransfer(transfer, stopPath, stops)) throw new TransitSnapshotError('INVALID_SHARD');
       const { fromStopId, toStopId } = transfer;
@@ -257,15 +271,30 @@ async function readTransferCandidates(stopIds: string[], snapshot: LoadedSnapsho
       destinations.add(toStopId);
       destinationsByOrigin.set(fromStopId, destinations);
 
-      const from = await readEndpoint(fromStopId, cell);
-      const to = await readEndpoint(toStopId, destinationCell);
+      endpointCells.set(fromStopId, cell);
+      endpointCells.set(toStopId, destinationCell);
+      validated.push(transfer);
+    }
+
+    const endpoints = new Map<string, TransitStop>();
+    await Promise.all([...endpointCells].map(async ([stopId, endpointCell]) => {
+      endpoints.set(stopId, await readEndpoint(stopId, endpointCell));
+    }));
+
+    const groupEdges: TransitTransfer[] = [];
+    for (const transfer of validated) {
+      const { fromStopId, toStopId } = transfer;
+      const from = endpoints.get(fromStopId)!;
+      const to = endpoints.get(toStopId)!;
       const distance = haversineDistanceMeters([from.latitude, from.longitude], [to.latitude, to.longitude]);
       if (distance > maxTransferDistanceMeters || transfer.distanceMeters < Math.floor(distance)) {
         throw new TransitSnapshotError('INVALID_SHARD');
       }
-      if (requested.has(fromStopId)) edges.push(transfer);
+      if (requested.has(fromStopId)) groupEdges.push(transfer);
     }
-  }
+    return groupEdges;
+  }));
+  edges.push(...groups.flat());
 
   return edges.sort((first, second) =>
     compareIds(first.fromStopId, second.fromStopId) || compareIds(first.toStopId, second.toStopId));

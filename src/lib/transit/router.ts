@@ -1,6 +1,6 @@
 import type { Coordinate, RoutePreference, TransitConnection, TransitManifest, TransitTransfer } from './contracts.ts';
 import { getServiceContext, isServiceActive, serviceTimeToEpochMs, type ServiceDay } from './service-calendar.ts';
-import { loadSnapshotShard, TransitSnapshotError, type LoadedSnapshot } from './snapshot-source.ts';
+import { streamSnapshotConnections, TransitSnapshotError, type LoadedSnapshot } from './snapshot-source.ts';
 import { createTransferCandidateLoader, estimateWalk } from './spatial.ts';
 
 export interface RouterLimits {
@@ -29,6 +29,7 @@ export const DEFAULT_ROUTER_LIMITS: Readonly<RouterLimits> = Object.freeze({
 const hourSeconds = 3600;
 const hourMs = hourSeconds * 1000;
 const maxServiceHours = 72;
+const maxDominatedHistoryVariants = 8;
 const hashId = /^[a-f0-9]{64}$/;
 const { boardingBufferSeconds, transferBufferSeconds } = estimateWalk(0);
 const preferences = ['fastest', 'less-walking', 'fewer-transfers'] as const;
@@ -171,8 +172,12 @@ export function reconstructJourney(label: ArrivalLabel, state: RouterState): Jou
     chain.push(current.segment);
   }
 
+  return mergeJourneySegments(chain);
+}
+
+function mergeJourneySegments(reverseChain: JourneySegment[]): JourneySegment[] {
   const journey: JourneySegment[] = [];
-  for (const segment of chain.reverse()) {
+  for (const segment of reverseChain.reverse()) {
     const last = journey.at(-1);
     if (last?.kind === 'ride' && segment.kind === 'ride' && last.serviceDate === segment.serviceDate && sameVehicle(last, segment)
       && last.toStopId === segment.fromStopId && last.arrivalStopSequence === segment.stopSequence) {
@@ -235,6 +240,21 @@ function retainLabel<T extends ArrivalLabel>(frontier: T[], label: T, cap: numbe
   if (cap !== null && frontier.length >= cap) throw new BudgetExceeded('stop-labels');
   frontier.push(label);
   return true;
+}
+
+function pruneMetricDominatedHistories<T extends ArrivalLabel>(frontier: T[]): void {
+  const skyline = new Set(frontier.filter((label, index) => !frontier.some((other, otherIndex) => {
+    if (index === otherIndex || !dominates(other, label)) return false;
+    const equivalent = dominates(label, other);
+    return !equivalent || otherIndex < index;
+  })));
+  let exceptions = 0;
+  for (let index = frontier.length - 1; index >= 0; index--) {
+    const label = frontier[index];
+    if (skyline.has(label)) continue;
+    exceptions++;
+    if (exceptions > maxDominatedHistoryVariants) frontier.splice(index, 1);
+  }
 }
 
 interface ConnectionInstance extends SegmentTime {
@@ -310,6 +330,7 @@ interface RideProgress {
 
 interface ScanLabel extends ArrivalLabel {
   readonly ride: RideProgress | null;
+  readonly parent: ScanLabel | null;
 }
 
 class ConnectionScan {
@@ -318,13 +339,14 @@ class ConnectionScan {
   readonly hasEndpoints: boolean;
   private readonly input: RouterQuery;
   private readonly limits: RouterLimits;
-  private readonly labels: ScanLabel[] = [];
   private readonly byStop = new Map<string, ScanLabel[]>();
   private readonly onboard = new Map<string, ScanLabel[]>();
-  private readonly destinations: ArrivalLabel[] = [];
+  private readonly destinations: ScanLabel[] = [];
   private readonly egress = new Map<string, StopWalk>();
   private readonly transfers = new Map<string, TransitTransfer[]>();
   private readonly minimumWalking: number;
+  private nextLabelIndex = 0;
+  private readonly rootReferences = new Map<ScanLabel, number>();
 
   constructor(input: RouterQuery, limits: RouterLimits) {
     this.input = input;
@@ -374,56 +396,65 @@ class ConnectionScan {
 
   private createLabel(stopId: string, readyEpochMs: number, boardings: number, walkingSeconds: number,
     predecessor: ArrivalLabel | null, segment: JourneySegment, ride: RideProgress | null = null,
-    index = this.labels.length): ScanLabel {
+  ): ScanLabel {
+    const parent = predecessor as ScanLabel | null;
     return {
-      index, stopId, arrivalEpochMs: segment.arrivalEpochMs, readyEpochMs,
-      boardings, walkingSeconds, predecessor: predecessor?.index ?? null, segment, ride,
+      index: this.nextLabelIndex++, stopId, arrivalEpochMs: segment.arrivalEpochMs, readyEpochMs,
+      boardings, walkingSeconds, predecessor: predecessor?.index ?? null, segment, ride, parent,
     };
   }
 
-  private commitLabel(label: ScanLabel): void {
-    if (label.index !== this.labels.length) throw new Error('Transit label index is out of sequence');
-    if (this.labels.length >= this.limits.maxTotalLabels) throw new BudgetExceeded('total-labels');
-    this.labels.push(label);
+  private replaceRoots(previous: readonly ScanLabel[], next: readonly ScanLabel[]): void {
+    for (const label of previous) {
+      const references = this.rootReferences.get(label)! - 1;
+      if (references === 0) this.rootReferences.delete(label);
+      else this.rootReferences.set(label, references);
+    }
+    for (const label of next) this.rootReferences.set(label, (this.rootReferences.get(label) ?? 0) + 1);
+    if (this.rootReferences.size > this.limits.maxTotalLabels) throw new BudgetExceeded('total-labels');
   }
 
   private addLabel(stopId: string, readyEpochMs: number, boardings: number, walkingSeconds: number,
     predecessor: ArrivalLabel | null, segment: JourneySegment, ride: RideProgress | null = null): ScanLabel {
-    const label = this.createLabel(stopId, readyEpochMs, boardings, walkingSeconds, predecessor, segment, ride);
-    this.commitLabel(label);
-    return label;
+    return this.createLabel(stopId, readyEpochMs, boardings, walkingSeconds, predecessor, segment, ride);
   }
 
   private retainAtStop(label: ScanLabel): boolean {
     const frontier = this.byStop.get(label.stopId) ?? [];
-    const retained = retainLabel(frontier, label, this.limits.maxLabelsPerStop, this.dominatesForContinuation);
+    const previous = [...frontier];
+    retainLabel(frontier, label, this.limits.maxLabelsPerStop, this.dominatesForContinuation);
+    pruneMetricDominatedHistories(frontier);
+    const retained = frontier.includes(label);
     this.byStop.set(label.stopId, frontier);
+    this.replaceRoots(previous, frontier);
     return retained;
+  }
+
+  private static labelStops(label: ScanLabel): readonly string[] {
+    return label.segment.kind === 'ride' ? label.segment.stopIds : [label.stopId];
   }
 
   private readonly dominatesForContinuation = (first: ScanLabel, second: ScanLabel): boolean => {
     if (!dominates(first, second)) return false;
     const visited = new Set<string>();
     const trips = new Set<string>();
-    for (let label: ArrivalLabel | undefined = second; label;
-      label = label.predecessor === null ? undefined : this.labels[label.predecessor]) {
-      visited.add(label.stopId);
+    for (let label: ScanLabel | null = second; label; label = label.parent) {
+      for (const stopId of ConnectionScan.labelStops(label)) visited.add(stopId);
       if (label.segment.kind === 'ride') trips.add(tripKey(label.segment.serviceDate, label.segment.tripId));
     }
-    for (let label: ArrivalLabel | undefined = first; label;
-      label = label.predecessor === null ? undefined : this.labels[label.predecessor]) {
+    for (let label: ScanLabel | null = first; label; label = label.parent) {
       // Once the chains meet, all remaining history is shared.
       if (label.index === second.index) return true;
-      if (!visited.has(label.stopId) || (label.segment.kind === 'ride'
+      if (ConnectionScan.labelStops(label).some((stopId) => !visited.has(stopId)) || (label.segment.kind === 'ride'
         && !trips.has(tripKey(label.segment.serviceDate, label.segment.tripId)))) return false;
     }
     return true;
   };
 
   private canVisit(parent: ArrivalLabel, stopId: string | undefined, boarding?: ConnectionInstance): boolean {
-    for (let label: ArrivalLabel | undefined = parent; label;
-      label = label.predecessor === null ? undefined : this.labels[label.predecessor]) {
-      if (label.stopId === stopId || (boarding && label.segment.kind === 'ride'
+    for (let label: ScanLabel | null = parent as ScanLabel; label; label = label.parent) {
+      if ((stopId !== undefined && ConnectionScan.labelStops(label).includes(stopId))
+        || (boarding && label.segment.kind === 'ride'
         && label.segment.serviceDate === boarding.serviceDate && label.segment.tripId === boarding.connection.tripId)) return false;
     }
     return true;
@@ -443,7 +474,9 @@ class ConnectionScan {
       distanceMeters: walk.distanceMeters, walkingSeconds: walk.walkingSeconds,
     };
     const label = this.addLabel(parent.stopId, arrival, parent.boardings, walkingSeconds, parent, segment);
-    retainLabel(this.destinations, label, this.limits.maxTotalLabels);
+    const previous = [...this.destinations];
+    retainLabel(this.destinations, label, null);
+    this.replaceRoots(previous, this.destinations);
   }
 
   alight(label: ScanLabel): boolean {
@@ -497,28 +530,40 @@ class ConnectionScan {
 
     if (candidates.length === 0) {
       this.onboard.delete(key);
+      this.replaceRoots(continuation, []);
       return [];
     }
     const staged: ScanLabel[] = [];
-    const segment = rideSegment(instance);
     const hasPositiveDuration = (label: ScanLabel) => label.ride !== null && label.arrivalEpochMs > label.ride.startEpochMs;
-    for (const [index, { parent, boardings, ride }] of candidates.entries()) {
+    for (const { parent, boardings, ride } of candidates) {
+      const edge = rideSegment(instance);
+      const previousRide = parent.segment.kind === 'ride' && parent.ride !== null
+        && parent.segment.serviceDate === serviceDate && sameVehicle(parent.segment, connection)
+        && parent.segment.toStopId === connection.fromStopId
+        && parent.segment.arrivalStopSequence === connection.stopSequence ? parent.segment : undefined;
+      const segment: RideSegment = previousRide ? {
+        ...previousRide,
+        toStopId: edge.toStopId,
+        arrivalStopSequence: edge.arrivalStopSequence,
+        arrivalEpochMs: edge.arrivalEpochMs,
+        stopIds: previousRide.toStopId === edge.toStopId
+          ? [...previousRide.stopIds]
+          : [...previousRide.stopIds, edge.toStopId],
+      } : edge;
+      const predecessor = previousRide ? parent.parent : parent;
       const label = this.createLabel(toStopId, arrivalEpochMs + transferBufferSeconds * 1000,
-        boardings, parent.walkingSeconds, parent, segment, ride, -index - 1);
+        boardings, parent.walkingSeconds, predecessor, segment, ride);
       // A rider needs both movement and elapsed time before an alighting can enter a journey.
       retainLabel(staged, label, candidates.length, (first, second) =>
         (first.ride?.moved || !second.ride?.moved) && (!hasPositiveDuration(second) || hasPositiveDuration(first))
         && this.dominatesForContinuation(first, second));
     }
-    const next = staged.map((label) => {
-      const committed = { ...label, index: this.labels.length };
-      this.commitLabel(committed);
-      return committed;
-    });
+    const next = staged;
     if (this.limits.maxLabelsPerStop !== null && next.length > this.limits.maxLabelsPerStop) {
       throw new BudgetExceeded('stop-labels');
     }
     this.onboard.set(key, next);
+    this.replaceRoots(continuation, next);
     return connection.dropOffType === 0 ? next.filter((label) => label.ride?.moved && hasPositiveDuration(label)) : [];
   }
 
@@ -531,8 +576,11 @@ class ConnectionScan {
 
   result(): RouterResult {
     if (this.destinations.length === 0) return { status: 'no-route' };
-    const state = { labels: this.labels };
-    const candidates = this.destinations.map((label) => reconstructJourney(label, state));
+    const candidates = this.destinations.map((label) => {
+      const chain: JourneySegment[] = [];
+      for (let current: ScanLabel | null = label; current; current = current.parent) chain.push(current.segment);
+      return mergeJourneySegments(chain);
+    });
     const choices = new Set<JourneySegment[]>();
     const seen = new Set<string>();
     const add = (journey: JourneySegment[]) => {
@@ -627,18 +675,17 @@ function compareProducerConnections(first: TransitConnection, second: TransitCon
     || first.stopSequence - second.stopSequence;
 }
 
-function readBucket(payload: unknown, bucket: Bucket, manifest: TransitManifest,
-  previousByTrip: Map<string, TransitConnection>, checkTime: () => void): TransitConnection[] {
-  if (!isRecord(payload) || !Array.isArray(payload.connections) || payload.connections.length === 0) {
-    throw new TransitSnapshotError('INVALID_SHARD');
-  }
+async function* streamBucket(snapshot: LoadedSnapshot, bucket: Bucket, manifest: TransitManifest,
+  checkTime: () => void): AsyncGenerator<ConnectionInstance> {
   const indexes = manifest.indexes;
   const context = { calendars: indexes, serviceDays: [bucket.day], serviceDate: bucket.day.serviceDate,
     localDepartureSeconds: bucket.day.departureSeconds, departureEpochMs: bucket.startEpochMs };
   const serviceIds = new Set<string>();
   let previousRecord: TransitConnection | undefined;
-  for (const record of payload.connections) {
+  let records = 0;
+  for await (const value of streamSnapshotConnections(snapshot, bucket.path, { checkTime })) {
     checkTime();
+    const record = value as TransitConnection;
     if (!isConnection(record) || record.serviceClass !== bucket.classId || Math.floor(record.departure / hourSeconds) !== bucket.hour
       || !Object.hasOwn(indexes.stops, record.fromStopId) || !Object.hasOwn(indexes.stops, record.toStopId)
       || !Object.hasOwn(indexes.routes, record.routeId) || !Object.hasOwn(indexes.patterns, record.patternId)
@@ -651,19 +698,11 @@ function readBucket(payload: unknown, bucket: Bucket, manifest: TransitManifest,
     if (previousRecord && compareProducerConnections(previousRecord, record) >= 0) {
       throw new TransitSnapshotError('INVALID_SHARD');
     }
-    // Bucket windows for one service date are loaded in hour order. Validate the whole
-    // observed trip before the caller filters the records to the departure interval.
-    const key = tripKey(bucket.day.serviceDate, record.tripId);
-    const previousTripEdge = previousByTrip.get(key);
-    if (previousTripEdge && (previousTripEdge.arrival > record.departure
-      || previousTripEdge.arrivalStopSequence !== record.stopSequence
-      || previousTripEdge.toStopId !== record.fromStopId || !sameVehicle(previousTripEdge, record))) {
-      throw new TransitSnapshotError('INVALID_SHARD');
-    }
-    previousByTrip.set(key, record);
     previousRecord = record;
+    records++;
+    yield instantiate(record, bucket.day);
   }
-  return payload.connections as TransitConnection[];
+  if (records === 0) throw new TransitSnapshotError('INVALID_SHARD');
 }
 
 interface SnapshotRouterOptions {
@@ -695,10 +734,8 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
     const scan = new ConnectionScan(input, limits);
     if (!scan.hasEndpoints) return scan.result();
     const buckets = selectBuckets(snapshot.manifest, scan.departureEpochMs, scan.endEpochMs, checkTime);
-    const paths = new Map<string, number>();
-    for (const bucket of buckets) paths.set(bucket.path, (paths.get(bucket.path) ?? 0) + 1);
-    const reused = new Map<string, unknown>();
     const previousByTrip = new Map<string, TransitConnection>();
+    const connectionReadPaths = new Set<string>();
     const loadedTransferCells = new Set<string>();
     const transferReadPaths = new Set<string>();
     const readTransfers = createTransferCandidateLoader(snapshot, (path) => {
@@ -711,11 +748,19 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
       diagnostics.transferShards = transferReadPaths.size;
     });
     let stopsByGridPath: Map<string, string[]> | undefined;
-    let pending: ConnectionInstance[] = [];
+    let cellsByGridPath: Map<string, string> | undefined;
+
+    interface BucketCursor {
+      iterator: AsyncIterator<ConnectionInstance>;
+      current: ConnectionInstance;
+    }
+
+    const active: BucketCursor[] = [];
 
     async function loadTransfers(gridPath: string) {
       if (!stopsByGridPath) {
         stopsByGridPath = new Map<string, string[]>();
+        cellsByGridPath = new Map(Object.entries(snapshot.manifest.indexes.stopGrid).map(([cell, path]) => [path, cell]));
         for (const [id, path] of Object.entries(snapshot.manifest.indexes.stops)) {
           checkTime();
           const ids = stopsByGridPath.get(path) ?? [];
@@ -724,55 +769,102 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
         }
       }
       checkTime();
-      // Load the entire origin cell on its first reached alighting stop, so later stops
-      // in this cell can expand synchronously without another transfer shard read.
-      const transfers = await readTransfers(stopsByGridPath.get(gridPath)!);
+      // Load a bounded 5x5 neighborhood as one concurrent batch. Transfer edges never
+      // leave the inner 3x3 area; the outer ring is safe read-ahead for later labels.
+      const [latitude, longitude] = cellsByGridPath!.get(gridPath)!.split('_').map(Number);
+      const paths: string[] = [];
+      for (let latitudeOffset = -2; latitudeOffset <= 2; latitudeOffset++) {
+        for (let longitudeOffset = -2; longitudeOffset <= 2; longitudeOffset++) {
+          const cell = `${latitude + latitudeOffset}_${longitude + longitudeOffset}`;
+          const path = snapshot.manifest.indexes.stopGrid[cell];
+          if (path && !loadedTransferCells.has(path)) paths.push(path);
+        }
+      }
+      for (const path of paths) loadedTransferCells.add(path);
+      const transfers = await readTransfers(paths.flatMap((path) => stopsByGridPath!.get(path)!));
       checkTime();
       scan.addTransfers(transfers);
-      loadedTransferCells.add(gridPath);
+    }
+
+    function validateTripContinuity(instance: ConnectionInstance) {
+      const record = instance.connection;
+      const key = tripKey(instance.serviceDate, record.tripId);
+      const previous = previousByTrip.get(key);
+      if (previous && (previous.arrival > record.departure
+        || previous.arrivalStopSequence !== record.stopSequence
+        || previous.toStopId !== record.fromStopId || !sameVehicle(previous, record))) {
+        throw new TransitSnapshotError('INVALID_SHARD');
+      }
+      previousByTrip.set(key, record);
+    }
+
+    async function advanceCursor(cursor: BucketCursor) {
+      const next = await cursor.iterator.next();
+      checkTime();
+      if (next.done) active.splice(active.indexOf(cursor), 1);
+      else cursor.current = next.value;
+    }
+
+    async function drainBefore(exclusiveEnd: number, routeConnections: boolean) {
+      while (true) {
+        checkTime();
+        let cursor: BucketCursor | undefined;
+        for (const candidate of active) {
+          if (candidate.current.departureEpochMs >= exclusiveEnd) continue;
+          if (!cursor || compareConnections(candidate.current, cursor.current) < 0) cursor = candidate;
+        }
+        if (!cursor) return;
+
+        const instance = cursor.current;
+        validateTripContinuity(instance);
+        if (routeConnections && instance.departureEpochMs >= scan.departureEpochMs
+          && instance.departureEpochMs <= scan.endEpochMs && scan.canImprove(instance.departureEpochMs)) {
+          const alighted = scan.advance(instance);
+          const expandable = alighted.filter((label) => scan.alight(label));
+          if (expandable.length > 0 && instance.arrivalEpochMs < scan.endEpochMs
+            && scan.canImprove(instance.arrivalEpochMs)) {
+            const gridPath = snapshot.manifest.indexes.stops[instance.connection.toStopId];
+            if (!loadedTransferCells.has(gridPath)) await loadTransfers(gridPath);
+            for (const label of expandable) scan.expandTransfers(label);
+          }
+        }
+        await advanceCursor(cursor);
+      }
     }
 
     // Historical offsets can shift one dated bucket across another bucket's boundary.
-    // Flush only departures strictly before the next bucket can begin.
-    for (const [index, bucket] of buckets.entries()) {
+    // Open equal-start buckets together, then merge their streams in absolute time order.
+    let index = 0;
+    while (index < buckets.length) {
       checkTime();
-      if (!scan.canImprove(bucket.startEpochMs)) break;
-      if (index >= limits.maxBuckets) throw new BudgetExceeded('buckets');
-      diagnostics.connectionBuckets++;
-      let payload = reused.get(bucket.path);
-      if (payload === undefined) {
-        diagnostics.connectionShards++;
-        payload = await loadSnapshotShard<unknown>(snapshot, bucket.path);
+      const groupStart = buckets[index].startEpochMs;
+      if (!scan.canImprove(groupStart)) {
+        // The old materializing reader had already validated every opened shard. Preserve
+        // that fail-closed behavior while avoiding route work that cannot improve a result.
+        await drainBefore(Infinity, false);
+        break;
       }
-      checkTime();
-      const remaining = paths.get(bucket.path)! - 1;
-      paths.set(bucket.path, remaining);
-      if (remaining > 0) reused.set(bucket.path, payload);
-      else reused.delete(bucket.path);
 
-      for (const record of readBucket(payload, bucket, snapshot.manifest, previousByTrip, checkTime)) {
-        checkTime();
-        const departure = bucket.day.anchorEpochMs + record.departure * 1000;
-        if (departure >= scan.departureEpochMs && departure <= scan.endEpochMs) pending.push(instantiate(record, bucket.day));
-      }
-      const nextStart = buckets[index + 1]?.startEpochMs ?? Infinity;
-      if (nextStart === bucket.startEpochMs) continue;
-      pending.sort(compareConnections);
-      let offset = 0;
-      for (; offset < pending.length && pending[offset].departureEpochMs < nextStart; offset++) {
-        checkTime();
-        const instance = pending[offset];
-        if (!scan.canImprove(instance.departureEpochMs)) continue;
-        const alighted = scan.advance(instance);
-        const expandable = alighted.filter((label) => scan.alight(label));
-        if (expandable.length > 0 && instance.arrivalEpochMs < scan.endEpochMs && scan.canImprove(instance.arrivalEpochMs)) {
-          const gridPath = snapshot.manifest.indexes.stops[instance.connection.toStopId];
-          if (!loadedTransferCells.has(gridPath)) await loadTransfers(gridPath);
-          for (const label of expandable) scan.expandTransfers(label);
+      while (index < buckets.length && buckets[index].startEpochMs === groupStart) {
+        if (diagnostics.connectionBuckets >= limits.maxBuckets) throw new BudgetExceeded('buckets');
+        const bucket = buckets[index++];
+        diagnostics.connectionBuckets++;
+        if (!connectionReadPaths.has(bucket.path)) {
+          connectionReadPaths.add(bucket.path);
+          diagnostics.connectionShards = connectionReadPaths.size;
         }
+        const iterator = streamBucket(snapshot, bucket, snapshot.manifest, checkTime)[Symbol.asyncIterator]();
+        const first = await iterator.next();
+        checkTime();
+        if (first.done) throw new TransitSnapshotError('INVALID_SHARD');
+        active.push({ iterator, current: first.value });
       }
-      pending = pending.slice(offset);
+
+      const nextStart = buckets[index]?.startEpochMs ?? Infinity;
+      await drainBefore(nextStart, true);
     }
+
+    if (index >= buckets.length) await drainBefore(Infinity, true);
     const result = scan.result();
     checkTime();
     return result;

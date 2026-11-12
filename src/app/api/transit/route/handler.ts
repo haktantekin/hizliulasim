@@ -98,7 +98,8 @@ export function createTransitRouteHandler({
       const snapshot = await loadActiveSnapshotWithPreflight((manifest) => [
         ...getNearbyStopGridPaths(manifest, points).values(),
         ...getStartupConnectionPaths(manifest, query.departureAt, limits, checkTime),
-      ], { checkTime, signal: abort.signal, onFallback: (reason) => { fallbackReason = reason; } });
+      ], { checkTime, signal: abort.signal, connectionPreflight: 'compressed',
+        onFallback: (reason) => { fallbackReason = reason; } });
       version = snapshot.version;
       usedFallback = snapshot.usedFallback;
 
