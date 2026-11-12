@@ -10,8 +10,7 @@ import {
   destinationTransferPath, fixtureStorage, originStopPath, shapePath,
 } from '../test-storage.ts';
 import { createTransitRouteHandler } from './handler.ts';
-import { DEFAULT_ROUTER_LIMITS } from '../../../../lib/transit/router.ts';
-import { dynamic, maxDuration, POST, runtime } from './route.ts';
+import { dynamic, POST, runtime } from './route.ts';
 
 const params: Record<string, unknown> = {
   originLat: 41.000987, originLng: 28.999913,
@@ -52,7 +51,6 @@ async function expectError(response: Response, status: number, code: string) {
 test('the public route is dynamic and writes one coordinate-free JSON line with the default logger', async (t) => {
   assert.equal(runtime, 'nodejs');
   assert.equal(dynamic, 'force-dynamic');
-  assert.equal(maxDuration, 15);
   const lines: string[] = [];
   const writer = t.mock.method(process.stdout, 'write', (line: string) => {
     lines.push(line);
@@ -112,6 +110,18 @@ test('preflights adjacent stop grids and the first connection hour before routin
     usedFallback: false, connectionShards: 1, transferShards: 1, originCandidates: 1,
     destinationCandidates: 1, alternatives: 1 }]);
   assert.doesNotMatch(JSON.stringify(logs), /41\.000987|29\.021234|originLat|Başlangıç|hizliulasim|internal-assets/u);
+});
+
+test('default route continues after the former wall-clock deadline', async (t) => {
+  const storage = fixtureStorage(t);
+  storage.publish('current', 'current_test');
+  let monotonicTime = 0;
+  storage.readHooks.set(`versions/current_test/${contentPath}`, () => { monotonicTime = 60_000; });
+  const { get } = routeHandler({ clock: () => monotonicTime });
+
+  const response = await get(routeRequest());
+
+  assert.equal(response.status, 200);
 });
 
 const invalidBodies: [string, (body: Record<string, unknown>) => void][] = [
@@ -259,8 +269,8 @@ for (const [phase, path] of [
       if (monotonicTime > 0) lateReads.push(url.pathname);
       return fetch(url);
     });
-    storage.readHooks.set(`versions/current_test/${path}`, () => { monotonicTime = DEFAULT_ROUTER_LIMITS.wallTimeMs; });
-    const { get, logs } = routeHandler({ clock: () => monotonicTime });
+    storage.readHooks.set(`versions/current_test/${path}`, () => { monotonicTime = 20; });
+    const { get, logs } = routeHandler({ clock: () => monotonicTime, limits: { wallTimeMs: 20 } });
     await expectError(await get(routeRequest()), 504, 'ROUTE_TIMEOUT');
     await setImmediate();
     assert.deepEqual(lateReads, []);

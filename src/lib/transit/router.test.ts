@@ -17,8 +17,7 @@ import {
   type RouterInput,
 } from './router.ts';
 
-test('allows enough wall time for a cold remote snapshot route', () => {
-  assert.equal(DEFAULT_ROUTER_LIMITS.wallTimeMs, 10_000);
+test('allows a wider label frontier for a remote snapshot route', () => {
   assert.equal(DEFAULT_ROUTER_LIMITS.maxLabelsPerStop, 32);
 });
 
@@ -285,9 +284,9 @@ test('exposes per-stop and total label budget exhaustion', () => {
     { status: 'budget-exceeded', budget: 'total-labels' });
 });
 
-test('rejects over-cap limit overrides', () => {
+test('rejects invalid or over-cap limit overrides', () => {
   for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 65 }, { maxLabelsPerStop: 33 },
-    { maxTotalLabels: 100001 }, { maxAlternatives: 4 }, { wallTimeMs: 10_001 }]) {
+    { maxTotalLabels: 100001 }, { maxAlternatives: 4 }, { wallTimeMs: 0 }]) {
     assert.throws(() => scanTransitConnections({ ...query({ limits }), connections: [] }), RangeError);
   }
 });

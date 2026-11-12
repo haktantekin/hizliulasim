@@ -12,7 +12,7 @@ export interface RouterLimits {
   maxLabelsPerStop: number;
   maxTotalLabels: number;
   maxAlternatives: number;
-  wallTimeMs: number;
+  wallTimeMs: number | null;
 }
 
 export const DEFAULT_ROUTER_LIMITS: Readonly<RouterLimits> = Object.freeze({
@@ -23,7 +23,7 @@ export const DEFAULT_ROUTER_LIMITS: Readonly<RouterLimits> = Object.freeze({
   maxLabelsPerStop: 32,
   maxTotalLabels: 100_000,
   maxAlternatives: 3,
-  wallTimeMs: 10_000,
+  wallTimeMs: null,
 });
 
 const hourSeconds = 3600;
@@ -128,13 +128,24 @@ function budgetResult(error: unknown): RouterResult {
 
 function routerLimits(overrides: Partial<RouterLimits> = {}): RouterLimits {
   const limits = { ...DEFAULT_ROUTER_LIMITS };
-  for (const key of Object.keys(limits) as (keyof RouterLimits)[]) {
+  const boundedKeys = [
+    'horizonSeconds', 'maxBuckets', 'maxTransferShards', 'maxBoardings',
+    'maxLabelsPerStop', 'maxTotalLabels', 'maxAlternatives',
+  ] as const;
+  for (const key of boundedKeys) {
     const override = overrides[key];
     if (override === undefined) continue;
     if (!Number.isSafeInteger(override) || override < 1 || override > limits[key]) {
       throw new RangeError(`Invalid transit router limit: ${key}`);
     }
     limits[key] = override;
+  }
+  const wallTimeMs = overrides.wallTimeMs;
+  if (wallTimeMs !== undefined) {
+    if (wallTimeMs !== null && (!Number.isSafeInteger(wallTimeMs) || wallTimeMs < 1)) {
+      throw new RangeError('Invalid transit router limit: wallTimeMs');
+    }
+    limits.wallTimeMs = wallTimeMs;
   }
   return limits;
 }
@@ -651,12 +662,13 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
     diagnostics = { connectionBuckets: 0, connectionShards: 0, transferShards: 0 } }: SnapshotRouterOptions = {}
 ): Promise<SnapshotRouterResult> {
   const limits = routerLimits(input.limits);
-  const deadline = clock() + limits.wallTimeMs;
+  const wallTimeMs = limits.wallTimeMs;
+  const deadline = wallTimeMs === null ? null : clock() + wallTimeMs;
   let expired = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const checkTime = () => {
     checkRequestTime?.();
-    if (expired || clock() >= deadline) throw new BudgetExceeded('timeout');
+    if (expired || (deadline !== null && clock() >= deadline)) throw new BudgetExceeded('timeout');
   };
 
   async function run(): Promise<RouterResult> {
@@ -746,15 +758,18 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
   }
 
   try {
+    if (wallTimeMs === null) return { ...await run(), diagnostics };
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => {
         expired = true;
         reject(new BudgetExceeded('timeout'));
-      }, limits.wallTimeMs);
+      }, wallTimeMs);
     });
     return { ...await Promise.race([run(), timeout]), diagnostics };
   } catch (error) {
-    if (expired || clock() >= deadline) return { status: 'budget-exceeded', budget: 'timeout', diagnostics };
+    if (expired || (deadline !== null && clock() >= deadline)) {
+      return { status: 'budget-exceeded', budget: 'timeout', diagnostics };
+    }
     return { ...budgetResult(error), diagnostics };
   } finally {
     clearTimeout(timer);

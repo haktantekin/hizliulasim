@@ -44,14 +44,14 @@ export function createTransitRouteHandler({
   limits = {},
   log = (entry) => { process.stdout.write(`${JSON.stringify(entry)}\n`); },
 }: RouteHandlerOptions = {}) {
-  const wallTimeMs = limits.wallTimeMs ?? DEFAULT_ROUTER_LIMITS.wallTimeMs;
+  const wallTimeMs = limits.wallTimeMs === undefined ? DEFAULT_ROUTER_LIMITS.wallTimeMs : limits.wallTimeMs;
   const maxAlternatives = limits.maxAlternatives ?? DEFAULT_ROUTER_LIMITS.maxAlternatives;
 
   return async (request: Request): Promise<Response> => {
     const started = clock();
     const abort = new AbortController();
     const deadlineError = new Error('Transit request deadline exceeded');
-    const expired = () => abort.signal.aborted || clock() - started >= wallTimeMs;
+    const expired = () => abort.signal.aborted || (wallTimeMs !== null && clock() - started >= wallTimeMs);
     const checkTime = () => {
       if (expired()) throw deadlineError;
     };
@@ -132,6 +132,7 @@ export function createTransitRouteHandler({
     }
 
     try {
+      if (wallTimeMs === null) return await run();
       const timeout = new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
           abort.abort();
