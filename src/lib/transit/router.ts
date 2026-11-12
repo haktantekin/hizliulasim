@@ -9,7 +9,7 @@ export interface RouterLimits {
   /** Unique transfer and endpoint stop-grid shard paths. */
   maxTransferShards: number;
   maxBoardings: number;
-  maxLabelsPerStop: number;
+  maxLabelsPerStop: number | null;
   maxTotalLabels: number;
   maxAlternatives: number;
   wallTimeMs: number | null;
@@ -20,7 +20,7 @@ export const DEFAULT_ROUTER_LIMITS: Readonly<RouterLimits> = Object.freeze({
   maxBuckets: 32,
   maxTransferShards: 64,
   maxBoardings: 3,
-  maxLabelsPerStop: 32,
+  maxLabelsPerStop: null,
   maxTotalLabels: 100_000,
   maxAlternatives: 3,
   wallTimeMs: null,
@@ -130,7 +130,7 @@ function routerLimits(overrides: Partial<RouterLimits> = {}): RouterLimits {
   const limits = { ...DEFAULT_ROUTER_LIMITS };
   const boundedKeys = [
     'horizonSeconds', 'maxBuckets', 'maxTransferShards', 'maxBoardings',
-    'maxLabelsPerStop', 'maxTotalLabels', 'maxAlternatives',
+    'maxTotalLabels', 'maxAlternatives',
   ] as const;
   for (const key of boundedKeys) {
     const override = overrides[key];
@@ -140,12 +140,13 @@ function routerLimits(overrides: Partial<RouterLimits> = {}): RouterLimits {
     }
     limits[key] = override;
   }
-  const wallTimeMs = overrides.wallTimeMs;
-  if (wallTimeMs !== undefined) {
-    if (wallTimeMs !== null && (!Number.isSafeInteger(wallTimeMs) || wallTimeMs < 1)) {
-      throw new RangeError('Invalid transit router limit: wallTimeMs');
+  for (const key of ['maxLabelsPerStop', 'wallTimeMs'] as const) {
+    const override = overrides[key];
+    if (override === undefined) continue;
+    if (override !== null && (!Number.isSafeInteger(override) || override < 1)) {
+      throw new RangeError(`Invalid transit router limit: ${key}`);
     }
-    limits.wallTimeMs = wallTimeMs;
+    limits[key] = override;
   }
   return limits;
 }
@@ -226,13 +227,13 @@ function dominates(first: ArrivalLabel, second: ArrivalLabel): boolean {
     && first.walkingSeconds <= second.walkingSeconds && first.boardings <= second.boardings;
 }
 
-function retainLabel<T extends ArrivalLabel>(frontier: T[], label: T, cap: number,
+function retainLabel<T extends ArrivalLabel>(frontier: T[], label: T, cap: number | null,
   canDominate: (first: T, second: T) => boolean = dominates): void {
   if (frontier.some((other) => canDominate(other, label))) return;
   for (let i = frontier.length - 1; i >= 0; i--) {
     if (canDominate(label, frontier[i])) frontier.splice(i, 1);
   }
-  if (frontier.length >= cap) throw new BudgetExceeded('stop-labels');
+  if (cap !== null && frontier.length >= cap) throw new BudgetExceeded('stop-labels');
   frontier.push(label);
 }
 
@@ -497,7 +498,9 @@ class ConnectionScan {
         (first.ride?.moved || !second.ride?.moved) && (!hasPositiveDuration(second) || hasPositiveDuration(first))
         && this.dominatesForContinuation(first, second));
     }
-    if (next.length > this.limits.maxLabelsPerStop) throw new BudgetExceeded('stop-labels');
+    if (this.limits.maxLabelsPerStop !== null && next.length > this.limits.maxLabelsPerStop) {
+      throw new BudgetExceeded('stop-labels');
+    }
     this.onboard.set(key, next);
     return connection.dropOffType === 0 ? next.filter((label) => label.ride?.moved && hasPositiveDuration(label)) : [];
   }

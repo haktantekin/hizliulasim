@@ -8,7 +8,6 @@ import type { ServiceDay } from './service-calendar.ts';
 import { clearTransitSnapshotCacheForTests, loadActiveSnapshot } from './snapshot-source.ts';
 import { manifestFixture } from './test-fixtures.ts';
 import {
-  DEFAULT_ROUTER_LIMITS,
   rankJourneys,
   routeTransitSnapshot,
   scanTransitConnections,
@@ -16,10 +15,6 @@ import {
   type JourneySegment,
   type RouterInput,
 } from './router.ts';
-
-test('allows a wider label frontier for a remote snapshot route', () => {
-  assert.equal(DEFAULT_ROUTER_LIMITS.maxLabelsPerStop, 32);
-});
 
 const serviceClass = 'a'.repeat(64);
 const secondClass = 'b'.repeat(64);
@@ -275,6 +270,19 @@ test('ranks the same capped set by each preference and deduplicates repeated con
   assert.deepEqual(tighter.journeys.map(trips), [['fast', 'fast-change']]);
 });
 
+test('default scan keeps more than 32 incomparable labels at one stop', () => {
+  const alternatives = Array.from({ length: 33 }, (_, index) => (
+    ride(`choice-${index}`, `X${index}`, 'B', 100, 150 + index)
+  ));
+  const access = Array.from({ length: 33 }, (_, index) => walk(`X${index}`, 32 - index, 32 - index));
+  const result = scanTransitConnections({
+    ...query({ access }),
+    connections: [...alternatives, ride('end', 'B', 'Z', 300, 400)],
+  });
+
+  assert.equal(result.status, 'ok');
+});
+
 test('exposes per-stop and total label budget exhaustion', () => {
   const network = [ride('early', 'A', 'B', 100, 150), ride('less-walk', 'X', 'B', 100, 200), ride('end', 'B', 'Z', 260, 300)];
   const access = [walk('A', 55, 50), walk('X')];
@@ -285,7 +293,7 @@ test('exposes per-stop and total label budget exhaustion', () => {
 });
 
 test('rejects invalid or over-cap limit overrides', () => {
-  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 65 }, { maxLabelsPerStop: 33 },
+  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 65 }, { maxLabelsPerStop: 0 },
     { maxTotalLabels: 100001 }, { maxAlternatives: 4 }, { wallTimeMs: 0 }]) {
     assert.throws(() => scanTransitConnections({ ...query({ limits }), connections: [] }), RangeError);
   }
