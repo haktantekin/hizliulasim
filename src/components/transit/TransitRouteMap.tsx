@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Map as LeafletMap } from 'leaflet';
 import type { TransitItinerary } from '@/lib/transit/contracts';
+import { canDrawTransitMap } from '@/lib/transit/map-lifecycle';
 import { buildTransitMapModel, type TransitMapMarker } from '@/lib/transit/map-model';
 import { getTransitPathStyle, TRANSIT_BASEMAP_OPACITY } from '@/lib/transit/map-style';
 import { getModePresentation } from '@/lib/transit/presentation';
@@ -105,6 +106,7 @@ function addKeyPoint(leaflet: Leaflet, group: ReturnType<Leaflet['layerGroup']>,
 
 export default function TransitRouteMap({ itinerary, size, selectedAlternative, selectedStep }: TransitRouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const legendId = useId();
   const model = useMemo(() => buildTransitMapModel(itinerary, selectedStep), [itinerary, selectedStep]);
   const hasBounds = model.bounds !== null;
@@ -120,6 +122,7 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative, 
     Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]).then(([leaflet]) => {
       if (cancelled) return;
       map = leaflet.map(container, { scrollWheelZoom: false });
+      mapRef.current = map;
       leaflet.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         opacity: TRANSIT_BASEMAP_OPACITY,
@@ -132,6 +135,7 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative, 
 
     return () => {
       cancelled = true;
+      if (mapRef.current === map) mapRef.current = null;
       map?.remove();
     };
   }, []);
@@ -139,6 +143,7 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative, 
   useEffect(() => {
     if (!mapState || mapState === 'unavailable' || !model.bounds) return;
     const { leaflet, map } = mapState;
+    if (!canDrawTransitMap(mapRef.current, map)) return;
     const group = leaflet.layerGroup();
     const activeSegment = model.segments.find(({ highlighted }) => highlighted);
     const segments = activeSegment
