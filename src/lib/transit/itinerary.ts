@@ -31,13 +31,13 @@ const istanbulClock = new Intl.DateTimeFormat('tr-TR', {
 
 // Standard GTFS route types and unambiguous extended types used by these modes.
 const rideModes: Readonly<Partial<Record<number, RideMode>>> = {
-  0: 'tram', 1: 'metro', 2: 'rail', 3: 'bus', 4: 'ferry', 5: 'tram', 7: 'funicular', 11: 'bus', 12: 'rail',
+  0: 'tram', 1: 'metro', 2: 'rail', 3: 'bus', 4: 'ferry', 5: 'tram', 6: 'cable_car', 7: 'funicular', 11: 'bus', 12: 'rail',
   100: 'rail', 109: 'rail', 401: 'metro', 402: 'metro', 700: 'bus', 800: 'bus', 900: 'tram',
   1200: 'ferry', 1400: 'funicular', 1501: 'minibus',
 };
 const rideColors: Record<RideMode, string> = {
   bus: '#f59e0b', metro: '#dc2626', rail: '#881337', tram: '#e11d48',
-  ferry: '#2563eb', funicular: '#be123c', minibus: '#7c3aed',
+  ferry: '#2563eb', funicular: '#be123c', cable_car: '#9f1239', minibus: '#7c3aed',
 };
 
 export interface ShapeIndex {

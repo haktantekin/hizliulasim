@@ -4,6 +4,7 @@ import { test, type TestContext } from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { parseManifest, type Coordinate, type TransitGeometry, type TransitManifest, type TransitStop } from './contracts.ts';
 import { attachContentLink, buildItinerary, collectKeyPoints, mergeLegGeometry } from './itinerary.ts';
+import { getModePresentation } from './presentation.ts';
 import type { JourneySegment } from './router.ts';
 import { clearTransitSnapshotCacheForTests, loadActiveSnapshot, TransitSnapshotError } from './snapshot-source.ts';
 import { manifestFixture } from './test-fixtures.ts';
@@ -328,6 +329,19 @@ test('recognizes rail, tram, ferry, funicular and dolmuş route types from snaps
   }
 });
 
+test('recognizes cable car route types', async (t) => {
+  const store = snapshotStorage(t);
+  const route = payloads()[metroRoutePath];
+  store.publish('mode_cable_car', { [metroRoutePath]: { ...route, routeType: 6 } });
+
+  const result = await buildItinerary(journey(), await loadActiveSnapshot());
+
+  assert.equal(result.steps[3].mode, 'cable_car');
+  assert.deepEqual(getModePresentation('cable_car'), {
+    label: 'Teleferik', color: '#9f1239', icon: 'cable-car',
+  });
+});
+
 const fixture = payloads();
 const pattern = busPatternRecord;
 const integrityCases: [string, string, unknown][] = [
@@ -338,7 +352,7 @@ const integrityCases: [string, string, unknown][] = [
   ['a stop with invalid coordinates', stopPath, { ...fixture[stopPath], stops: [...stops.slice(0, -1), { ...stops.at(-1), longitude: 30 }] }],
   ['a route with the wrong ID', busRoutePath, { ...fixture[busRoutePath], routeId: 'metro' }],
   ['a route missing its ride pattern', busRoutePath, { ...fixture[busRoutePath], patternIds: [] }],
-  ['an unsupported route type', busRoutePath, { ...fixture[busRoutePath], routeType: 6 }],
+  ['an unsupported route type', busRoutePath, { ...fixture[busRoutePath], routeType: 99 }],
   ['a route with malformed labels', busRoutePath, { ...fixture[busRoutePath], shortName: 500 }],
   ['a pattern with the wrong ID', busPatternPath, { patterns: [{ ...pattern, patternId: metroPattern }] }],
   ['a pattern with the wrong route', busPatternPath, { patterns: [{ ...pattern, routeId: 'metro' }] }],

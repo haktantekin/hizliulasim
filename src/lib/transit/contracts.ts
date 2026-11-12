@@ -7,7 +7,8 @@ export const MAX_ROUTE_DEPARTURE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
 export type Coordinate = [latitude: number, longitude: number];
 export type RoutePreference = 'fastest' | 'less-walking' | 'fewer-transfers';
 export type RouteTravelMode = 'transit' | 'walking' | 'bus' | 'metro';
-export type TransitMode = 'bus' | 'metro' | 'tram' | 'rail' | 'ferry' | 'funicular' | 'minibus' | 'walking';
+export type TransitMode = 'bus' | 'metro' | 'tram' | 'rail' | 'ferry' | 'funicular' | 'cable_car' | 'minibus' | 'walking';
+export type TransitProvider = 'iett' | 'metro' | 'tcdd' | 'sehirhatlari' | 'minibus';
 export type GeometryQuality = 'exact' | 'approximate';
 
 export interface TransitSnapshotPointer {
@@ -56,14 +57,23 @@ const pathIndexes = [
   'stops', 'stopGrid', 'routes', 'patterns', 'shapes', 'transfers', 'connectionBuckets',
 ] as const;
 
-type TransitManifestIndexes = Record<(typeof pathIndexes)[number], Record<string, string>> & {
+type TransitManifestIndexesV1 = Record<(typeof pathIndexes)[number], Record<string, string>> & {
   sourceShapes: Record<string, string>;
   calendarRules: Record<string, string>;
   serviceClasses: Record<string, TransitServiceClass>;
 };
 
-export interface TransitManifest {
-  schemaVersion: typeof TRANSIT_SCHEMA_VERSION;
+type TransitManifestIndexesV2 = TransitManifestIndexesV1 & { transferGraph: string };
+
+export interface TransitProviderCoverage {
+  provider: TransitProvider;
+  modes: Exclude<TransitMode, 'walking'>[];
+  retrievedAt: string;
+  status: 'current' | 'stale';
+  sourceSha256: string;
+}
+
+interface TransitManifestBase {
   version: string;
   createdAt: string;
   source: TransitManifestSource;
@@ -76,9 +86,21 @@ export interface TransitManifest {
   };
   counts: Record<string, number>;
   quality: Record<string, unknown>;
-  indexes: TransitManifestIndexes;
   files: Record<string, TransitFileMetadata>;
 }
+
+export interface TransitManifestV1 extends TransitManifestBase {
+  schemaVersion: 1;
+  indexes: TransitManifestIndexesV1;
+}
+
+export interface TransitManifestV2 extends TransitManifestBase {
+  schemaVersion: 2;
+  indexes: TransitManifestIndexesV2;
+  providerCoverage: TransitProviderCoverage[];
+}
+
+export type TransitManifest = TransitManifestV1 | TransitManifestV2;
 
 export interface TransitStop {
   stopId: string;
@@ -125,6 +147,8 @@ export interface TransitConnection {
   arrivalStopSequence: number;
   pickupType: 0 | 1 | 2 | 3;
   dropOffType: 0 | 1 | 2 | 3;
+  mode?: Exclude<TransitMode, 'walking'>;
+  durationSecondsEstimated?: boolean;
 }
 
 export interface TransitTransfer {
@@ -210,6 +234,8 @@ const connectionBucketPattern = /^([a-f0-9]{64})-(?:[0-6]\d|7[01])$/;
 const gridCellPattern = /^(?:0|-?[1-9]\d*)_(?:0|-?[1-9]\d*)$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const instantPattern = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+const transitProviders = ['iett', 'metro', 'tcdd', 'sehirhatlari', 'minibus'] as const satisfies readonly TransitProvider[];
+const providerModes = ['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'cable_car', 'minibus'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -302,6 +328,24 @@ function isFileInventory(value: unknown): value is Record<string, TransitFileMet
     filePathPattern.test(path) && isRecord(file) && isIntegerAtLeast(file.bytes, 1) && isSha256(file.sha256));
 }
 
+function isProviderCoverage(value: unknown): value is TransitProviderCoverage[] {
+  if (!Array.isArray(value) || value.length !== transitProviders.length) return false;
+  const seen = new Set<TransitProvider>();
+  for (const entry of value) {
+    if (!isRecord(entry) || Object.keys(entry).length !== 5
+      || !transitProviders.includes(entry.provider as TransitProvider)
+      || !Array.isArray(entry.modes) || entry.modes.length === 0
+      || !entry.modes.every((mode) => providerModes.includes(mode as (typeof providerModes)[number]))
+      || new Set(entry.modes).size !== entry.modes.length
+      || !Number.isFinite(parseInstant(entry.retrievedAt))
+      || (entry.status !== 'current' && entry.status !== 'stale')
+      || !isSha256(entry.sourceSha256)) return false;
+    if (seen.has(entry.provider as TransitProvider)) return false;
+    seen.add(entry.provider as TransitProvider);
+  }
+  return transitProviders.every((provider) => seen.has(provider));
+}
+
 function isServiceClass(value: unknown): value is TransitServiceClass {
   if (!isRecord(value) || !Array.isArray(value.serviceIds) || !isRecord(value.calendar)) return false;
   const { weekdays, startDate, endDate, addedDates, removedDates } = value.calendar;
@@ -354,9 +398,11 @@ function hasMatchingSpatialIndexes(indexes: Record<string, unknown>): boolean {
     });
 }
 
-function isManifestIndexes(value: unknown, files: Record<string, TransitFileMetadata>): boolean {
+function isManifestIndexes(value: unknown, files: Record<string, TransitFileMetadata>, schemaVersion: 1 | 2): boolean {
   if (!isRecord(value) || !isRecord(value.shapes) || !isRecord(value.serviceClasses)) return false;
-  return pathIndexes.every((name) => isReferenceMap(value[name], files))
+  const transferGraphValid = schemaVersion === 1 || (value.transferGraph === 'transfers/graph.json.gz'
+    && Object.hasOwn(files, value.transferGraph));
+  return transferGraphValid && pathIndexes.every((name) => isReferenceMap(value[name], files))
     && isReferenceMap(value.sourceShapes, value.shapes)
     && hasMatchingCalendarRules(value.serviceClasses, value.calendarRules)
     && hasMatchingConnectionBuckets(value.connectionBuckets, value.serviceClasses)
@@ -373,7 +419,7 @@ export function parseSnapshotPointer(value: unknown): TransitSnapshotPointer {
 }
 
 export function parseManifest(value: unknown): TransitManifest {
-  if (!isRecord(value) || value.schemaVersion !== TRANSIT_SCHEMA_VERSION) {
+  if (!isRecord(value) || (value.schemaVersion !== 1 && value.schemaVersion !== 2)) {
     throw new TypeError('Unsupported transit manifest schema version');
   }
   if (!isVersionId(value.version) || !Number.isFinite(parseInstant(value.createdAt))
@@ -382,7 +428,8 @@ export function parseManifest(value: unknown): TransitManifest {
     || !isBoundingBox(value.boundingBox) || !isCounts(value.counts) || !isRecord(value.quality)) {
     throw new TypeError('Invalid transit manifest metadata');
   }
-  if (!isFileInventory(value.files) || !isManifestIndexes(value.indexes, value.files)) {
+  if (!isFileInventory(value.files) || !isManifestIndexes(value.indexes, value.files, value.schemaVersion)
+    || (value.schemaVersion === 2 && !isProviderCoverage(value.providerCoverage))) {
     throw new TypeError('Invalid transit manifest inventory or indexes');
   }
 

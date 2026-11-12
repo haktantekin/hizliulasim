@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { parseManifest, parseRouteRequest, parseSnapshotPointer } from './contracts.ts';
-import { manifestFixture, snapshotPointerFixture } from './test-fixtures.ts';
+import { manifestFixture, multimodalManifestFixture, snapshotPointerFixture } from './test-fixtures.ts';
 
 const now = new Date('2026-11-10T12:00:00.000Z');
 
@@ -58,6 +58,30 @@ test('reads historical schema-1 snapshots without the source provenance marker',
   assert.deepEqual(parseManifest(historical), historical);
 });
 
+test('parses a v2 multimodal manifest without weakening v1 validation', () => {
+  const v1 = parseManifest(structuredClone(manifestFixture));
+  const v2 = parseManifest(structuredClone(multimodalManifestFixture));
+
+  assert.deepEqual(v1, manifestFixture);
+  if (v2.schemaVersion !== 2) assert.fail('Expected schema version 2');
+  assert.deepEqual(v2.providerCoverage, multimodalManifestFixture.providerCoverage);
+  assert.equal(v2.indexes.transferGraph, 'transfers/graph.json.gz');
+});
+
+test('rejects unknown providers and unsafe transfer graph paths', () => {
+  assert.throws(() => parseManifest({
+    ...multimodalManifestFixture,
+    providerCoverage: [
+      ...multimodalManifestFixture.providerCoverage.slice(0, -1),
+      { ...multimodalManifestFixture.providerCoverage.at(-1), provider: 'unknown' },
+    ],
+  }));
+  assert.throws(() => parseManifest({
+    ...multimodalManifestFixture,
+    indexes: { ...multimodalManifestFixture.indexes, transferGraph: '../graph.json.gz' },
+  }));
+});
+
 test('rejects each missing required manifest field', () => {
   for (const key of Object.keys(manifestFixture)) {
     const value: Record<string, unknown> = { ...manifestFixture };
@@ -67,7 +91,7 @@ test('rejects each missing required manifest field', () => {
 });
 
 test('rejects unsupported manifest schema versions', () => {
-  for (const schemaVersion of [2, '1']) {
+  for (const schemaVersion of [3, '1']) {
     assert.throws(() => parseManifest({ ...manifestFixture, schemaVersion }));
   }
 });

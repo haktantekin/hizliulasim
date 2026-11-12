@@ -9,6 +9,7 @@ const routePath = `routes/${routeHash}.json.gz`;
 const patternPath = `patterns/${patternId}.json.gz`;
 const shapePath = `shapes/${shapeId}.json.gz`;
 const connectionPath = `connections/${serviceClass}-25.json.gz`;
+const transferGraphPath = 'transfers/graph.json.gz';
 
 function resource(table: string) {
   return {
@@ -84,4 +85,22 @@ export const manifestFixture = {
     [stopPath, transferPath, routePath, patternPath, shapePath, connectionPath, 'content-links.json.gz']
       .map((path) => [path, { bytes: 64, sha256: '2'.repeat(64) }]),
   ),
+};
+
+export const multimodalManifestFixture = {
+  ...manifestFixture,
+  schemaVersion: 2,
+  version: 'fixture_v2',
+  providerCoverage: [
+    { provider: 'iett', modes: ['bus'], retrievedAt: '2026-11-10T12:00:00+03:00', status: 'current', sourceSha256: '3'.repeat(64) },
+    { provider: 'metro', modes: ['metro', 'tram', 'funicular', 'cable_car'], retrievedAt: '2026-11-10T12:01:00+03:00', status: 'current', sourceSha256: '4'.repeat(64) },
+    { provider: 'tcdd', modes: ['rail'], retrievedAt: '2026-11-10T12:02:00+03:00', status: 'current', sourceSha256: '5'.repeat(64) },
+    { provider: 'sehirhatlari', modes: ['ferry'], retrievedAt: '2026-11-10T12:03:00+03:00', status: 'stale', sourceSha256: '6'.repeat(64) },
+    { provider: 'minibus', modes: ['minibus'], retrievedAt: '2026-11-10T12:04:00+03:00', status: 'current', sourceSha256: '7'.repeat(64) },
+  ],
+  indexes: { ...manifestFixture.indexes, transferGraph: transferGraphPath },
+  files: {
+    ...manifestFixture.files,
+    [transferGraphPath]: { bytes: 64, sha256: '8'.repeat(64) },
+  },
 };

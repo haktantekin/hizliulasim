@@ -11,6 +11,7 @@ const modes = {
   rail: { label: 'Tren', color: '#881337', icon: 'train-track' },
   ferry: { label: 'Vapur', color: '#2563eb', icon: 'ship' },
   funicular: { label: 'Füniküler', color: '#be123c', icon: 'cable-car' },
+  cable_car: { label: 'Teleferik', color: '#9f1239', icon: 'cable-car' },
   minibus: { label: 'Minibüs', color: '#7c3aed', icon: 'van' },
 } as const satisfies Record<TransitMode, { label: string; color: string; icon: string }>;
 
@@ -32,6 +33,7 @@ const boardingVehicles: Record<RideMode, string> = {
   rail: 'trenine',
   ferry: 'vapuruna',
   funicular: 'fünikülerine',
+  cable_car: 'teleferiğine',
   minibus: 'minibüsüne',
 };
 
