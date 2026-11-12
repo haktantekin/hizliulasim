@@ -19,7 +19,7 @@ export const DEFAULT_ROUTER_LIMITS: Readonly<RouterLimits> = Object.freeze({
   horizonSeconds: 6 * 3600,
   maxBuckets: 32,
   maxTransferShards: null,
-  maxBoardings: 3,
+  maxBoardings: 4,
   maxLabelsPerStop: null,
   maxTotalLabels: 100_000,
   maxAlternatives: 3,
@@ -668,6 +668,24 @@ export function getStartupConnectionPaths(manifest: TransitManifest, departureAt
   return [...paths];
 }
 
+function selectTopologyBuckets(manifest: TransitManifest, departureAt: Date, overrides: Partial<RouterLimits>,
+  checkTime: () => void): Bucket[] {
+  const limits = routerLimits(overrides);
+  const context = getServiceContext(departureAt, manifest);
+  const day = context.serviceDays.find((candidate) => candidate.serviceDate === context.serviceDate);
+  if (!day) return [];
+  const representativeTime = day.anchorEpochMs + 10 * hourMs;
+  const buckets = selectBuckets(manifest, representativeTime, representativeTime + hourMs - 1, checkTime);
+  const firstStart = buckets[0]?.startEpochMs;
+  return buckets.filter((bucket) => bucket.startEpochMs === firstStart).slice(0, limits.maxBuckets);
+}
+
+/** A representative daytime bucket supplies a schedule-independent route topology. */
+export function getTopologyConnectionPaths(manifest: TransitManifest, departureAt: Date,
+  overrides: Partial<RouterLimits>, checkTime: () => void): string[] {
+  return [...new Set(selectTopologyBuckets(manifest, departureAt, overrides, checkTime).map(({ path }) => path))];
+}
+
 function compareProducerConnections(first: TransitConnection, second: TransitConnection): number {
   return first.departure - second.departure || first.arrival - second.arrival
     // PHP strcmp orders UTF-8 bytes, including trip IDs containing supplementary characters.
@@ -886,5 +904,273 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
     return { ...budgetResult(error), diagnostics };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+interface TopologyEdge {
+  connection: TransitConnection;
+  durationSeconds: number;
+}
+
+interface TransitTopology {
+  outgoing: ReadonlyMap<string, readonly TopologyEdge[]>;
+  representatives: ReadonlyMap<string, TransitConnection>;
+}
+
+interface TopologyTransition {
+  previous: TopologyState;
+  edge: TopologyEdge;
+  departureSeconds: number;
+  arrivalSeconds: number;
+}
+
+interface TopologyState {
+  key: string;
+  stopId: string;
+  patternId: string | null;
+  sequence: number;
+  canAlight: boolean;
+  boardings: number;
+  elapsedSeconds: number;
+  walkingSeconds: number;
+  access: StopWalk;
+  transition: TopologyTransition | null;
+}
+
+interface TopologyDestination {
+  state: TopologyState;
+  egress: StopWalk;
+}
+
+const topologyCache = new Map<string, Promise<TransitTopology>>();
+
+function compareTopologyMetrics(first: Pick<TopologyState, 'elapsedSeconds' | 'walkingSeconds' | 'boardings' | 'key'>,
+  second: Pick<TopologyState, 'elapsedSeconds' | 'walkingSeconds' | 'boardings' | 'key'>,
+  preference: RoutePreference): number {
+  const time = first.elapsedSeconds - second.elapsedSeconds;
+  const walking = first.walkingSeconds - second.walkingSeconds;
+  const boardings = first.boardings - second.boardings;
+  const metric = preference === 'less-walking' ? walking || time || boardings
+    : preference === 'fewer-transfers' ? boardings || time || walking
+      : time || walking || boardings;
+  return metric || compareIds(first.key, second.key);
+}
+
+class TopologyQueue {
+  private readonly values: TopologyState[] = [];
+  private readonly compare: (first: TopologyState, second: TopologyState) => number;
+
+  constructor(compare: (first: TopologyState, second: TopologyState) => number) {
+    this.compare = compare;
+  }
+
+  get size(): number { return this.values.length; }
+
+  push(value: TopologyState): void {
+    let index = this.values.push(value) - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (this.compare(this.values[parent], value) <= 0) break;
+      this.values[index] = this.values[parent];
+      index = parent;
+    }
+    this.values[index] = value;
+  }
+
+  pop(): TopologyState | undefined {
+    const first = this.values[0];
+    const last = this.values.pop();
+    if (!first || !last || this.values.length === 0) return first;
+    let index = 0;
+    while (true) {
+      const left = index * 2 + 1;
+      if (left >= this.values.length) break;
+      const right = left + 1;
+      const child = right < this.values.length && this.compare(this.values[right], this.values[left]) < 0 ? right : left;
+      if (this.compare(last, this.values[child]) <= 0) break;
+      this.values[index] = this.values[child];
+      index = child;
+    }
+    this.values[index] = last;
+    return first;
+  }
+}
+
+function topologyStateKey(stopId: string, patternId: string | null, sequence: number, boardings: number): string {
+  return `${stopId}\0${patternId ?? ''}\0${sequence}\0${boardings}`;
+}
+
+async function loadTransitTopology(snapshot: LoadedSnapshot, buckets: readonly Bucket[], checkTime: () => void,
+  diagnostics: SnapshotRouterResult['diagnostics']): Promise<TransitTopology> {
+  const key = JSON.stringify([snapshot.pointer.manifestSha256, ...buckets.map(({ path }) => path)]);
+  const cached = topologyCache.get(key);
+  if (cached) return cached;
+
+  const loading = (async () => {
+    const outgoing = new Map<string, Map<string, TopologyEdge>>();
+    const representatives = new Map<string, TransitConnection>();
+    const paths = new Set<string>();
+    for (const bucket of buckets) {
+      checkTime();
+      diagnostics.connectionBuckets++;
+      paths.add(bucket.path);
+      diagnostics.connectionShards = paths.size;
+      for await (const instance of streamBucket(snapshot, bucket, snapshot.manifest, checkTime)) {
+        const connection = instance.connection;
+        const representative = representatives.get(connection.patternId);
+        if (!representative || compareIds(connection.tripId, representative.tripId) < 0) {
+          representatives.set(connection.patternId, connection);
+        }
+        const durationSeconds = Math.max(1, connection.arrival - connection.departure);
+        const edges = outgoing.get(connection.fromStopId) ?? new Map<string, TopologyEdge>();
+        const edgeKey = `${connection.patternId}\0${connection.stopSequence}\0${connection.arrivalStopSequence}\0${connection.toStopId}`;
+        const previous = edges.get(edgeKey);
+        if (!previous || durationSeconds < previous.durationSeconds
+          || (durationSeconds === previous.durationSeconds && compareIds(connection.tripId, previous.connection.tripId) < 0)) {
+          edges.set(edgeKey, { connection, durationSeconds });
+        }
+        outgoing.set(connection.fromStopId, edges);
+      }
+    }
+    const sorted = new Map<string, readonly TopologyEdge[]>();
+    for (const [stopId, edges] of outgoing) {
+      sorted.set(stopId, [...edges.values()].sort((first, second) =>
+        compareIds(first.connection.patternId, second.connection.patternId)
+        || first.connection.stopSequence - second.connection.stopSequence
+        || first.connection.arrivalStopSequence - second.connection.arrivalStopSequence
+        || compareIds(first.connection.toStopId, second.connection.toStopId)));
+    }
+    return { outgoing: sorted, representatives };
+  })();
+  topologyCache.set(key, loading);
+  while (topologyCache.size > 2) topologyCache.delete(topologyCache.keys().next().value!);
+  try {
+    return await loading;
+  } catch (error) {
+    if (topologyCache.get(key) === loading) topologyCache.delete(key);
+    throw error;
+  }
+}
+
+function topologyJourney(destination: TopologyDestination, input: RouterQuery,
+  representatives: TransitTopology['representatives'], serviceDate: string): JourneySegment[] {
+  const transitions: TopologyTransition[] = [];
+  for (let state: TopologyState | null = destination.state; state?.transition; state = state.transition.previous) {
+    transitions.push(state.transition);
+  }
+  transitions.reverse();
+  const start = input.departureAt.getTime();
+  const accessArrival = start + destination.state.access.walkingSeconds * 1000;
+  const journey: JourneySegment[] = [{
+    kind: 'walk', role: 'access', fromCoordinate: input.origin, toStopId: destination.state.access.stopId,
+    departureEpochMs: start, arrivalEpochMs: accessArrival, distanceMeters: destination.state.access.distanceMeters,
+    walkingSeconds: destination.state.access.walkingSeconds,
+  }];
+  for (const transition of transitions) {
+    const edge = transition.edge.connection;
+    const vehicle = representatives.get(edge.patternId) ?? edge;
+    journey.push({
+      kind: 'ride', serviceDate, tripId: vehicle.tripId, routeId: vehicle.routeId, serviceId: vehicle.serviceId,
+      patternId: edge.patternId, shapeId: vehicle.shapeId, directionId: vehicle.directionId, headsign: vehicle.headsign,
+      fromStopId: edge.fromStopId, toStopId: edge.toStopId, stopIds: [edge.fromStopId, edge.toStopId],
+      stopSequence: edge.stopSequence, arrivalStopSequence: edge.arrivalStopSequence,
+      departureEpochMs: start + transition.departureSeconds * 1000,
+      arrivalEpochMs: start + transition.arrivalSeconds * 1000,
+    });
+  }
+  const rideArrival = start + destination.state.elapsedSeconds * 1000;
+  journey.push({
+    kind: 'walk', role: 'egress', fromStopId: destination.state.stopId, toCoordinate: input.destination,
+    departureEpochMs: rideArrival,
+    arrivalEpochMs: rideArrival + destination.egress.walkingSeconds * 1000,
+    distanceMeters: destination.egress.distanceMeters, walkingSeconds: destination.egress.walkingSeconds,
+  });
+  return journey;
+}
+
+/** Route over one representative daytime bucket; departure schedules intentionally do not affect path selection. */
+export async function routeTransitTopology(snapshot: LoadedSnapshot, input: RouterQuery,
+  { clock = () => performance.now(), checkTime: checkRequestTime,
+    diagnostics = { connectionBuckets: 0, connectionShards: 0, transferShards: 0 } }: SnapshotRouterOptions = {}
+): Promise<SnapshotRouterResult> {
+  const limits = routerLimits(input.limits);
+  const deadline = limits.wallTimeMs === null ? null : clock() + limits.wallTimeMs;
+  const checkTime = () => {
+    checkRequestTime?.();
+    if (deadline !== null && clock() >= deadline) throw new BudgetExceeded('timeout');
+  };
+  try {
+    const buckets = selectTopologyBuckets(snapshot.manifest, input.departureAt, limits, checkTime);
+    if (buckets.length === 0 || input.access.length === 0 || input.egress.length === 0) {
+      return { status: 'no-route', diagnostics };
+    }
+    const topology = await loadTransitTopology(snapshot, buckets, checkTime, diagnostics);
+    checkTime();
+    const preference = input.preference ?? 'fastest';
+    const compare = (first: TopologyState, second: TopologyState) => compareTopologyMetrics(first, second, preference);
+    const queue = new TopologyQueue(compare);
+    const best = new Map<string, TopologyState>();
+    const destinations = new Map(input.egress.map((walk) => [walk.stopId, walk]));
+    let choice: TopologyDestination | null = null;
+
+    for (const access of input.access) {
+      assertStopWalk(access);
+      const key = topologyStateKey(access.stopId, null, -1, 0);
+      const state: TopologyState = {
+        key, stopId: access.stopId, patternId: null, sequence: -1, canAlight: true, boardings: 0,
+        elapsedSeconds: access.walkingSeconds, walkingSeconds: access.walkingSeconds, access, transition: null,
+      };
+      const previous = best.get(key);
+      if (!previous || compare(state, previous) < 0) {
+        best.set(key, state);
+        queue.push(state);
+      }
+    }
+
+    while (queue.size > 0) {
+      checkTime();
+      const state = queue.pop()!;
+      if (best.get(state.key) !== state) continue;
+      const egress = destinations.get(state.stopId);
+      if (egress && state.boardings > 0 && state.canAlight) {
+        const candidate = { state: { ...state, elapsedSeconds: state.elapsedSeconds + egress.walkingSeconds,
+          walkingSeconds: state.walkingSeconds + egress.walkingSeconds }, egress };
+        if (!choice || compare(candidate.state, {
+          ...choice.state, elapsedSeconds: choice.state.elapsedSeconds + choice.egress.walkingSeconds,
+          walkingSeconds: choice.state.walkingSeconds + choice.egress.walkingSeconds,
+        }) < 0) choice = { state, egress };
+      }
+
+      for (const edge of topology.outgoing.get(state.stopId) ?? []) {
+        const connection = edge.connection;
+        const continuing = state.patternId === connection.patternId && state.sequence === connection.stopSequence;
+        if (!continuing && ((!state.canAlight && state.patternId !== null) || connection.pickupType !== 0)) continue;
+        const boardings = state.boardings + (continuing ? 0 : 1);
+        if (boardings > limits.maxBoardings) continue;
+        const wait = continuing ? 0 : state.boardings === 0 ? boardingBufferSeconds : transferBufferSeconds;
+        const departureSeconds = state.elapsedSeconds + wait;
+        const elapsedSeconds = departureSeconds + edge.durationSeconds;
+        if (elapsedSeconds > limits.horizonSeconds) continue;
+        const key = topologyStateKey(connection.toStopId, connection.patternId,
+          connection.arrivalStopSequence, boardings);
+        const next: TopologyState = {
+          key, stopId: connection.toStopId, patternId: connection.patternId,
+          sequence: connection.arrivalStopSequence, canAlight: connection.dropOffType === 0,
+          boardings, elapsedSeconds, walkingSeconds: state.walkingSeconds, access: state.access,
+          transition: { previous: state, edge, departureSeconds, arrivalSeconds: elapsedSeconds },
+        };
+        const previous = best.get(key);
+        if (previous && compare(previous, next) <= 0) continue;
+        best.set(key, next);
+        if (best.size > limits.maxTotalLabels) throw new BudgetExceeded('total-labels');
+        queue.push(next);
+      }
+    }
+
+    if (!choice) return { status: 'no-route', diagnostics };
+    const serviceDate = buckets[0].day.serviceDate;
+    return { status: 'ok', journeys: [topologyJourney(choice, input, topology.representatives, serviceDate)], diagnostics };
+  } catch (error) {
+    return { ...budgetResult(error), diagnostics };
   }
 }

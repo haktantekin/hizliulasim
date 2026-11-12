@@ -1,6 +1,6 @@
 import { parseRouteRequest, type RouteTravelMode, type TransitItinerary } from '../../../../lib/transit/contracts.ts';
 import { buildItinerary } from '../../../../lib/transit/itinerary.ts';
-import { DEFAULT_ROUTER_LIMITS, getStartupConnectionPaths, routeTransitSnapshot,
+import { DEFAULT_ROUTER_LIMITS, getTopologyConnectionPaths, routeTransitTopology,
   type RouterLimits, type StopWalk } from '../../../../lib/transit/router.ts';
 import { loadActiveSnapshotWithPreflight, TransitSnapshotError } from '../../../../lib/transit/snapshot-source.ts';
 import { estimateWalk, findNearbyStops, getNearbyStopGridPaths, loadNearbyStopGrid,
@@ -118,7 +118,7 @@ export function createTransitRouteHandler({
       const points = [query.origin, query.destination];
       const snapshot = await loadActiveSnapshotWithPreflight((manifest) => [
         ...getNearbyStopGridPaths(manifest, points).values(),
-        ...getStartupConnectionPaths(manifest, query.departureAt, limits, checkTime),
+        ...getTopologyConnectionPaths(manifest, query.departureAt, limits, checkTime),
       ], { checkTime, signal: abort.signal, connectionPreflight: 'compressed',
         onFallback: (reason) => { fallbackReason = reason; } });
       version = snapshot.version;
@@ -134,7 +134,7 @@ export function createTransitRouteHandler({
       checkTime();
       if (!access.length || !egress.length) return fail('NO_ROUTE');
 
-      const result = await routeTransitSnapshot(snapshot, { ...query, access, egress, limits },
+      const result = await routeTransitTopology(snapshot, { ...query, access, egress, limits },
         { clock, checkTime, diagnostics });
       checkTime();
       if (result.status === 'budget-exceeded') return fail('ROUTE_TIMEOUT', result.budget);

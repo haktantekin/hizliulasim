@@ -9,6 +9,7 @@ import { clearTransitSnapshotCacheForTests, loadActiveSnapshot } from './snapsho
 import { manifestFixture } from './test-fixtures.ts';
 import {
   rankJourneys,
+  routeTransitTopology,
   routeTransitSnapshot,
   scanTransitConnections,
   type DatedConnection,
@@ -124,13 +125,13 @@ test('does not spend the label budget expanding a dominated alight', () => {
   assert.deepEqual(result.status === 'ok' ? trips(result.journeys[0]) : [], ['T', 'E']);
 });
 
-test('allows two changes and enforces tighter and absolute boarding caps', () => {
+test('allows three changes and enforces tighter and absolute boarding caps', () => {
   const network = [ride('T1', 'A', 'B', 30, 100), ride('T2', 'B', 'C', 160, 200),
     ride('T3', 'C', 'Z', 260, 300), ride('T4', 'Z', 'Y', 360, 400)];
-  assert.deepEqual(trips(journey(network)), ['T1', 'T2', 'T3']);
+  assert.deepEqual(trips(journey(network, { egress: [walk('Y')] })), ['T1', 'T2', 'T3', 'T4']);
   noRoute(network, { limits: { maxBoardings: 2 } });
-  noRoute(network, { egress: [walk('Y')] });
-  assert.throws(() => scanTransitConnections({ ...query({ limits: { maxBoardings: 4 } }), connections: network }), RangeError);
+  assert.deepEqual(trips(journey(network, { egress: [walk('Y')], limits: { maxBoardings: 4 } })), ['T1', 'T2', 'T3', 'T4']);
+  assert.throws(() => scanTransitConnections({ ...query({ limits: { maxBoardings: 5 } }), connections: network }), RangeError);
 });
 
 test('continues on the same dated vehicle through restricted intermediate stops', () => {
@@ -460,6 +461,30 @@ function publishedStorage(t: TestContext) {
 
   return { files, publish, reads, onRead: (callback: typeof onRead) => { onRead = callback; } };
 }
+
+test('routes from one representative topology bucket and permits four boardings', async (t) => {
+  const storage = publishedStorage(t);
+  const manifest = publishedManifest();
+  const patterns = ['1'.repeat(64), '2'.repeat(64), '3'.repeat(64), '4'.repeat(64)];
+  const patternPath = manifest.indexes.patterns[patternId];
+  for (const id of patterns) manifest.indexes.patterns[id] = patternPath;
+  storage.publish(manifest, 'topology_route', {
+    [bucket(serviceClass, 10)]: { connections: [
+      connection('T1', 'A', 'B', 10 * hour + 10, 10 * hour + 100, { patternId: patterns[0] }),
+      connection('T2', 'B', 'X', 10 * hour + 110, 10 * hour + 200, { patternId: patterns[1] }),
+      connection('T3', 'X', 'C', 10 * hour + 210, 10 * hour + 300, { patternId: patterns[2] }),
+      connection('T4', 'C', 'Z', 10 * hour + 310, 10 * hour + 400, { patternId: patterns[3] }),
+    ] },
+  });
+
+  const result = await routeTransitTopology(await loadActiveSnapshot(), query());
+
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(result.status === 'ok' ? trips(result.journeys[0]) : [], ['T1', 'T2', 'T3', 'T4']);
+  assert.deepEqual(result.diagnostics, { connectionBuckets: 1, connectionShards: 1, transferShards: 0 });
+  assert.equal(storage.reads.filter((path) => path.includes('/connections/')).length, 1);
+  assert.equal(storage.reads.some((path) => path.includes('/transfers/')), false);
+});
 
 test('skips inactive weekly and removed service buckets and reads added service', async (t) => {
   const storage = publishedStorage(t);

@@ -7,7 +7,7 @@ import type { NextConfig } from 'next';
 import { transpileConfig } from 'next/dist/build/next-config-ts/transpile-config.js';
 import {
   checkedAt, connectionPath, contentPath, decoyStopPath, destinationStopPath,
-  destinationTransferPath, fixtureStorage, originStopPath, shapePath,
+  fixtureStorage, originStopPath, shapePath,
 } from '../test-storage.ts';
 import { createTransitRouteHandler } from './handler.ts';
 import { dynamic, POST, runtime } from './route.ts';
@@ -101,7 +101,7 @@ test('preflights adjacent stop grids and the first connection hour before routin
   assert.equal(itineraries[0].steps[1].lineCode, 'T1');
   assert.equal(itineraries[0].steps[1].board.contentLink.title, 'Başlangıç durağı');
   assert.equal(itineraries[0].metadata.serviceDate, '2026-11-10');
-  assert.deepEqual(diagnostics, { connectionBuckets: 1, connectionShards: 1, transferShards: 2,
+  assert.deepEqual(diagnostics, { connectionBuckets: 1, connectionShards: 1, transferShards: 0,
     originCandidates: 1, destinationCandidates: 1 });
   assert.deepEqual(new Set(storage.reads.slice(3, 7)), new Set(
     [originStopPath, destinationStopPath, decoyStopPath, connectionPath(10)].map((path) => `versions/current_test/${path}`),
@@ -109,8 +109,9 @@ test('preflights adjacent stop grids and the first connection hour before routin
   assert.equal(storage.reads.includes(`versions/current_test/${connectionPath(11)}`), false);
   assert.equal(storage.reads.filter((path) => path === `versions/current_test/${connectionPath(10)}`).length, 1);
   assert.deepEqual(logs, [{ event: 'transit_route', outcome: 'ok', elapsedMs: 0, version: 'current_test',
-    usedFallback: false, connectionShards: 1, transferShards: 2, originCandidates: 1,
+    usedFallback: false, connectionShards: 1, transferShards: 0, originCandidates: 1,
     destinationCandidates: 1, alternatives: 1 }]);
+  assert.equal(storage.reads.some((path) => path.includes('/transfers/')), false);
   assert.doesNotMatch(JSON.stringify(logs), /41\.000987|29\.021234|originLat|Başlangıç|hizliulasim|internal-assets/u);
 });
 
@@ -266,13 +267,13 @@ for (const [label, path, payload] of malformedShards) {
   });
 }
 
-test('returns 504 on a search resource limit without reading a later bucket', async (t) => {
+test('bounds the topology search to one representative bucket', async (t) => {
   const storage = fixtureStorage(t);
   storage.publish('current', 'current_test', { laterBucket: true, noServiceToDestination: true });
   const { get, logs } = routeHandler({ limits: { maxBuckets: 1 } });
-  await expectError(await get(routeRequest()), 504, 'ROUTE_TIMEOUT');
+  await expectError(await get(routeRequest()), 404, 'NO_ROUTE');
   assert.equal(storage.reads.includes(`versions/current_test/${connectionPath(11)}`), false);
-  assert.match(JSON.stringify(logs), /buckets/u);
+  assert.match(JSON.stringify(logs), /NO_ROUTE/u);
 });
 
 test('returns 504 when the pointer read stalls and prevents manifest I/O when it resumes', async (t) => {
@@ -290,7 +291,6 @@ test('returns 504 when the pointer read stalls and prevents manifest I/O when it
 
 for (const [phase, path] of [
   ['startup preflight', contentPath],
-  ['route scan', destinationTransferPath],
   ['itinerary enrichment', shapePath],
 ]) {
   test(`stops new I/O and returns 504 at the deadline during ${phase}`, async (t) => {
