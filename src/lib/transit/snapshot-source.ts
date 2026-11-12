@@ -29,6 +29,7 @@ const contentLinksPath = 'content-links.json.gz';
 const sha256Pattern = /^[a-f0-9]{64}$/;
 const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 const inflateRaw = promisify(zlib.inflateRaw);
+const manifestBytesCache = new SnapshotCache<Buffer>(4, 32 * mib);
 const shardCache = new SnapshotCache<Buffer>(128, 64 * mib);
 const snapshotStorage = Symbol('snapshotStorage');
 
@@ -298,8 +299,13 @@ function freezeManifest(manifest: TransitManifest): TransitManifest {
 }
 
 async function readManifest(storage: SnapshotStorage, pointer: TransitSnapshotPointer): Promise<TransitManifest> {
-  const bytes = await readAsset(storage, `versions/${pointer.version}/manifest.json`, maxManifestBytes, true);
-  if (sha256(bytes) !== pointer.manifestSha256) throw new TransitSnapshotError('MANIFEST_HASH');
+  const cacheKey = JSON.stringify([storage.cacheScope, pointer.version, pointer.manifestSha256]);
+  let bytes = manifestBytesCache.get(cacheKey);
+  if (!bytes) {
+    bytes = await readAsset(storage, `versions/${pointer.version}/manifest.json`, maxManifestBytes, true);
+    if (sha256(bytes) !== pointer.manifestSha256) throw new TransitSnapshotError('MANIFEST_HASH');
+    manifestBytesCache.set(cacheKey, bytes, bytes.byteLength + 2 * cacheKey.length + 128);
+  }
   let manifest: TransitManifest;
   try {
     manifest = parseManifest(parseJson(bytes));
@@ -457,5 +463,6 @@ export async function loadActiveSnapshot(): Promise<LoadedSnapshot> {
 }
 
 export function clearTransitSnapshotCacheForTests(): void {
+  manifestBytesCache.clear();
   shardCache.clear();
 }

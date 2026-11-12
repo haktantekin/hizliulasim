@@ -525,6 +525,27 @@ test('reads production HTTP pointers fresh and permits CDN caching of versioned 
   ]);
 });
 
+test('reuses immutable manifest bytes while reading the production pointer fresh', async (t) => {
+  const root = await setupStorage(t, false);
+  await writePointer(root, 'current', await stageVersion(root, 'current_v1'));
+  Object.assign(process.env, {
+    NODE_ENV: 'production',
+    TRANSIT_DATA_BASE_URL: 'https://snapshot.example.test/feeds/transit',
+  });
+  const requests: string[] = [];
+  t.mock.method(globalThis, 'fetch', async (input: URL | string) => {
+    const url = new URL(input);
+    requests.push(url.href);
+    const relative = url.pathname.slice('/feeds/transit/'.length);
+    return new Response(await readFile(join(root, relative)));
+  });
+
+  assert.equal((await loadActiveSnapshot()).version, 'current_v1');
+  assert.equal((await loadActiveSnapshot()).version, 'current_v1');
+  assert.equal(requests.filter((url) => url.endsWith('/current.json')).length, 2);
+  assert.equal(requests.filter((url) => url.endsWith('/manifest.json')).length, 1);
+});
+
 test('cancels an HTTP shard stream as soon as it exceeds the declared size', async (t) => {
   const root = await setupStorage(t, false);
   await writePointer(root, 'current', await stageVersion(root, 'current_v1', {

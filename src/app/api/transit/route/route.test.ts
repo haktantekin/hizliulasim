@@ -10,7 +10,8 @@ import {
   destinationTransferPath, fixtureStorage, originStopPath, shapePath,
 } from '../test-storage.ts';
 import { createTransitRouteHandler } from './handler.ts';
-import { dynamic, POST, runtime } from './route.ts';
+import { DEFAULT_ROUTER_LIMITS } from '../../../../lib/transit/router.ts';
+import { dynamic, maxDuration, POST, runtime } from './route.ts';
 
 const params: Record<string, unknown> = {
   originLat: 41.000987, originLng: 28.999913,
@@ -51,6 +52,7 @@ async function expectError(response: Response, status: number, code: string) {
 test('the public route is dynamic and writes one coordinate-free JSON line with the default logger', async (t) => {
   assert.equal(runtime, 'nodejs');
   assert.equal(dynamic, 'force-dynamic');
+  assert.equal(maxDuration, 15);
   const lines: string[] = [];
   const writer = t.mock.method(process.stdout, 'write', (line: string) => {
     lines.push(line);
@@ -257,7 +259,7 @@ for (const [phase, path] of [
       if (monotonicTime > 0) lateReads.push(url.pathname);
       return fetch(url);
     });
-    storage.readHooks.set(`versions/current_test/${path}`, () => { monotonicTime = 1500; });
+    storage.readHooks.set(`versions/current_test/${path}`, () => { monotonicTime = DEFAULT_ROUTER_LIMITS.wallTimeMs; });
     const { get, logs } = routeHandler({ clock: () => monotonicTime });
     await expectError(await get(routeRequest()), 504, 'ROUTE_TIMEOUT');
     await setImmediate();

@@ -8,6 +8,7 @@ import type { ServiceDay } from './service-calendar.ts';
 import { clearTransitSnapshotCacheForTests, loadActiveSnapshot } from './snapshot-source.ts';
 import { manifestFixture } from './test-fixtures.ts';
 import {
+  DEFAULT_ROUTER_LIMITS,
   rankJourneys,
   routeTransitSnapshot,
   scanTransitConnections,
@@ -15,6 +16,11 @@ import {
   type JourneySegment,
   type RouterInput,
 } from './router.ts';
+
+test('allows enough wall time for a cold remote snapshot route', () => {
+  assert.equal(DEFAULT_ROUTER_LIMITS.wallTimeMs, 10_000);
+  assert.equal(DEFAULT_ROUTER_LIMITS.maxLabelsPerStop, 32);
+});
 
 const serviceClass = 'a'.repeat(64);
 const secondClass = 'b'.repeat(64);
@@ -280,8 +286,8 @@ test('exposes per-stop and total label budget exhaustion', () => {
 });
 
 test('rejects over-cap limit overrides', () => {
-  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 65 }, { maxLabelsPerStop: 9 },
-    { maxTotalLabels: 100001 }, { maxAlternatives: 4 }, { wallTimeMs: 1501 }]) {
+  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 65 }, { maxLabelsPerStop: 33 },
+    { maxTotalLabels: 100001 }, { maxAlternatives: 4 }, { wallTimeMs: 10_001 }]) {
     assert.throws(() => scanTransitConnections({ ...query({ limits }), connections: [] }), RangeError);
   }
 });

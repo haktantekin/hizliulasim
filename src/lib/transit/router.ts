@@ -20,10 +20,10 @@ export const DEFAULT_ROUTER_LIMITS: Readonly<RouterLimits> = Object.freeze({
   maxBuckets: 32,
   maxTransferShards: 64,
   maxBoardings: 3,
-  maxLabelsPerStop: 8,
+  maxLabelsPerStop: 32,
   maxTotalLabels: 100_000,
   maxAlternatives: 3,
-  wallTimeMs: 1500,
+  wallTimeMs: 10_000,
 });
 
 const hourSeconds = 3600;
