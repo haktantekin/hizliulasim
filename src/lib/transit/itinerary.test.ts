@@ -138,7 +138,9 @@ function snapshotStorage(t: TestContext) {
 
 test('assembles walk, board and alight across a coalesced bus and a metro ride', async (t) => {
   snapshotStorage(t).publish('itinerary_v1');
-  const segments = journey();
+  const segments = journey().map((segment, index) => index === 2 && segment.kind === 'ride'
+    ? { ...segment, durationSecondsEstimated: true }
+    : segment);
   const result = await buildItinerary(segments, await loadActiveSnapshot());
   assert.deepEqual(result.steps.map(({ kind, mode }) => [kind, mode]), [
     ['walk', 'walking'], ['ride', 'bus'], ['walk', 'walking'], ['ride', 'metro'], ['walk', 'walking'],
@@ -150,6 +152,8 @@ test('assembles walk, board and alight across a coalesced bus and a metro ride',
   assert.deepEqual(rides[0].board, { role: 'board', stopId: '0', name: 'Durak 0', code: 'alias', coordinate: board, contentLink: stationLink });
   assert.equal(rides[0].alight.role, 'alight');
   assert.equal(rides[1].alight.role, 'alight');
+  assert.equal(rides[0].estimatedDuration, true);
+  assert.equal(rides[1].estimatedDuration, undefined);
   assert.equal(segments[1].kind === 'ride' && segments[1].toStopId, 'middle');
 });
 

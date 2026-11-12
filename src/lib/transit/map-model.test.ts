@@ -40,7 +40,7 @@ const itinerary: TransitItinerary = {
 };
 
 test('colors each leg by transit mode and dashes only approximate geometry', () => {
-  const modes = ['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'minibus'] as const;
+  const modes = ['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'cable_car', 'minibus'] as const;
   const model = buildTransitMapModel({
     ...itinerary,
     steps: [walk, ...modes.map((mode) => ({ ...bus, mode })), { ...bus, geometryQuality: 'approximate' }],
@@ -54,6 +54,7 @@ test('colors each leg by transit mode and dashes only approximate geometry', () 
     ['rail', '#881337', false],
     ['ferry', '#2563eb', false],
     ['funicular', '#be123c', false],
+    ['cable_car', '#9f1239', false],
     ['minibus', '#7c3aed', false],
     ['bus', '#f59e0b', true],
   ]);

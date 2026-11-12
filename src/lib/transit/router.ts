@@ -85,7 +85,8 @@ type WalkSegment = SegmentTime & { kind: 'walk'; distanceMeters: number; walking
   | { role: 'egress'; fromStopId: string; toCoordinate: Coordinate }
 );
 
-type Vehicle = Pick<TransitConnection, 'tripId' | 'routeId' | 'serviceId' | 'patternId' | 'shapeId' | 'directionId' | 'headsign'>;
+type Vehicle = Pick<TransitConnection, 'tripId' | 'routeId' | 'serviceId' | 'patternId' | 'shapeId' | 'directionId'
+  | 'headsign' | 'durationSecondsEstimated'>;
 
 type RideSegment = SegmentTime & Vehicle & {
   kind: 'ride';
@@ -200,6 +201,7 @@ function mergeJourneySegments(reverseChain: JourneySegment[]): JourneySegment[] 
       last.toStopId = segment.toStopId;
       last.arrivalStopSequence = segment.arrivalStopSequence;
       last.arrivalEpochMs = segment.arrivalEpochMs;
+      last.durationSecondsEstimated ||= segment.durationSecondsEstimated;
     } else {
       journey.push(segment.kind === 'ride' ? { ...segment, stopIds: [...segment.stopIds] } : segment);
     }
@@ -315,10 +317,11 @@ function instantiate(connection: TransitConnection, day: ServiceDay): Connection
 
 function rideSegment({ serviceDate, departureEpochMs, arrivalEpochMs, connection }: ConnectionInstance): RideSegment {
   const { tripId, routeId, serviceId, patternId, shapeId, directionId, headsign, fromStopId, toStopId,
-    stopSequence, arrivalStopSequence } = connection;
+    stopSequence, arrivalStopSequence, durationSecondsEstimated } = connection;
   return {
     kind: 'ride', serviceDate, departureEpochMs, arrivalEpochMs, tripId, routeId, serviceId, patternId, shapeId, directionId, headsign,
-    fromStopId, toStopId, stopSequence, arrivalStopSequence, stopIds: fromStopId === toStopId ? [fromStopId] : [fromStopId, toStopId],
+    fromStopId, toStopId, stopSequence, arrivalStopSequence, durationSecondsEstimated,
+    stopIds: fromStopId === toStopId ? [fromStopId] : [fromStopId, toStopId],
   };
 }
 
@@ -562,6 +565,7 @@ class ConnectionScan {
         ...previousRide,
         toStopId: edge.toStopId,
         arrivalStopSequence: edge.arrivalStopSequence,
+        durationSecondsEstimated: Boolean(previousRide.durationSecondsEstimated || edge.durationSecondsEstimated),
         arrivalEpochMs: edge.arrivalEpochMs,
         stopIds: previousRide.toStopId === edge.toStopId
           ? [...previousRide.stopIds]
@@ -1126,6 +1130,7 @@ function topologyJourney(destination: TopologyDestination, input: RouterQuery,
       patternId: edge.patternId, shapeId: vehicle.shapeId, directionId: vehicle.directionId, headsign: vehicle.headsign,
       fromStopId: edge.fromStopId, toStopId: edge.toStopId, stopIds: [edge.fromStopId, edge.toStopId],
       stopSequence: edge.stopSequence, arrivalStopSequence: edge.arrivalStopSequence,
+      durationSecondsEstimated: edge.durationSecondsEstimated,
       departureEpochMs: start + transition.departureSeconds * 1000,
       arrivalEpochMs: start + transition.arrivalSeconds * 1000,
     });

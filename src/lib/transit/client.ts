@@ -1,4 +1,4 @@
-import type { TransitItinerary, TransitRouteRequest } from './contracts.ts';
+import type { TransitItinerary, TransitProviderCoverage, TransitProviderMode, TransitRouteRequest } from './contracts.ts';
 import { canonicalizeRouteCoordinates } from './route-search-area.ts';
 
 const errorMessages = {
@@ -22,18 +22,27 @@ export class TransitRouteError extends Error {
 
 export interface TransitRouteResponse {
   itineraries: TransitItinerary[];
-  metadata: { dataVersion: string; usedFallback: boolean };
+  metadata: { dataVersion: string; usedFallback: boolean; providerCoverage?: TransitProviderCoverage[] };
   diagnostics: {
     connectionBuckets: number;
     connectionShards: number;
     originCandidates: number;
     destinationCandidates: number;
+    transferGraphLoaded?: boolean;
   };
 }
 
-const rideModes = new Set(['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'minibus']);
+const rideModes = new Set<TransitProviderMode>(['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'cable_car', 'minibus']);
 const pointRoles = new Set(['origin', 'board', 'alight', 'transfer', 'destination']);
 const travelModes = new Set(['transit', 'walking', 'bus', 'metro']);
+const providerModes = {
+  iett: ['bus'],
+  metro: ['metro', 'tram', 'funicular', 'cable_car'],
+  tcdd: ['rail'],
+  sehirhatlari: ['ferry'],
+  minibus: ['minibus'],
+} as const satisfies Record<TransitProviderCoverage['provider'], readonly TransitProviderMode[]>;
+const sha256Pattern = /^[a-f0-9]{64}$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -70,9 +79,28 @@ function isStep(value: unknown): boolean {
     || !Array.isArray(value.geometry) || !value.geometry.every(isCoordinate)) return false;
 
   if (value.kind === 'walk') return value.mode === 'walking';
-  return value.kind === 'ride' && typeof value.mode === 'string' && rideModes.has(value.mode)
+  return value.kind === 'ride' && typeof value.mode === 'string' && rideModes.has(value.mode as TransitProviderMode)
     && typeof value.lineCode === 'string' && typeof value.color === 'string'
-    && isNonnegativeNumber(value.stopCount) && isPoint(value.board) && isPoint(value.alight);
+    && isNonnegativeNumber(value.stopCount) && isPoint(value.board) && isPoint(value.alight)
+    && (value.estimatedDuration === undefined || typeof value.estimatedDuration === 'boolean');
+}
+
+function isProviderCoverage(value: unknown): value is TransitProviderCoverage[] {
+  if (!Array.isArray(value) || value.length !== Object.keys(providerModes).length) return false;
+  const seen = new Set<string>();
+  for (const entry of value) {
+    if (!isRecord(entry) || Object.keys(entry).length !== 5 || typeof entry.provider !== 'string'
+      || !Object.hasOwn(providerModes, entry.provider) || seen.has(entry.provider)
+      || !Array.isArray(entry.modes) || !entry.modes.every((mode) => typeof mode === 'string')
+      || typeof entry.retrievedAt !== 'string' || !Number.isFinite(Date.parse(entry.retrievedAt))
+      || (entry.status !== 'current' && entry.status !== 'stale')
+      || typeof entry.sourceSha256 !== 'string' || !sha256Pattern.test(entry.sourceSha256)) return false;
+    const expectedModes = providerModes[entry.provider as keyof typeof providerModes];
+    if (entry.modes.length !== expectedModes.length
+      || !entry.modes.every((mode, index) => mode === expectedModes[index])) return false;
+    seen.add(entry.provider);
+  }
+  return seen.size === Object.keys(providerModes).length;
 }
 
 function isItinerary(value: unknown): boolean {
@@ -91,8 +119,10 @@ function isRouteResponse(value: unknown): value is TransitRouteResponse {
   if (!isRecord(value) || !isRecord(value.metadata) || !isRecord(value.diagnostics)) return false;
   const { metadata, diagnostics, itineraries } = value;
   return typeof metadata.dataVersion === 'string' && typeof metadata.usedFallback === 'boolean'
+    && (metadata.providerCoverage === undefined || isProviderCoverage(metadata.providerCoverage))
     && isNonnegativeNumber(diagnostics.connectionBuckets) && isNonnegativeNumber(diagnostics.connectionShards)
     && isNonnegativeNumber(diagnostics.originCandidates) && isNonnegativeNumber(diagnostics.destinationCandidates)
+    && (diagnostics.transferGraphLoaded === undefined || typeof diagnostics.transferGraphLoaded === 'boolean')
     && Array.isArray(itineraries) && itineraries.length > 0 && itineraries.every(isItinerary);
 }
 

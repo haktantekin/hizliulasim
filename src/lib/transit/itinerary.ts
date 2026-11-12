@@ -347,6 +347,7 @@ function coalesceRides(journey: JourneySegment[]): JourneySegment[] {
       previous.toStopId = segment.toStopId;
       previous.arrivalStopSequence = segment.arrivalStopSequence;
       previous.arrivalEpochMs = segment.arrivalEpochMs;
+      previous.durationSecondsEstimated ||= segment.durationSecondsEstimated;
     } else {
       legs.push(segment.kind === 'ride' ? { ...segment, stopIds: [...segment.stopIds] } : segment);
     }
@@ -534,6 +535,7 @@ export async function buildItinerary(journey: JourneySegment[], snapshot: Loaded
       board: boardingPoint('board', getRequired(assets.stops, leg.fromStopId), assets.links),
       alight: boardingPoint('alight', getRequired(assets.stops, leg.toStopId), assets.links),
       stopCount: leg.stopIds.length - 1,
+      ...(leg.durationSecondsEstimated !== undefined && { estimatedDuration: leg.durationSecondsEstimated }),
       distanceMeters: stepDistance(geometry), geometry, geometryQuality, ...times,
     };
   });

@@ -1,5 +1,7 @@
 import { BROKEN_DURAK_SLUGS } from '../../broken-redirects.ts';
-import type { RoutePreference, RouteTravelMode, TransitBoardingPoint, TransitItinerary, TransitMode } from './contracts.ts';
+import type {
+  RoutePreference, RouteTravelMode, TransitBoardingPoint, TransitItinerary, TransitMode, TransitProviderCoverage,
+} from './contracts.ts';
 import { coordinatesInRouteSearchArea } from './route-search-area.ts';
 import type { PlannerLocation, ShareablePlannerState } from './share-url.ts';
 
@@ -42,6 +44,54 @@ const canonicalStopPath = /^\/otobus-duraklari\/([a-z0-9]+(?:-[a-z0-9]+)*-[0-9]+
 
 export function getModePresentation(mode: TransitMode): ModePresentation {
   return modes[mode];
+}
+
+const travelModeLabels = {
+  transit: 'Tümü',
+  walking: 'Yürüyerek',
+  bus: 'Otobüs',
+  metro: 'Metro',
+} as const satisfies Record<RouteTravelMode, string>;
+
+const providerLabels = {
+  iett: 'İETT',
+  metro: 'Metro İstanbul',
+  tcdd: 'Marmaray',
+  sehirhatlari: 'Şehir Hatları',
+  minibus: 'Minibüs',
+} as const;
+
+export function getTravelModeLabel(mode: RouteTravelMode): string {
+  return travelModeLabels[mode];
+}
+
+export function getUsedTransitModes(itinerary: TransitItinerary): RideMode[] {
+  const used = new Set<RideMode>();
+  for (const step of itinerary.steps) {
+    if (step.kind === 'ride') used.add(step.mode);
+  }
+  return [...used];
+}
+
+export function getTransitCoverageNotice(
+  itinerary: TransitItinerary,
+  coverage?: readonly Readonly<Omit<TransitProviderCoverage, 'modes'> & { modes: readonly RideMode[] }>[],
+): string | null {
+  const usedModes = new Set(getUsedTransitModes(itinerary));
+  const estimated = itinerary.steps.some((step) => step.kind === 'ride' && step.estimatedDuration === true);
+  if (!coverage) {
+    return `Bu rota mevcut İETT otobüs verisiyle hesaplandı.${estimated ? ' Bazı yolculuk süreleri tahminidir.' : ''}`;
+  }
+
+  const staleProviders = coverage
+    .filter((entry) => entry.status === 'stale' && entry.modes.some((mode) => usedModes.has(mode)))
+    .map((entry) => providerLabels[entry.provider]);
+  const notices: string[] = [];
+  if (staleProviders.length > 0) {
+    notices.push(`${staleProviders.join(', ')} için son doğrulanmış paket kullanılıyor.`);
+  }
+  if (estimated) notices.push('Bazı yolculuk süreleri tahminidir.');
+  return notices.length > 0 ? notices.join(' ') : null;
 }
 
 export function getCanonicalStopHref(href: string | undefined): string | undefined {
@@ -119,7 +169,10 @@ export interface PlannerEndpoint {
 export type PlannerRoute =
   | { kind: 'idle' }
   | ({ kind: 'loading'; id: number } & Omit<ShareablePlannerState, 'selectedAlternative'>)
-  | { kind: 'success'; departureAt: string; alternatives: TransitItinerary[]; selectedAlternative: number; selectedStep: number | null }
+  | {
+    kind: 'success'; departureAt: string; alternatives: TransitItinerary[]; selectedAlternative: number;
+    selectedStep: number | null; providerCoverage?: TransitProviderCoverage[];
+  }
   | { kind: 'error'; message: string };
 
 export interface PlannerState {
@@ -147,7 +200,10 @@ export type PlannerAction =
   | { type: 'set-preference'; preference: RoutePreference }
   | { type: 'set-travel-mode'; travelMode: RouteTravelMode }
   | { type: 'submit-route'; departureAt: string }
-  | { type: 'route-succeeded'; id: number; departureAt: string; alternatives: TransitItinerary[] }
+  | {
+    type: 'route-succeeded'; id: number; departureAt: string; alternatives: TransitItinerary[];
+    providerCoverage?: TransitProviderCoverage[];
+  }
   | { type: 'route-failed'; id: number; message: string }
   | { type: 'cancel-route' }
   | { type: 'retry-route'; departureAt: string }
@@ -308,6 +364,7 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
           alternatives,
           selectedAlternative: Number.isInteger(index) && alternatives[index] ? index : 0,
           selectedStep: null,
+          ...(action.providerCoverage && { providerCoverage: action.providerCoverage }),
         },
       };
     }

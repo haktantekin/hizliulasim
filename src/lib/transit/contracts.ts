@@ -223,6 +223,7 @@ export type TransitLeg = TransitLegDetails & (
       board: TransitBoardingPoint;
       alight: TransitBoardingPoint;
       stopCount: number;
+      estimatedDuration?: boolean;
     }
 );
 

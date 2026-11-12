@@ -125,14 +125,17 @@ function useRouteRequest(route: PlannerRoute, dispatch: Dispatch<PlannerAction>)
       if (signal.aborted) return;
       const departureAt = request.departureAt ? new Date(request.departureAt) : new Date();
       try {
-        const { itineraries } = await requestTransitRoutes({
+        const { itineraries, metadata } = await requestTransitRoutes({
           origin: [origin.latitude, origin.longitude],
           destination: [destination.latitude, destination.longitude],
           departureAt,
           preference,
           travelMode,
         }, signal);
-        if (!signal.aborted) dispatch({ type: 'route-succeeded', id, departureAt: departureAt.toISOString(), alternatives: itineraries });
+        if (!signal.aborted) dispatch({
+          type: 'route-succeeded', id, departureAt: departureAt.toISOString(), alternatives: itineraries,
+          providerCoverage: metadata.providerCoverage,
+        });
       } catch (error) {
         if (!signal.aborted) dispatch({
           type: 'route-failed',
@@ -220,6 +223,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
             compact={compact}
             selectedStep={route.selectedStep}
             onSelectStep={(index) => dispatch({ type: 'select-step', index })}
+            providerCoverage={route.providerCoverage}
           />
           <TransitRouteMapLoader
             itinerary={activeItinerary}

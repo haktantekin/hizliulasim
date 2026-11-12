@@ -61,6 +61,34 @@ test('posts the seven route contract fields without putting coordinates in the r
   assert.equal(init?.signal, signal);
 });
 
+test('accepts validated provider coverage and estimated multimodal ride metadata', async (t) => {
+  const providerCoverage = [
+    { provider: 'iett', modes: ['bus'], retrievedAt: '2026-11-10T12:00:00Z', status: 'current', sourceSha256: '1'.repeat(64) },
+    { provider: 'metro', modes: ['metro', 'tram', 'funicular', 'cable_car'], retrievedAt: '2026-11-10T12:01:00Z', status: 'stale', sourceSha256: '2'.repeat(64) },
+    { provider: 'tcdd', modes: ['rail'], retrievedAt: '2026-11-10T12:02:00Z', status: 'current', sourceSha256: '3'.repeat(64) },
+    { provider: 'sehirhatlari', modes: ['ferry'], retrievedAt: '2026-11-10T12:03:00Z', status: 'current', sourceSha256: '4'.repeat(64) },
+    { provider: 'minibus', modes: ['minibus'], retrievedAt: '2026-11-10T12:04:00Z', status: 'current', sourceSha256: '5'.repeat(64) },
+  ];
+  const multimodalPayload = {
+    ...payload,
+    itineraries: [{ ...itinerary, steps: [{ ...itinerary.steps[0], mode: 'cable_car', estimatedDuration: true }] }],
+    metadata: { ...payload.metadata, providerCoverage },
+    diagnostics: { ...payload.diagnostics, transferGraphLoaded: true },
+  };
+  t.mock.method(globalThis, 'fetch', async () => Response.json(multimodalPayload));
+
+  assert.deepEqual(await requestTransitRoutes(input), multimodalPayload);
+});
+
+test('rejects unknown or incomplete provider coverage', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({
+    ...payload,
+    metadata: { ...payload.metadata, providerCoverage: [{ provider: 'unknown' }] },
+  }));
+
+  await assert.rejects(requestTransitRoutes(input), { code: 'DATA_UNAVAILABLE' });
+});
+
 test('requests the same coordinates before and after sharing a route near a boarding threshold', async (t) => {
   const fetchRoute = t.mock.method(globalThis, 'fetch', async () => Response.json(payload));
   // Rounding this origin changes walking time to the nearby stop at [41.00001, 29].

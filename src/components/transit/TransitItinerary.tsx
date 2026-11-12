@@ -1,6 +1,6 @@
 import { Bus, CableCar, Footprints, MapPin, Ship, TrainFront, TrainTrack, TramFront, Van } from 'lucide-react';
-import type { TransitItinerary as Itinerary } from '@/lib/transit/contracts';
-import { buildTimelineItems, getModePresentation } from '@/lib/transit/presentation';
+import type { TransitItinerary as Itinerary, TransitProviderCoverage } from '@/lib/transit/contracts';
+import { buildTimelineItems, getModePresentation, getTransitCoverageNotice } from '@/lib/transit/presentation';
 import TransitStopLabel from './TransitStopLabel';
 
 const modeIcons = {
@@ -19,17 +19,22 @@ interface TransitItineraryProps {
   compact: boolean;
   selectedStep: number | null;
   onSelectStep: (index: number) => void;
+  providerCoverage?: readonly TransitProviderCoverage[];
 }
 
-export default function TransitItinerary({ itinerary, compact, selectedStep, onSelectStep }: TransitItineraryProps) {
+export default function TransitItinerary({
+  itinerary, compact, selectedStep, onSelectStep, providerCoverage,
+}: TransitItineraryProps) {
   const items = buildTimelineItems(itinerary);
+  const coverageNotice = getTransitCoverageNotice(itinerary, providerCoverage);
 
   return (
-    <ol
-      role="list"
-      aria-label="Rota adımları"
-      className={`rounded-xl border border-gray-200 bg-white ${compact ? 'p-3' : 'p-4'}`}
-    >
+    <div className="grid gap-2">
+      <ol
+        role="list"
+        aria-label="Rota adımları"
+        className={`rounded-xl border border-gray-200 bg-white ${compact ? 'p-3' : 'p-4'}`}
+      >
       {items.map((item) => {
         const mode = getModePresentation(item.mode);
         const Icon = modeIcons[mode.icon];
@@ -87,6 +92,10 @@ export default function TransitItinerary({ itinerary, compact, selectedStep, onS
           </li>
         );
       })}
-    </ol>
+      </ol>
+      {coverageNotice && (
+        <p className="px-1 text-xs leading-relaxed text-gray-600">{coverageNotice}</p>
+      )}
+    </div>
   );
 }

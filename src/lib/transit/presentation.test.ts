@@ -6,7 +6,8 @@ import * as presentation from './presentation.ts';
 
 const {
   buildTimelineItems, createPlannerState, getCurrentDepartureAt,
-  getCurrentLocationButtonVisibility, getModePresentation, isPlannerLocation, reducePlanner,
+  getCurrentLocationButtonVisibility, getModePresentation, getTransitCoverageNotice, getTravelModeLabel,
+  getUsedTransitModes, isPlannerLocation, reducePlanner,
 } = presentation;
 
 const modes = [
@@ -17,6 +18,7 @@ const modes = [
   ['rail', 'Tren', '#881337', 'train-track'],
   ['ferry', 'Vapur', '#2563eb', 'ship'],
   ['funicular', 'Füniküler', '#be123c', 'cable-car'],
+  ['cable_car', 'Teleferik', '#9f1239', 'cable-car'],
   ['minibus', 'Minibüs', '#7c3aed', 'van'],
 ] as const satisfies readonly [TransitMode, string, string, string][];
 
@@ -24,6 +26,13 @@ test('each transit mode has a stable Turkish label, map color and icon', () => {
   for (const [mode, label, color, icon] of modes) {
     assert.deepEqual(getModePresentation(mode), { label, color, icon }, mode);
   }
+});
+
+test('labels the mixed public filter as Tümü while preserving its transit value', () => {
+  assert.equal(getTravelModeLabel('transit'), 'Tümü');
+  assert.equal(getTravelModeLabel('walking'), 'Yürüyerek');
+  assert.equal(getTravelModeLabel('bus'), 'Otobüs');
+  assert.equal(getTravelModeLabel('metro'), 'Metro');
 });
 
 const boardUrl = 'https://hizliulasim.com/otobus-duraklari/carsi-123456';
@@ -80,7 +89,7 @@ test('uses Turkish vehicle suffixes and singular stop count across transfers', (
   assert.equal(bus.kind, 'ride');
   const modes = [
     ['bus', 'otobüsüne'], ['metro', 'metrosuna'], ['tram', 'tramvayına'], ['rail', 'trenine'],
-    ['ferry', 'vapuruna'], ['funicular', 'fünikülerine'], ['minibus', 'minibüsüne'],
+    ['ferry', 'vapuruna'], ['funicular', 'fünikülerine'], ['cable_car', 'teleferiğine'], ['minibus', 'minibüsüne'],
   ] as const;
   for (const [mode, vehicle] of modes) {
     const items = buildTimelineItems({
@@ -100,6 +109,26 @@ test('uses Turkish vehicle suffixes and singular stop count across transfers', (
       { kind: 'alight', mode, stepIndex: 1, stop: { name: 'Merkez' }, action: 'durağında in', time: '10:28' },
     ]);
   }
+});
+
+test('summarizes used modes and explains stale, estimated and v1 coverage', () => {
+  const bus = itinerary.steps[1];
+  assert.equal(bus.kind, 'ride');
+  const mixed = {
+    ...itinerary,
+    steps: [bus, { ...bus, mode: 'metro' as const, estimatedDuration: true }],
+  };
+  assert.deepEqual(getUsedTransitModes(mixed), ['bus', 'metro']);
+  const coverage = [
+    { provider: 'iett', modes: ['bus'], retrievedAt: '2026-11-10T12:00:00Z', status: 'current', sourceSha256: '1'.repeat(64) },
+    { provider: 'metro', modes: ['metro'], retrievedAt: '2026-11-10T12:00:00Z', status: 'stale', sourceSha256: '2'.repeat(64) },
+    { provider: 'tcdd', modes: ['rail'], retrievedAt: '2026-11-10T12:00:00Z', status: 'current', sourceSha256: '3'.repeat(64) },
+    { provider: 'sehirhatlari', modes: ['ferry'], retrievedAt: '2026-11-10T12:00:00Z', status: 'current', sourceSha256: '4'.repeat(64) },
+    { provider: 'minibus', modes: ['minibus'], retrievedAt: '2026-11-10T12:00:00Z', status: 'current', sourceSha256: '5'.repeat(64) },
+  ] as const;
+  assert.equal(getTransitCoverageNotice(mixed, coverage),
+    'Metro İstanbul için son doğrulanmış paket kullanılıyor. Bazı yolculuk süreleri tahminidir.');
+  assert.equal(getTransitCoverageNotice(itinerary), 'Bu rota mevcut İETT otobüs verisiyle hesaplandı.');
 });
 
 test('summarizes duration, walking, transfers and scheduled times for each alternative', () => {
