@@ -19,6 +19,7 @@ const maxPointerBytes = 4 * 1024;
 const maxManifestBytes = 12 * mib;
 const maxCompressedShardBytes = 24 * mib;
 const maxUncompressedShardBytes = 64 * mib;
+const maxUncompressedConnectionShardBytes = 96 * mib;
 const maxJsonDepth = 64;
 const maxJsonContainers = 500_000;
 // Even a 64 MiB connection bucket with minimum-width fields has fewer than 3M commas.
@@ -30,6 +31,7 @@ const sha256Pattern = /^[a-f0-9]{64}$/;
 const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 const inflateRaw = promisify(zlib.inflateRaw);
 const manifestBytesCache = new SnapshotCache<Buffer>(4, 32 * mib);
+const compressedShardCache = new SnapshotCache<Buffer>(8, 64 * mib);
 const shardCache = new SnapshotCache<Buffer>(128, 64 * mib);
 const snapshotStorage = Symbol('snapshotStorage');
 
@@ -65,6 +67,8 @@ interface SnapshotReadOptions {
   checkTime?: () => void;
   signal?: AbortSignal;
 }
+
+export type SnapshotConnectionStreamOptions = SnapshotReadOptions;
 
 interface SnapshotPreflightOptions extends SnapshotReadOptions {
   onFallback?: (reason: SnapshotErrorCode) => void;
@@ -128,6 +132,12 @@ function parseJson(bytes: Buffer): unknown {
   const text = decoder.decode(bytes);
   checkJsonComplexity(text);
   return JSON.parse(text);
+}
+
+function streamCheck(options: SnapshotReadOptions, storage: SnapshotStorage): void {
+  storage.checkTime?.();
+  options.checkTime?.();
+  if (options.signal?.aborted) throw new TransitSnapshotError('READ_FAILED');
 }
 
 async function readLocalFile(root: string, path: string, limit: number, checkTime?: () => void): Promise<Buffer> {
@@ -275,14 +285,18 @@ export async function loadSnapshotPointer(name: PointerName): Promise<TransitSna
   return readPointer(await getStorage(), name);
 }
 
-function hasValidShardMetadata(file: ShardMetadata): boolean {
+function maxExpandedShardBytes(path: string): number {
+  return path.startsWith('connections/') ? maxUncompressedConnectionShardBytes : maxUncompressedShardBytes;
+}
+
+function hasValidShardMetadata(path: string, file: ShardMetadata): boolean {
   if (file.bytes > maxCompressedShardBytes) return false;
   const { uncompressedBytes, uncompressedSha256 } = file;
   // Schema 1 producer manifests publish the compressed digest and size. When expanded
   // integrity metadata is supplied, require the complete pair and apply the same hard cap.
   if (!Object.hasOwn(file, 'uncompressedBytes') && !Object.hasOwn(file, 'uncompressedSha256')) return true;
   return typeof uncompressedBytes === 'number' && Number.isSafeInteger(uncompressedBytes)
-    && uncompressedBytes > 0 && uncompressedBytes <= maxUncompressedShardBytes
+    && uncompressedBytes > 0 && uncompressedBytes <= maxExpandedShardBytes(path)
     && typeof uncompressedSha256 === 'string' && sha256Pattern.test(uncompressedSha256);
 }
 
@@ -313,7 +327,8 @@ async function readManifest(storage: SnapshotStorage, pointer: TransitSnapshotPo
     if (error instanceof TransitSnapshotError) throw error;
     throw new TransitSnapshotError('INVALID_MANIFEST');
   }
-  if (manifest.version !== pointer.version || !Object.values(manifest.files).every(hasValidShardMetadata)) {
+  if (manifest.version !== pointer.version
+    || !Object.entries(manifest.files).every(([path, file]) => hasValidShardMetadata(path, file))) {
     throw new TransitSnapshotError('INVALID_MANIFEST');
   }
   return freezeManifest(manifest);
@@ -330,27 +345,33 @@ export async function loadManifest(pointer: TransitSnapshotPointer): Promise<Tra
 }
 
 function gzipCrc(bytes: Buffer): number {
-  if (typeof zlib.crc32 === 'function') return zlib.crc32(bytes);
+  return updateGzipCrc(0, bytes);
+}
+
+let fallbackCrcTable: Uint32Array | undefined;
+
+function updateGzipCrc(value: number, bytes: Buffer): number {
+  if (typeof zlib.crc32 === 'function') return zlib.crc32(bytes, value);
   // Node 20 lacks zlib.crc32. Use the same IEEE CRC-32 polynomial for the gzip footer.
-  const table = new Uint32Array(256);
-  for (let index = 0; index < table.length; index++) {
-    let value = index;
-    for (let bit = 0; bit < 8; bit++) value = (value >>> 1) ^ ((value & 1) ? 0xedb88320 : 0);
-    table[index] = value;
+  fallbackCrcTable ??= new Uint32Array(256);
+  if (fallbackCrcTable[1] === 0) for (let index = 0; index < fallbackCrcTable.length; index++) {
+    let entry = index;
+    for (let bit = 0; bit < 8; bit++) entry = (entry >>> 1) ^ ((entry & 1) ? 0xedb88320 : 0);
+    fallbackCrcTable[index] = entry;
   }
-  let crc = 0xffffffff;
-  for (const byte of bytes) crc = (crc >>> 8) ^ table[(crc ^ byte) & 0xff];
+  let crc = value ^ 0xffffffff;
+  for (const byte of bytes) crc = (crc >>> 8) ^ fallbackCrcTable[(crc ^ byte) & 0xff];
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-async function expandShard(compressed: Buffer, metadata: ShardMetadata): Promise<Buffer> {
+async function expandShard(compressed: Buffer, metadata: ShardMetadata, legacyLimit: number): Promise<Buffer> {
   // The PHP producer emits a fixed-size gzip header without optional fields and exactly one member.
   if (compressed.length < 20 || compressed.readUInt32BE() !== 0x1f8b0800) {
     throw new TransitSnapshotError('INVALID_GZIP');
   }
   const footer = compressed.length - 8;
   const deflateBytes = compressed.subarray(10, footer);
-  const maxOutputLength = metadata.uncompressedBytes ?? maxUncompressedShardBytes;
+  const maxOutputLength = metadata.uncompressedBytes ?? legacyLimit;
   let expanded: Buffer;
   let consumed: number;
   try {
@@ -384,22 +405,209 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function shardKey(snapshot: LoadedSnapshot, relativePath: string): string {
+  const storage = snapshot[snapshotStorage];
+  return JSON.stringify([storage.cacheScope, snapshot.version, snapshot.pointer.manifestSha256, relativePath]);
+}
+
+function shardMetadata(snapshot: LoadedSnapshot, relativePath: string, connectionsOnly = false): ShardMetadata {
+  if (!relativePath.endsWith('.json.gz') || !Object.hasOwn(snapshot.manifest.files, relativePath)
+    || (connectionsOnly && !relativePath.startsWith('connections/'))) {
+    throw new TransitSnapshotError('UNDECLARED_SHARD');
+  }
+  return snapshot.manifest.files[relativePath];
+}
+
+async function readCompressedShard(snapshot: LoadedSnapshot, relativePath: string,
+  options: SnapshotReadOptions = {}): Promise<Buffer> {
+  const storage = snapshot[snapshotStorage];
+  streamCheck(options, storage);
+  const metadata = shardMetadata(snapshot, relativePath);
+  const key = shardKey(snapshot, relativePath);
+  let compressed = compressedShardCache.get(key);
+  if (!compressed) {
+    compressed = await readAsset(storage, `versions/${snapshot.version}/${relativePath}`, metadata.bytes, true);
+    if (compressed.length !== metadata.bytes) throw new TransitSnapshotError('SIZE_LIMIT');
+    if (sha256(compressed) !== metadata.sha256) throw new TransitSnapshotError('SHARD_HASH');
+    compressedShardCache.set(key, compressed, compressed.byteLength + 2 * key.length + 128);
+  }
+  streamCheck(options, storage);
+  return compressed;
+}
+
+async function* expandGzipChunks(compressed: Buffer, metadata: ShardMetadata, limit: number,
+  options: SnapshotReadOptions, storage: SnapshotStorage): AsyncGenerator<Buffer> {
+  if (compressed.length < 20 || compressed.readUInt32BE() !== 0x1f8b0800) {
+    throw new TransitSnapshotError('INVALID_GZIP');
+  }
+  const footer = compressed.length - 8;
+  const deflateBytes = compressed.subarray(10, footer);
+  const inflater = zlib.createInflateRaw({ chunkSize: 64 * 1024 });
+  let expandedBytes = 0;
+  let crc = 0;
+  const expandedHash = metadata.uncompressedSha256 === undefined ? undefined : createHash('sha256');
+  let consumed = 0;
+  try {
+    inflater.end(deflateBytes);
+    for await (const value of inflater) {
+      streamCheck(options, storage);
+      const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
+      expandedBytes += chunk.length;
+      if (expandedBytes > (metadata.uncompressedBytes ?? limit)) throw new TransitSnapshotError('SIZE_LIMIT');
+      crc = updateGzipCrc(crc, chunk);
+      expandedHash?.update(chunk);
+      yield chunk;
+    }
+    consumed = inflater.bytesWritten;
+  } catch (error) {
+    if (error instanceof TransitSnapshotError) throw error;
+    if (options.signal?.aborted) throw new TransitSnapshotError('READ_FAILED');
+    throw new TransitSnapshotError('INVALID_GZIP');
+  } finally {
+    inflater.destroy();
+  }
+  streamCheck(options, storage);
+  if (consumed !== deflateBytes.length || expandedBytes !== compressed.readUInt32LE(footer + 4)
+    || crc !== compressed.readUInt32LE(footer)) throw new TransitSnapshotError('INVALID_GZIP');
+  if (metadata.uncompressedBytes !== undefined && expandedBytes !== metadata.uncompressedBytes) {
+    throw new TransitSnapshotError('SIZE_LIMIT');
+  }
+  if (metadata.uncompressedSha256 !== undefined && expandedHash?.digest('hex') !== metadata.uncompressedSha256) {
+    throw new TransitSnapshotError('SHARD_HASH');
+  }
+}
+
+function createComplexityTracker() {
+  let depth = 0;
+  let containers = 0;
+  let commas = 0;
+  let inString = false;
+  let escaped = false;
+  let stringLength = 0;
+  return {
+    push(character: string) {
+      if (inString) {
+        stringLength++;
+        if (stringLength > maxJsonStringLength) throw new TransitSnapshotError('JSON_COMPLEXITY');
+        if (escaped) escaped = false;
+        else if (character === '\\') escaped = true;
+        else if (character === '"') inString = false;
+        return;
+      }
+      if (character === '"') {
+        inString = true;
+        stringLength = 0;
+      } else if (character === '[' || character === '{') {
+        depth++;
+        containers++;
+        if (depth > maxJsonDepth || containers > maxJsonContainers) throw new TransitSnapshotError('JSON_COMPLEXITY');
+      } else if (character === ']' || character === '}') {
+        depth--;
+      } else if (character === ',') {
+        commas++;
+        if (commas > maxJsonCommas) throw new TransitSnapshotError('JSON_COMPLEXITY');
+      }
+    },
+    finish() {
+      if (inString || escaped || depth !== 0) throw new TransitSnapshotError('INVALID_SHARD');
+    },
+  };
+}
+
+async function* parseConnectionChunks(chunks: AsyncIterable<Buffer>): AsyncGenerator<unknown> {
+  const streamDecoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+  const prefix = '{"connections":[';
+  let prefixAt = 0;
+  let phase: 'prefix' | 'value' | 'separator' | 'suffix' | 'done' = 'prefix';
+  let record = '';
+  let recordDepth = 0;
+  let recordInString = false;
+  let recordEscaped = false;
+  const complexity = createComplexityTracker();
+
+  function* accept(text: string): Generator<unknown> {
+    for (const character of text) {
+      complexity.push(character);
+      if (phase === 'prefix') {
+        if (character !== prefix[prefixAt++]) throw new TransitSnapshotError('INVALID_SHARD');
+        if (prefixAt === prefix.length) phase = 'value';
+        continue;
+      }
+      if (recordDepth > 0) {
+        record += character;
+        if (recordInString) {
+          if (recordEscaped) recordEscaped = false;
+          else if (character === '\\') recordEscaped = true;
+          else if (character === '"') recordInString = false;
+        } else if (character === '"') recordInString = true;
+        else if (character === '{' || character === '[') recordDepth++;
+        else if (character === '}' || character === ']') recordDepth--;
+        if (recordDepth === 0) {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(record);
+          } catch {
+            throw new TransitSnapshotError('INVALID_SHARD');
+          }
+          if (!isRecord(parsed)) throw new TransitSnapshotError('INVALID_SHARD');
+          record = '';
+          phase = 'separator';
+          yield parsed;
+        }
+        continue;
+      }
+      if (/\s/u.test(character)) continue;
+      if (phase === 'value') {
+        if (character === ']') phase = 'suffix';
+        else if (character === '{') {
+          record = '{';
+          recordDepth = 1;
+        } else throw new TransitSnapshotError('INVALID_SHARD');
+      } else if (phase === 'separator') {
+        if (character === ',') phase = 'value';
+        else if (character === ']') phase = 'suffix';
+        else throw new TransitSnapshotError('INVALID_SHARD');
+      } else if (phase === 'suffix') {
+        if (character !== '}') throw new TransitSnapshotError('INVALID_SHARD');
+        phase = 'done';
+      } else {
+        throw new TransitSnapshotError('INVALID_SHARD');
+      }
+    }
+  }
+
+  try {
+    for await (const chunk of chunks) yield* accept(streamDecoder.decode(chunk, { stream: true }));
+    yield* accept(streamDecoder.decode());
+  } catch (error) {
+    if (error instanceof TransitSnapshotError) throw error;
+    throw new TransitSnapshotError('INVALID_SHARD');
+  }
+  complexity.finish();
+  if (phase !== 'done' || recordDepth !== 0) throw new TransitSnapshotError('INVALID_SHARD');
+}
+
+/** Read one validated connection at a time without retaining the expanded shard. */
+export async function* streamSnapshotConnections(snapshot: LoadedSnapshot, relativePath: string,
+  options: SnapshotConnectionStreamOptions = {}): AsyncGenerator<unknown> {
+  const storage = snapshot[snapshotStorage];
+  const metadata = shardMetadata(snapshot, relativePath, true);
+  const compressed = await readCompressedShard(snapshot, relativePath, options);
+  const chunks = expandGzipChunks(compressed, metadata, maxExpandedShardBytes(relativePath), options, storage);
+  yield* parseConnectionChunks(chunks);
+}
+
 export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePath: string): Promise<T> {
   const storage = snapshot[snapshotStorage];
   storage.checkTime?.();
   // The captured manifest's own inventory keys have already passed the relative-path validator.
-  if (!relativePath.endsWith('.json.gz') || !Object.hasOwn(snapshot.manifest.files, relativePath)) {
-    throw new TransitSnapshotError('UNDECLARED_SHARD');
-  }
-  const key = JSON.stringify([storage.cacheScope, snapshot.version, snapshot.pointer.manifestSha256, relativePath]);
+  const metadata = shardMetadata(snapshot, relativePath);
+  const key = shardKey(snapshot, relativePath);
   const cached = shardCache.get(key);
   if (cached) return JSON.parse(decoder.decode(cached)) as T;
 
-  const metadata = snapshot.manifest.files[relativePath];
-  const compressed = await readAsset(storage, `versions/${snapshot.version}/${relativePath}`, metadata.bytes, true);
-  if (compressed.length !== metadata.bytes) throw new TransitSnapshotError('SIZE_LIMIT');
-  if (sha256(compressed) !== metadata.sha256) throw new TransitSnapshotError('SHARD_HASH');
-  const expanded = await expandShard(compressed, metadata);
+  const compressed = await readCompressedShard(snapshot, relativePath);
+  const expanded = await expandShard(compressed, metadata, maxExpandedShardBytes(relativePath));
   storage.checkTime?.();
   let value: unknown;
   try {

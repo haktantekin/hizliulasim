@@ -15,11 +15,14 @@ import {
   loadManifest,
   loadSnapshotPointer,
   loadSnapshotShard,
+  streamSnapshotConnections,
 } from './snapshot-source.ts';
 import { manifestFixture } from './test-fixtures.ts';
 
 const contentPath = 'content-links.json.gz';
 const stopPath = manifestFixture.indexes.stopGrid['4100_2900'];
+const connectionPath = Object.values(manifestFixture.indexes.connectionBuckets)[0];
+const mibibyte = 1024 ** 2;
 const gibibyte = 1024 ** 3;
 
 type FileFixture = { bytes: number; sha256: string; uncompressedBytes?: number; uncompressedSha256?: string };
@@ -56,6 +59,7 @@ async function setupStorage(t: TestContext, useLocal = true): Promise<string> {
 
 async function stageVersion(root: string, version: string, options: {
   contentBytes?: Buffer;
+  fileBytes?: Partial<Record<string, Buffer>>;
   updateManifest?: (manifest: ManifestFixture) => void;
 } = {}) {
   const directory = join(root, 'versions', version);
@@ -64,7 +68,8 @@ async function stageVersion(root: string, version: string, options: {
     const payload = path === stopPath
       ? { cell: '4100_2900', stops: [{ stopId: '0', stopCode: null, name: `Durak ${version}`, latitude: 41, longitude: 29 }] }
       : { links: {}, schemaVersion: 1 };
-    const bytes = path === contentPath && options.contentBytes ? options.contentBytes : gzipSync(JSON.stringify(payload));
+    const bytes = options.fileBytes?.[path]
+      ?? (path === contentPath && options.contentBytes ? options.contentBytes : gzipSync(JSON.stringify(payload)));
     const filename = join(directory, path);
     await mkdir(dirname(filename), { recursive: true });
     await writeFile(filename, bytes);
@@ -81,6 +86,12 @@ async function writePointer(root: string, name: 'current' | 'previous', pointer:
   await writeFile(join(root, `${name}.json`), JSON.stringify(pointer));
 }
 
+async function collectConnections(snapshot: Awaited<ReturnType<typeof loadActiveSnapshot>>, path = connectionPath) {
+  const records: unknown[] = [];
+  for await (const record of streamSnapshotConnections(snapshot, path)) records.push(record);
+  return records;
+}
+
 test('loads the exact published manifest bytes and a legacy gzip inventory', async (t) => {
   const root = await setupStorage(t);
   const pointer = await stageVersion(root, 'current_v1');
@@ -93,6 +104,60 @@ test('loads the exact published manifest bytes and a legacy gzip inventory', asy
   assert.equal(snapshot.version, 'current_v1');
   assert.equal(snapshot.usedFallback, false);
   assert.deepEqual(await loadSnapshotShard(snapshot, contentPath), { links: {}, schemaVersion: 1 });
+});
+
+test('loads a legacy connection shard slightly larger than 64 MiB when expanded', async (t) => {
+  const root = await setupStorage(t);
+  const payload = Buffer.concat([Buffer.from('{"connections":[]}'), Buffer.alloc(65 * mibibyte, 0x20)]);
+  const pointer = await stageVersion(root, 'current_v1', {
+    fileBytes: { [connectionPath]: gzipSync(payload) },
+  });
+  await writePointer(root, 'current', pointer);
+
+  assert.deepEqual(await loadSnapshotShard(await loadActiveSnapshot(), connectionPath), { connections: [] });
+});
+
+test('streams connection records split across inflate chunks without treating escaped JSON as structure', async (t) => {
+  const root = await setupStorage(t);
+  const records = [
+    { id: 'first', headsign: `${'x'.repeat(20_000)}\\"{Merkez},[A]` },
+    { id: 'second', headsign: 'Havalimanı' },
+  ];
+  const pointer = await stageVersion(root, 'current_v1', {
+    fileBytes: { [connectionPath]: gzipSync(JSON.stringify({ connections: records })) },
+  });
+  await writePointer(root, 'current', pointer);
+
+  assert.deepEqual(await collectConnections(await loadActiveSnapshot()), records);
+});
+
+test('connection streaming fails closed for malformed envelopes, hash mismatches, and aborted reads', async (t) => {
+  const root = await setupStorage(t);
+  const malformed = await stageVersion(root, 'malformed_v1', {
+    fileBytes: { [connectionPath]: gzipSync('{"connections":{}}') },
+  });
+  await writePointer(root, 'current', malformed);
+  await assert.rejects(collectConnections(await loadActiveSnapshot()), { code: 'INVALID_SHARD' });
+
+  const mismatched = await stageVersion(root, 'mismatched_v1', {
+    updateManifest: (manifest) => { manifest.files[connectionPath].sha256 = '0'.repeat(64); },
+  });
+  await writePointer(root, 'current', mismatched);
+  clearTransitSnapshotCacheForTests();
+  await assert.rejects(collectConnections(await loadActiveSnapshot()), { code: 'SHARD_HASH' });
+
+  const valid = await stageVersion(root, 'aborted_v1');
+  await writePointer(root, 'current', valid);
+  clearTransitSnapshotCacheForTests();
+  const abort = new AbortController();
+  abort.abort();
+  const snapshot = await loadActiveSnapshot();
+  const consume = async () => {
+    for await (const _record of streamSnapshotConnections(snapshot, connectionPath, { signal: abort.signal })) {
+      assert.fail('an aborted stream must not yield records');
+    }
+  };
+  await assert.rejects(consume(), { code: 'READ_FAILED' });
 });
 
 test('fails closed when a local snapshot root is configured in production', async (t) => {
