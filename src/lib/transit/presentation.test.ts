@@ -135,6 +135,11 @@ test('uses plain stop names for external or invalid canonical URLs', () => {
 const origin = { name: 'Beşiktaş', latitude: 41.04, longitude: 29.01 };
 const destination = { name: 'Kadıköy', latitude: 40.99, longitude: 29.03 };
 const prediction = { id: 'besiktas', description: 'Beşiktaş, İstanbul' };
+const departureAt = '2026-11-10T07:00:00.000Z';
+
+function submit(state: ReturnType<typeof createPlannerState>, instant = departureAt) {
+  return reducePlanner(state, { type: 'submit-route', departureAt: instant });
+}
 
 test('turns the now button clock into an explicit departure instant', () => {
   assert.equal(getCurrentDepartureAt(new Date('2026-11-12T08:34:56.789Z')), '2026-11-12T08:34:56.789Z');
@@ -172,7 +177,7 @@ test('hides the other current-location button from click through resolution and 
   );
 });
 
-test('starts a route only when both location fields have selected coordinates', () => {
+test('starts a route only after both locations are selected and the user submits', () => {
   let state = createPlannerState({ destination });
   state = reducePlanner(state, { type: 'edit-location', role: 'origin', query: 'Beş' });
   assert.equal(state.route.kind, 'idle');
@@ -187,9 +192,13 @@ test('starts a route only when both location fields have selected coordinates', 
 
   state = reducePlanner(state, { type: 'resolve-location', role: 'origin', id: details.id, value: origin });
   assert.deepEqual(state.origin.value, origin);
+  assert.equal(state.route.kind, 'idle');
+
+  state = reducePlanner(state, { type: 'submit-route', departureAt });
   assert.equal(state.route.kind, 'loading');
   assert.deepEqual(state.route.origin, origin);
   assert.deepEqual(state.route.destination, destination);
+  assert.equal(state.route.departureAt, departureAt);
 
   state = reducePlanner(state, { type: 'edit-location', role: 'destination', query: '' });
   assert.equal(state.destination.value, null);
@@ -271,16 +280,17 @@ test('shows coverage feedback for an out-of-area Place result without routing', 
   assert.equal(state.route.kind, 'idle');
 });
 
-test('swaps both selected locations and starts a new request in the reversed direction', () => {
+test('swaps both selected locations without starting a request', () => {
   const state = createPlannerState({ origin, destination });
   const swapped = reducePlanner(state, { type: 'swap-locations' });
-  assert.equal(state.route.kind, 'loading');
-  assert.equal(swapped.route.kind, 'loading');
-  assert.notEqual(swapped.route.id, state.route.id);
-  assert.deepEqual(swapped.route.origin, destination);
-  assert.deepEqual(swapped.route.destination, origin);
+  assert.equal(state.route.kind, 'idle');
+  assert.equal(swapped.route.kind, 'idle');
   assert.equal(swapped.origin.query, 'Kadıköy');
   assert.equal(swapped.destination.query, 'Beşiktaş');
+  const requested = submit(swapped);
+  assert.equal(requested.route.kind, 'loading');
+  assert.deepEqual(requested.route.origin, destination);
+  assert.deepEqual(requested.route.destination, origin);
 });
 
 test('keeps manual search available after denied geolocation and accepts a later coordinate fix', () => {
@@ -299,7 +309,7 @@ test('keeps manual search available after denied geolocation and accepts a later
   state = reducePlanner(state, { type: 'resolve-location', role: 'origin', id: retry.id, value: origin });
   assert.deepEqual(state.origin.value, origin);
   assert.equal(state.origin.lookup.kind, 'idle');
-  assert.equal(state.route.kind, 'loading');
+  assert.equal(state.route.kind, 'idle');
 });
 
 test('discards autocomplete, place details, and geolocation responses superseded by a typed location', () => {
@@ -327,12 +337,11 @@ test('discards autocomplete, place details, and geolocation responses superseded
   }
 });
 
-const departureAt = '2026-11-10T07:00:00.000Z';
 const alternatives = [itinerary, { ...itinerary, durationMinutes: 28 }];
 
 test('labels every fixed destination map marker with the article title without changing the API response', () => {
   const fixedDestination = { name: 'Kadıköy İskelesi Nasıl Gidilir?', latitude: 41.0201, longitude: 29.03 };
-  const initial = createPlannerState({ origin }, fixedDestination);
+  const initial = submit(createPlannerState({ origin }, fixedDestination));
   assert.equal(initial.route.kind, 'loading');
   const result = reducePlanner(initial, { type: 'route-succeeded', id: initial.route.id, departureAt, alternatives });
   assert.equal(result.route.kind, 'success');
@@ -348,7 +357,7 @@ test('labels every fixed destination map marker with the article title without c
 });
 
 test('leaves route results for an editable destination as received from the API', () => {
-  const initial = createPlannerState({ origin, destination });
+  const initial = submit(createPlannerState({ origin, destination }));
   assert.equal(initial.route.kind, 'loading');
   const result = reducePlanner(initial, { type: 'route-succeeded', id: initial.route.id, departureAt, alternatives });
   assert.equal(result.route.kind, 'success');
@@ -356,35 +365,35 @@ test('leaves route results for an editable destination as received from the API'
 });
 
 test('rejects a cancelled route response and retries with a new request ID', () => {
-  const initial = createPlannerState({ origin, destination });
+  const initial = submit(createPlannerState({ origin, destination }));
   assert.equal(initial.route.kind, 'loading');
   const id = initial.route.id;
   const cancelled = reducePlanner(initial, { type: 'cancel-route' });
   assert.equal(cancelled.route.kind, 'idle');
   assert.equal(reducePlanner(cancelled, { type: 'route-succeeded', id, departureAt, alternatives }), cancelled);
 
-  const retry = reducePlanner(cancelled, { type: 'retry-route' });
+  const retry = reducePlanner(cancelled, { type: 'retry-route', departureAt: '2026-11-10T07:01:00.000Z' });
   assert.equal(retry.route.kind, 'loading');
   assert.notEqual(retry.route.id, id);
   assert.equal(reducePlanner(retry, { type: 'route-failed', id, message: 'Eski hata' }), retry);
 });
 
-test('changing route options ignores earlier responses and keeps the latest request values', () => {
-  const initial = createPlannerState({ origin, destination });
+test('changing route options invalidates results and waits for another submit', () => {
+  const initial = submit(createPlannerState({ origin, destination }));
   assert.equal(initial.route.kind, 'loading');
-  const timed = reducePlanner(initial, { type: 'set-departure', departureAt });
-  const preferred = reducePlanner(timed, { type: 'set-preference', preference: 'less-walking' });
-  assert.equal(timed.route.kind, 'loading');
-  assert.equal(preferred.route.kind, 'loading');
-  assert.equal(preferred.route.departureAt, departureAt);
-  assert.equal(preferred.route.preference, 'less-walking');
-  for (const id of [initial.route.id, timed.route.id]) {
-    assert.equal(reducePlanner(preferred, { type: 'route-succeeded', id, departureAt, alternatives }), preferred);
-  }
+  const preferred = reducePlanner(initial, { type: 'set-preference', preference: 'less-walking' });
+  assert.equal(preferred.route.kind, 'idle');
+  assert.equal(reducePlanner(preferred, {
+    type: 'route-succeeded', id: initial.route.id, departureAt, alternatives,
+  }), preferred);
+  const requested = submit(preferred, '2026-11-10T07:02:00.000Z');
+  assert.equal(requested.route.kind, 'loading');
+  assert.equal(requested.route.departureAt, '2026-11-10T07:02:00.000Z');
+  assert.equal(requested.route.preference, 'less-walking');
 });
 
 test('exposes a current route error and clears it when retrying', () => {
-  const initial = createPlannerState({ origin, destination });
+  const initial = submit(createPlannerState({ origin, destination }));
   assert.equal(initial.route.kind, 'loading');
   const failed = reducePlanner(initial, {
     type: 'route-failed', id: initial.route.id, message: 'Toplu taşıma verileri şu anda kullanılamıyor.',
@@ -392,13 +401,13 @@ test('exposes a current route error and clears it when retrying', () => {
   assert.deepEqual(failed.route, {
     kind: 'error', message: 'Toplu taşıma verileri şu anda kullanılamıyor.',
   });
-  const retry = reducePlanner(failed, { type: 'retry-route' });
+  const retry = reducePlanner(failed, { type: 'retry-route', departureAt: '2026-11-10T07:03:00.000Z' });
   assert.equal(retry.route.kind, 'loading');
   assert.notEqual(retry.route.id, initial.route.id);
 });
 
 test('restores an available alternative and ignores invalid selection indexes', () => {
-  const initial = createPlannerState({ origin, destination, selectedAlternative: 1 });
+  const initial = submit(createPlannerState({ origin, destination, selectedAlternative: 1 }));
   assert.equal(initial.route.kind, 'loading');
   const result = reducePlanner(initial, { type: 'route-succeeded', id: initial.route.id, departureAt, alternatives });
   assert.equal(result.route.kind, 'success');
@@ -414,12 +423,12 @@ test('restores an available alternative and ignores invalid selection indexes', 
 });
 
 test('restores the shared alternative after route failure and cancellation when retrying unchanged inputs', () => {
-  const initial = createPlannerState({ origin, destination, departureAt, selectedAlternative: 1 });
+  const initial = submit(createPlannerState({ origin, destination, departureAt, selectedAlternative: 1 }));
   assert.equal(initial.route.kind, 'loading');
   const failed = reducePlanner(initial, { type: 'route-failed', id: initial.route.id, message: 'Rota hatası' });
-  const retry = reducePlanner(failed, { type: 'retry-route' });
+  const retry = reducePlanner(failed, { type: 'retry-route', departureAt });
   const cancelled = reducePlanner(retry, { type: 'cancel-route' });
-  const resumed = reducePlanner(cancelled, { type: 'retry-route' });
+  const resumed = reducePlanner(cancelled, { type: 'retry-route', departureAt });
   assert.equal(resumed.route.kind, 'loading');
   const result = reducePlanner(resumed, { type: 'route-succeeded', id: resumed.route.id, departureAt, alternatives });
   assert.equal(result.route.kind, 'success');
@@ -427,7 +436,7 @@ test('restores the shared alternative after route failure and cancellation when 
 });
 
 test('toggles the selected itinerary step and clears focus on an alternative or a new result', () => {
-  const initial = createPlannerState({ origin, destination });
+  const initial = submit(createPlannerState({ origin, destination }));
   assert.equal(initial.route.kind, 'loading');
   const selectStep = { type: 'select-step', index: 1 } as const;
   assert.equal(reducePlanner(initial, selectStep), initial);
@@ -449,17 +458,21 @@ test('toggles the selected itinerary step and clears focus on an alternative or 
   assert.equal(changed.route.selectedStep, null);
 
   const recalculated = reducePlanner(focused, { type: 'set-preference', preference: 'less-walking' });
-  assert.equal(recalculated.route.kind, 'loading');
-  const next = reducePlanner(recalculated, { type: 'route-succeeded', id: recalculated.route.id, departureAt, alternatives });
+  assert.equal(recalculated.route.kind, 'idle');
+  const requested = submit(recalculated);
+  assert.equal(requested.route.kind, 'loading');
+  const next = reducePlanner(requested, { type: 'route-succeeded', id: requested.route.id, departureAt, alternatives });
   assert.equal(next.route.kind, 'success');
   assert.equal(next.route.selectedStep, null);
 });
 
 test('uses the first alternative after the route inputs change', () => {
-  const initial = createPlannerState({ origin, destination, departureAt, selectedAlternative: 1 });
+  const initial = submit(createPlannerState({ origin, destination, departureAt, selectedAlternative: 1 }));
   const changed = reducePlanner(initial, { type: 'set-preference', preference: 'fewer-transfers' });
-  assert.equal(changed.route.kind, 'loading');
-  const result = reducePlanner(changed, { type: 'route-succeeded', id: changed.route.id, departureAt, alternatives });
+  assert.equal(changed.route.kind, 'idle');
+  const requested = submit(changed);
+  assert.equal(requested.route.kind, 'loading');
+  const result = reducePlanner(requested, { type: 'route-succeeded', id: requested.route.id, departureAt, alternatives });
   assert.equal(result.route.kind, 'success');
   assert.equal(result.route.selectedAlternative, 0);
 });

@@ -141,12 +141,12 @@ export type PlannerAction =
     | { type: 'lookup-failed'; id: number; message: string }
   ))
   | { type: 'swap-locations' }
-  | { type: 'set-departure'; departureAt: string }
   | { type: 'set-preference'; preference: RoutePreference }
+  | { type: 'submit-route'; departureAt: string }
   | { type: 'route-succeeded'; id: number; departureAt: string; alternatives: TransitItinerary[] }
   | { type: 'route-failed'; id: number; message: string }
   | { type: 'cancel-route' }
-  | { type: 'retry-route' }
+  | { type: 'retry-route'; departureAt: string }
   | { type: 'select-alternative'; index: number }
   | { type: 'select-step'; index: number };
 
@@ -182,26 +182,27 @@ function selectedEndpoint(location?: PlannerLocation, usesCurrentLocation = loca
   return { value: null, query: location.name, lookup: { kind: 'error', message }, usesCurrentLocation: false };
 }
 
-function calculateRoute(state: PlannerState): PlannerState {
-  const { origin, destination, departureAt, preference } = state;
+function calculateRoute(state: PlannerState, departureAt: string): PlannerState {
+  const { origin, destination, preference } = state;
   if (!origin.value || !destination.value) return { ...state, route: { kind: 'idle' } };
   const id = state.serial + 1;
   return {
     ...state,
     serial: id,
+    departureAt,
     route: { kind: 'loading', id, origin: origin.value, destination: destination.value, departureAt, preference },
   };
 }
 
-function recalculateRoute(state: PlannerState): PlannerState {
-  return calculateRoute({ ...state, requestedAlternative: 0 });
+function invalidateRoute(state: PlannerState): PlannerState {
+  return { ...state, requestedAlternative: 0, route: { kind: 'idle' } };
 }
 
 export function createPlannerState(
   initialState: Partial<ShareablePlannerState> = {},
   fixedDestination?: PlannerLocation,
 ): PlannerState {
-  return calculateRoute({
+  return {
     origin: selectedEndpoint(initialState.origin),
     destination: selectedEndpoint(fixedDestination ?? initialState.destination),
     destinationLocked: fixedDestination !== undefined,
@@ -210,14 +211,14 @@ export function createPlannerState(
     requestedAlternative: initialState.selectedAlternative ?? 0,
     route: { kind: 'idle' },
     serial: 0,
-  });
+  };
 }
 
 function replaceEndpoint(
   state: PlannerState, role: PlannerEndpointRole, endpoint: PlannerEndpoint,
 ): PlannerState {
   const next = { ...state, [role]: endpoint };
-  return state[role].value === endpoint.value ? next : recalculateRoute(next);
+  return state[role].value === endpoint.value ? next : invalidateRoute(next);
 }
 
 function reduceLocation(state: PlannerState, action: Extract<PlannerAction, { role: PlannerEndpointRole }>): PlannerState {
@@ -277,11 +278,11 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
   switch (action.type) {
     case 'swap-locations':
       if (state.destinationLocked || !origin.value || !destination.value) return state;
-      return recalculateRoute({ ...state, origin: destination, destination: origin });
-    case 'set-departure':
-      return state.departureAt === action.departureAt ? state : recalculateRoute({ ...state, departureAt: action.departureAt });
+      return invalidateRoute({ ...state, origin: destination, destination: origin });
     case 'set-preference':
-      return state.preference === action.preference ? state : recalculateRoute({ ...state, preference: action.preference });
+      return state.preference === action.preference ? state : invalidateRoute({ ...state, preference: action.preference });
+    case 'submit-route':
+      return calculateRoute(state, action.departureAt);
     case 'route-succeeded': {
       if (route.kind !== 'loading' || route.id !== action.id) return state;
       const index = state.requestedAlternative;
@@ -309,7 +310,7 @@ export function reducePlanner(state: PlannerState, action: PlannerAction): Plann
     case 'cancel-route':
       return route.kind === 'loading' ? { ...state, route: { kind: 'idle' } } : state;
     case 'retry-route':
-      return route.kind === 'idle' || route.kind === 'error' ? calculateRoute(state) : state;
+      return route.kind === 'idle' || route.kind === 'error' ? calculateRoute(state, action.departureAt) : state;
     case 'select-alternative':
       if (route.kind !== 'success' || !Number.isInteger(action.index) || !route.alternatives[action.index]) return state;
       if (route.selectedAlternative === action.index) return state;

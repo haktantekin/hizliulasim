@@ -5,6 +5,7 @@ import { ArrowLeftRight, Maximize2 } from 'lucide-react';
 import { requestTransitRoutes, TransitRouteError } from '@/lib/transit/client';
 import {
   createPlannerState,
+  getCurrentDepartureAt,
   getCurrentLocationButtonVisibility,
   isPlannerLocation,
   reducePlanner,
@@ -148,7 +149,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
     reducePlanner, { initialState, fixedDestination },
     (props) => createPlannerState(props.initialState, props.fixedDestination),
   );
-  const { origin, destination, destinationLocked, departureAt, preference, route } = state;
+  const { origin, destination, destinationLocked, preference, route } = state;
   useLocationLookup('origin', origin.lookup, dispatch);
   useLocationLookup('destination', destination.lookup, dispatch);
   useRouteRequest(route, dispatch);
@@ -191,16 +192,14 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
       </div>
       <TransitPlannerOptions
         compact={compact}
-        departureAt={departureAt}
         preference={preference}
-        onDepartureChange={(value) => dispatch({ type: 'set-departure', departureAt: value })}
         onPreferenceChange={(value) => dispatch({ type: 'set-preference', preference: value })}
       />
       <TransitPlannerStatus
         route={route}
         canCalculate={canCalculate}
         onCancel={() => dispatch({ type: 'cancel-route' })}
-        onRetry={() => dispatch({ type: 'retry-route' })}
+        onRetry={() => dispatch({ type: 'retry-route', departureAt: getCurrentDepartureAt() })}
       />
       {route.kind === 'success' && activeItinerary && (
         <div className="grid gap-2">
