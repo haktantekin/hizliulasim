@@ -178,7 +178,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
             aria-label="Başlangıç ve hedefin yerini değiştir"
             disabled={!canCalculate}
             onClick={() => dispatch({ type: 'swap-locations' })}
-            className="min-h-10 justify-self-center rounded-xl border border-gray-200 bg-white px-3 text-brand-soft-blue hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-brand-soft-blue disabled:opacity-40 sm:mt-6"
+            className="hidden min-h-10 justify-self-center rounded-xl border border-gray-200 bg-white px-3 text-brand-soft-blue hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-brand-soft-blue disabled:opacity-40 sm:mt-6 sm:grid sm:place-items-center"
           >
             <ArrowLeftRight aria-hidden="true" className="size-4" />
           </button>
@@ -192,10 +192,7 @@ function PlannerControls({ variant, fixedDestination, initialState }: TransitPla
         />
       </div>
       <TransitPlannerOptions
-        compact={compact}
-        preference={preference}
         travelMode={travelMode}
-        onPreferenceChange={(value) => dispatch({ type: 'set-preference', preference: value })}
         onTravelModeChange={(value) => dispatch({ type: 'set-travel-mode', travelMode: value })}
       />
       <TransitPlannerStatus
