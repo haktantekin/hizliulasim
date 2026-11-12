@@ -293,7 +293,7 @@ test('exposes per-stop and total label budget exhaustion', () => {
 });
 
 test('rejects invalid or over-cap limit overrides', () => {
-  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 65 }, { maxLabelsPerStop: 0 },
+  for (const limits of [{ horizonSeconds: 21601 }, { maxBuckets: 33 }, { maxTransferShards: 0 }, { maxLabelsPerStop: 0 },
     { maxTotalLabels: 100001 }, { maxAlternatives: 4 }, { wallTimeMs: 0 }]) {
     assert.throws(() => scanTransitConnections({ ...query({ limits }), connections: [] }), RangeError);
   }
@@ -565,6 +565,44 @@ test('ignores a caller-provided transfer absent from the pinned snapshot', async
   storage.publish(publishedManifest(), 'no_published_transfer', transferConnections);
   const result = await routeTransitSnapshot(await loadActiveSnapshot(), query({ transfers: [stationTransfer] }));
   assert.equal(result.status, 'no-route');
+});
+
+test('default route reads more than 64 transfer and stop-grid shards', async (t) => {
+  const addedCells: string[] = [];
+  const intermediateStops = Array.from({ length: 70 }, (_, index) => {
+    const cell = `${4102 + index}_2900`;
+    const stopId = `S${index + 1}`;
+    addedCells.push(cell);
+    stopGrids[cell] = [{
+      stopId,
+      latitude: 41.02 + index * 0.01,
+      longitude: 29,
+      name: stopId,
+      stopCode: null,
+    }];
+    return stopId;
+  });
+  t.after(() => {
+    for (const cell of addedCells) delete stopGrids[cell];
+  });
+  const stops = ['A', ...intermediateStops, 'Z'];
+  const connections = stops.slice(0, -1).map((fromStopId, index) => connection(
+    'long-trip',
+    fromStopId,
+    stops[index + 1],
+    8 * hour + 30 + index * 10,
+    8 * hour + 35 + index * 10,
+    { stopSequence: index, arrivalStopSequence: index + 1 },
+  ));
+  const storage = publishedStorage(t);
+  storage.publish(publishedManifest(), 'unbounded_transfer_shards', {
+    [bucket(serviceClass, 8)]: { connections },
+  });
+
+  const result = await routeTransitSnapshot(await loadActiveSnapshot(), query());
+
+  assert.equal(result.status, 'ok');
+  assert.ok(result.diagnostics.transferShards > 64, JSON.stringify(result.diagnostics));
 });
 
 test('checks the transfer-read cap before loading an endpoint stop-grid path', async (t) => {

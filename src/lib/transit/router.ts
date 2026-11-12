@@ -7,7 +7,7 @@ export interface RouterLimits {
   horizonSeconds: number;
   maxBuckets: number;
   /** Unique transfer and endpoint stop-grid shard paths. */
-  maxTransferShards: number;
+  maxTransferShards: number | null;
   maxBoardings: number;
   maxLabelsPerStop: number | null;
   maxTotalLabels: number;
@@ -18,7 +18,7 @@ export interface RouterLimits {
 export const DEFAULT_ROUTER_LIMITS: Readonly<RouterLimits> = Object.freeze({
   horizonSeconds: 6 * 3600,
   maxBuckets: 32,
-  maxTransferShards: 64,
+  maxTransferShards: null,
   maxBoardings: 3,
   maxLabelsPerStop: null,
   maxTotalLabels: 100_000,
@@ -129,8 +129,7 @@ function budgetResult(error: unknown): RouterResult {
 function routerLimits(overrides: Partial<RouterLimits> = {}): RouterLimits {
   const limits = { ...DEFAULT_ROUTER_LIMITS };
   const boundedKeys = [
-    'horizonSeconds', 'maxBuckets', 'maxTransferShards', 'maxBoardings',
-    'maxTotalLabels', 'maxAlternatives',
+    'horizonSeconds', 'maxBuckets', 'maxBoardings', 'maxTotalLabels', 'maxAlternatives',
   ] as const;
   for (const key of boundedKeys) {
     const override = overrides[key];
@@ -140,7 +139,7 @@ function routerLimits(overrides: Partial<RouterLimits> = {}): RouterLimits {
     }
     limits[key] = override;
   }
-  for (const key of ['maxLabelsPerStop', 'wallTimeMs'] as const) {
+  for (const key of ['maxTransferShards', 'maxLabelsPerStop', 'wallTimeMs'] as const) {
     const override = overrides[key];
     if (override === undefined) continue;
     if (override !== null && (!Number.isSafeInteger(override) || override < 1)) {
@@ -688,7 +687,9 @@ export async function routeTransitSnapshot(snapshot: LoadedSnapshot, input: Rout
     const readTransfers = createTransferCandidateLoader(snapshot, (path) => {
       checkTime();
       if (transferReadPaths.has(path)) return;
-      if (transferReadPaths.size >= limits.maxTransferShards) throw new BudgetExceeded('transfer-shards');
+      if (limits.maxTransferShards !== null && transferReadPaths.size >= limits.maxTransferShards) {
+        throw new BudgetExceeded('transfer-shards');
+      }
       transferReadPaths.add(path);
       diagnostics.transferShards = transferReadPaths.size;
     });
