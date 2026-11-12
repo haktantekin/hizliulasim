@@ -6,8 +6,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { parseManifest, type TransitConnection, type TransitManifest, type TransitStop, type TransitTransfer } from './contracts.ts';
 import type { ServiceDay } from './service-calendar.ts';
 import { clearTransitSnapshotCacheForTests, loadActiveSnapshot } from './snapshot-source.ts';
-import { manifestFixture } from './test-fixtures.ts';
+import { manifestFixture, multimodalManifestFixture } from './test-fixtures.ts';
 import {
+  getAllowedTransitModes,
   rankJourneys,
   routeTransitTopology,
   routeTransitSnapshot,
@@ -394,8 +395,8 @@ const stopGrids: Record<string, TransitStop[]> = {
   ],
 };
 
-function publishedManifest(): TransitManifest {
-  const fixture = parseManifest(structuredClone(manifestFixture));
+function publishedManifest(schemaVersion: 1 | 2 = 1): TransitManifest {
+  const fixture = parseManifest(structuredClone(schemaVersion === 1 ? manifestFixture : multimodalManifestFixture));
   fixture.indexes.stops = {};
   for (const [cell, stops] of Object.entries(stopGrids)) {
     const stopPath = fixture.indexes.stopGrid[cell] = `stops-grid/${hash(cell)}.json.gz`;
@@ -449,6 +450,9 @@ function publishedStorage(t: TestContext) {
         cell, transfers: transferEdges.filter((edge) => manifest.indexes.stops[edge.fromStopId] === stopPath),
       };
     }
+    if (manifest.schemaVersion === 2) {
+      payloadsByPath[manifest.indexes.transferGraph] = { transfers: [...transferEdges] };
+    }
     for (const [path, payload] of Object.entries(payloadsByPath)) {
       const data = gzipSync(JSON.stringify(payload));
       files.set(`versions/${version}/${path}`, data);
@@ -461,6 +465,94 @@ function publishedStorage(t: TestContext) {
 
   return { files, publish, reads, onRead: (callback: typeof onRead) => { onRead = callback; } };
 }
+
+test('maps public route filters to the modes enforced during graph search', () => {
+  assert.deepEqual([...getAllowedTransitModes('bus')], ['bus', 'minibus']);
+  assert.deepEqual([...getAllowedTransitModes('metro')], ['metro', 'tram', 'rail', 'funicular', 'cable_car']);
+  assert.deepEqual([...getAllowedTransitModes('transit')],
+    ['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'cable_car', 'minibus']);
+});
+
+test('Tümü chooses a bus to metro transfer while Bus finds the slower allowed route', async (t) => {
+  const storage = publishedStorage(t);
+  const manifest = publishedManifest(2);
+  const busPattern = '1'.repeat(64);
+  const metroPattern = '2'.repeat(64);
+  const directPattern = '3'.repeat(64);
+  const patternPath = manifest.indexes.patterns[patternId];
+  const routePath = manifest.indexes.routes['0'];
+  for (const id of [busPattern, metroPattern, directPattern]) manifest.indexes.patterns[id] = patternPath;
+  for (const id of ['bus-route', 'metro-route', 'direct-route']) manifest.indexes.routes[id] = routePath;
+  storage.publish(manifest, 'mixed_topology', {
+    [bucket(serviceClass, 10)]: { connections: [
+      connection('BUS-1', 'A', 'B', 10 * hour + 10, 10 * hour + 130,
+        { patternId: busPattern, routeId: 'bus-route', mode: 'bus' }),
+      connection('METRO-1', 'C', 'Z', 10 * hour + 200, 10 * hour + 320,
+        { patternId: metroPattern, routeId: 'metro-route', mode: 'metro' }),
+      connection('BUS-DIRECT', 'A', 'Z', 10 * hour + 400, 10 * hour + 1000,
+        { patternId: directPattern, routeId: 'direct-route', mode: 'bus' }),
+    ] },
+  }, [stationTransfer]);
+  const snapshot = await loadActiveSnapshot();
+
+  const mixed = await routeTransitTopology(snapshot, {
+    ...query(), allowedModes: getAllowedTransitModes('transit'),
+  });
+  assert.equal(mixed.status, 'ok');
+  assert.deepEqual(mixed.status === 'ok' ? trips(mixed.journeys[0]) : [], ['BUS-1', 'METRO-1']);
+  assert.equal(mixed.status === 'ok' && mixed.journeys[0].some(
+    (segment) => segment.kind === 'walk' && segment.role === 'transfer' && segment.fromStopId === 'B' && segment.toStopId === 'C'), true);
+  assert.equal(mixed.diagnostics.transferGraphLoaded, true);
+
+  const bus = await routeTransitTopology(snapshot, { ...query(), allowedModes: getAllowedTransitModes('bus') });
+  assert.equal(bus.status, 'ok');
+  assert.deepEqual(bus.status === 'ok' ? trips(bus.journeys[0]) : [], ['BUS-DIRECT']);
+});
+
+test('Tümü can select a faster ferry edge', async (t) => {
+  const storage = publishedStorage(t);
+  const manifest = publishedManifest(2);
+  const busPattern = '4'.repeat(64);
+  const ferryPattern = '5'.repeat(64);
+  const patternPath = manifest.indexes.patterns[patternId];
+  const routePath = manifest.indexes.routes['0'];
+  manifest.indexes.patterns[busPattern] = patternPath;
+  manifest.indexes.patterns[ferryPattern] = patternPath;
+  manifest.indexes.routes.bus = routePath;
+  manifest.indexes.routes.ferry = routePath;
+  storage.publish(manifest, 'ferry_topology', {
+    [bucket(serviceClass, 10)]: { connections: [
+      connection('FERRY', 'A', 'Z', 10 * hour + 10, 10 * hour + 110,
+        { patternId: ferryPattern, routeId: 'ferry', mode: 'ferry' }),
+      connection('BUS', 'A', 'Z', 10 * hour + 200, 10 * hour + 700,
+        { patternId: busPattern, routeId: 'bus', mode: 'bus' }),
+    ] },
+  });
+
+  const result = await routeTransitTopology(await loadActiveSnapshot(), {
+    ...query(), allowedModes: getAllowedTransitModes('transit'),
+  });
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(result.status === 'ok' ? trips(result.journeys[0]) : [], ['FERRY']);
+});
+
+test('a corrupt compact transfer graph fails closed', async (t) => {
+  const storage = publishedStorage(t);
+  const manifest = publishedManifest(2);
+  storage.publish(manifest, 'corrupt_graph', {
+    [bucket(serviceClass, 10)]: { connections: [
+      connection('BUS', 'A', 'Z', 10 * hour + 10, 10 * hour + 100, { mode: 'bus' }),
+    ] },
+  });
+  const path = 'versions/corrupt_graph/transfers/graph.json.gz';
+  const bytes = Buffer.from(storage.files.get(path)!);
+  bytes[bytes.length - 1] ^= 1;
+  storage.files.set(path, bytes);
+
+  await assert.rejects(routeTransitTopology(await loadActiveSnapshot(), {
+    ...query(), allowedModes: getAllowedTransitModes('transit'),
+  }), { code: 'SHARD_HASH' });
+});
 
 test('routes from one representative topology bucket and permits four boardings', async (t) => {
   const storage = publishedStorage(t);

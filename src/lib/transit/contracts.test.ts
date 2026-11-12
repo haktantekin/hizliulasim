@@ -65,7 +65,29 @@ test('parses a v2 multimodal manifest without weakening v1 validation', () => {
   assert.deepEqual(v1, manifestFixture);
   if (v2.schemaVersion !== 2) assert.fail('Expected schema version 2');
   assert.deepEqual(v2.providerCoverage, multimodalManifestFixture.providerCoverage);
+  assert.equal(v2.source.providers.metro.provider, 'metro');
   assert.equal(v2.indexes.transferGraph, 'transfers/graph.json.gz');
+});
+
+test('requires v2 provider provenance to match coverage', () => {
+  assert.throws(() => parseManifest({
+    ...multimodalManifestFixture,
+    source: {
+      providers: {
+        ...multimodalManifestFixture.source.providers,
+        metro: { ...multimodalManifestFixture.source.providers.metro, sha256: '9'.repeat(64) },
+      },
+    },
+  }));
+  assert.throws(() => parseManifest({
+    ...multimodalManifestFixture,
+    source: {
+      providers: {
+        ...multimodalManifestFixture.source.providers,
+        unknown: multimodalManifestFixture.source.providers.metro,
+      },
+    },
+  }));
 });
 
 test('rejects unknown providers and unsafe transfer graph paths', () => {

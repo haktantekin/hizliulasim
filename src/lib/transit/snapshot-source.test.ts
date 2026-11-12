@@ -15,9 +15,10 @@ import {
   loadManifest,
   loadSnapshotPointer,
   loadSnapshotShard,
+  loadSnapshotTransferGraph,
   streamSnapshotConnections,
 } from './snapshot-source.ts';
-import { manifestFixture } from './test-fixtures.ts';
+import { manifestFixture, multimodalManifestFixture } from './test-fixtures.ts';
 
 const contentPath = 'content-links.json.gz';
 const stopPath = manifestFixture.indexes.stopGrid['4100_2900'];
@@ -82,6 +83,25 @@ async function stageVersion(root: string, version: string, options: {
   return { version, manifestSha256: sha256(manifestBytes) };
 }
 
+async function stageMultimodalVersion(root: string, version: string, transfers: unknown[]) {
+  const directory = join(root, 'versions', version);
+  const manifest = { ...structuredClone(multimodalManifestFixture), version, files: {} as Record<string, FileFixture> };
+  for (const path of Object.keys(multimodalManifestFixture.files)) {
+    const payload = path === multimodalManifestFixture.indexes.transferGraph
+      ? { transfers }
+      : path === contentPath ? { links: {}, schemaVersion: 1 }
+        : { fixture: true };
+    const bytes = gzipSync(JSON.stringify(payload));
+    const filename = join(directory, path);
+    await mkdir(dirname(filename), { recursive: true });
+    await writeFile(filename, bytes);
+    manifest.files[path] = { bytes: bytes.length, sha256: sha256(bytes) };
+  }
+  const manifestBytes = JSON.stringify(manifest);
+  await writeFile(join(directory, 'manifest.json'), manifestBytes);
+  return { version, manifestSha256: sha256(manifestBytes) };
+}
+
 async function writePointer(root: string, name: 'current' | 'previous', pointer: { version: string; manifestSha256: string }) {
   await writeFile(join(root, `${name}.json`), JSON.stringify(pointer));
 }
@@ -104,6 +124,28 @@ test('loads the exact published manifest bytes and a legacy gzip inventory', asy
   assert.equal(snapshot.version, 'current_v1');
   assert.equal(snapshot.usedFallback, false);
   assert.deepEqual(await loadSnapshotShard(snapshot, contentPath), { links: {}, schemaVersion: 1 });
+});
+
+test('loads and validates a schema-v2 compact transfer graph', async (t) => {
+  const root = await setupStorage(t);
+  const transfer = {
+    fromStopId: '0', toStopId: '1', distanceMeters: 55, seconds: 110,
+    evidence: { type: 'manual', reference: 'reviewed-fixture' },
+  };
+  await writePointer(root, 'current', await stageMultimodalVersion(root, 'current_v2', [transfer]));
+
+  assert.deepEqual(await loadSnapshotTransferGraph(await loadActiveSnapshot()), [transfer]);
+});
+
+test('rejects invalid endpoints in a schema-v2 compact transfer graph', async (t) => {
+  const root = await setupStorage(t);
+  const transfer = {
+    fromStopId: '0', toStopId: 'missing', distanceMeters: 55, seconds: 110,
+    evidence: { type: 'manual', reference: 'reviewed-fixture' },
+  };
+  await writePointer(root, 'current', await stageMultimodalVersion(root, 'invalid_graph_v2', [transfer]));
+
+  await assert.rejects(loadSnapshotTransferGraph(await loadActiveSnapshot()), { code: 'INVALID_SHARD' });
 });
 
 test('loads a legacy connection shard slightly larger than 64 MiB when expanded', async (t) => {

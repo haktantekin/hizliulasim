@@ -115,6 +115,20 @@ test('preflights adjacent stop grids and the first connection hour before routin
   assert.doesNotMatch(JSON.stringify(logs), /41\.000987|29\.021234|originLat|Başlangıç|hizliulasim|internal-assets/u);
 });
 
+test('returns v2 provider coverage after preflighting the compact transfer graph', async (t) => {
+  const storage = fixtureStorage(t);
+  storage.publish('current', 'multimodal_test', { schemaVersion: 2 });
+  const response = await routeHandler().get(routeRequest());
+
+  assert.equal(response.status, 200);
+  const { metadata, diagnostics } = await response.json();
+  assert.equal(metadata.dataVersion, 'multimodal_test');
+  assert.equal(metadata.providerCoverage.length, 5);
+  assert.equal(metadata.providerCoverage[1].provider, 'metro');
+  assert.equal(diagnostics.transferGraphLoaded, true);
+  assert.equal(storage.reads.filter((path) => path === 'versions/multimodal_test/transfers/graph.json.gz').length, 1);
+});
+
 test('filters static alternatives by the requested vehicle family', async (t) => {
   const storage = fixtureStorage(t);
   storage.publish('current', 'current_test');

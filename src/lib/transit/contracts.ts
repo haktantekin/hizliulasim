@@ -39,6 +39,22 @@ interface TransitManifestSource extends TransitSourceMetadata {
   tableCounts?: Record<string, number>;
 }
 
+export type TransitProviderMode = Exclude<TransitMode, 'walking'>;
+
+export interface TransitProviderSource {
+  provider: TransitProvider;
+  modes: TransitProviderMode[];
+  resourceUrl: string;
+  retrievedAt: string;
+  bytes: number;
+  sha256: string;
+  status: 'current' | 'stale';
+}
+
+export interface TransitProviderSourceMap {
+  providers: Record<TransitProvider, TransitProviderSource>;
+}
+
 export interface TransitServiceCalendar {
   /** Monday through Sunday, in GTFS order. */
   weekdays: [0 | 1, 0 | 1, 0 | 1, 0 | 1, 0 | 1, 0 | 1, 0 | 1];
@@ -67,16 +83,16 @@ type TransitManifestIndexesV2 = TransitManifestIndexesV1 & { transferGraph: stri
 
 export interface TransitProviderCoverage {
   provider: TransitProvider;
-  modes: Exclude<TransitMode, 'walking'>[];
+  modes: TransitProviderMode[];
   retrievedAt: string;
   status: 'current' | 'stale';
   sourceSha256: string;
 }
 
-interface TransitManifestBase {
+interface TransitManifestBase<TSource> {
   version: string;
   createdAt: string;
-  source: TransitManifestSource;
+  source: TSource;
   serviceDateRange: { start: string; end: string };
   boundingBox: {
     minLatitude: number;
@@ -89,12 +105,12 @@ interface TransitManifestBase {
   files: Record<string, TransitFileMetadata>;
 }
 
-export interface TransitManifestV1 extends TransitManifestBase {
+export interface TransitManifestV1 extends TransitManifestBase<TransitManifestSource> {
   schemaVersion: 1;
   indexes: TransitManifestIndexesV1;
 }
 
-export interface TransitManifestV2 extends TransitManifestBase {
+export interface TransitManifestV2 extends TransitManifestBase<TransitProviderSourceMap> {
   schemaVersion: 2;
   indexes: TransitManifestIndexesV2;
   providerCoverage: TransitProviderCoverage[];
@@ -236,6 +252,13 @@ const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const instantPattern = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 const transitProviders = ['iett', 'metro', 'tcdd', 'sehirhatlari', 'minibus'] as const satisfies readonly TransitProvider[];
 const providerModes = ['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'cable_car', 'minibus'] as const;
+const providerDefinitions: Record<TransitProvider, { host: string; modes: readonly TransitProviderMode[] }> = {
+  iett: { host: 'data.ibb.gov.tr', modes: ['bus'] },
+  metro: { host: 'api.ibb.gov.tr', modes: ['metro', 'tram', 'funicular', 'cable_car'] },
+  tcdd: { host: 'www.tcddtasimacilik.gov.tr', modes: ['rail'] },
+  sehirhatlari: { host: 'sehirhatlari.istanbul', modes: ['ferry'] },
+  minibus: { host: 'api.ibb.gov.tr', modes: ['minibus'] },
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -322,13 +345,36 @@ function isManifestSource(value: unknown): boolean {
       .every((field) => (value[field] ?? null) === (primary[field] ?? null));
 }
 
+function isProviderSource(provider: TransitProvider, value: unknown): value is TransitProviderSource {
+  if (!isRecord(value) || value.provider !== provider || !Array.isArray(value.modes) || value.modes.length === 0
+    || new Set(value.modes).size !== value.modes.length || !isIntegerAtLeast(value.bytes, 1)
+    || !isSha256(value.sha256) || !Number.isFinite(parseInstant(value.retrievedAt))
+    || (value.status !== 'current' && value.status !== 'stale')) return false;
+  const definition = providerDefinitions[provider];
+  if (!value.modes.every((mode) => definition.modes.includes(mode as TransitProviderMode))) return false;
+  try {
+    const url = new URL(typeof value.resourceUrl === 'string' ? value.resourceUrl : '');
+    return url.protocol === 'https:' && url.hostname.toLowerCase() === definition.host
+      && (url.port === '' || url.port === '443') && url.username === '' && url.password === '' && url.hash === '';
+  } catch {
+    return false;
+  }
+}
+
+function isProviderSourceMap(value: unknown): value is TransitProviderSourceMap {
+  if (!isRecord(value) || !isRecord(value.providers)
+    || Object.keys(value.providers).length !== transitProviders.length) return false;
+  const providers = value.providers;
+  return transitProviders.every((provider) => isProviderSource(provider, providers[provider]));
+}
+
 function isFileInventory(value: unknown): value is Record<string, TransitFileMetadata> {
   if (!isRecord(value) || !Object.hasOwn(value, 'content-links.json.gz')) return false;
   return Object.entries(value).every(([path, file]) =>
     filePathPattern.test(path) && isRecord(file) && isIntegerAtLeast(file.bytes, 1) && isSha256(file.sha256));
 }
 
-function isProviderCoverage(value: unknown): value is TransitProviderCoverage[] {
+function isProviderCoverage(value: unknown, source: TransitProviderSourceMap): value is TransitProviderCoverage[] {
   if (!Array.isArray(value) || value.length !== transitProviders.length) return false;
   const seen = new Set<TransitProvider>();
   for (const entry of value) {
@@ -340,8 +386,13 @@ function isProviderCoverage(value: unknown): value is TransitProviderCoverage[] 
       || !Number.isFinite(parseInstant(entry.retrievedAt))
       || (entry.status !== 'current' && entry.status !== 'stale')
       || !isSha256(entry.sourceSha256)) return false;
-    if (seen.has(entry.provider as TransitProvider)) return false;
-    seen.add(entry.provider as TransitProvider);
+    const provider = entry.provider as TransitProvider;
+    const artifact = source.providers[provider];
+    if (seen.has(provider) || entry.modes.length !== artifact.modes.length
+      || !entry.modes.every((mode, index) => mode === artifact.modes[index])
+      || entry.retrievedAt !== artifact.retrievedAt || entry.status !== artifact.status
+      || entry.sourceSha256 !== artifact.sha256) return false;
+    seen.add(provider);
   }
   return transitProviders.every((provider) => seen.has(provider));
 }
@@ -422,14 +473,18 @@ export function parseManifest(value: unknown): TransitManifest {
   if (!isRecord(value) || (value.schemaVersion !== 1 && value.schemaVersion !== 2)) {
     throw new TypeError('Unsupported transit manifest schema version');
   }
+  const sourceIsValid = value.schemaVersion === 1
+    ? isManifestSource(value.source)
+    : isProviderSourceMap(value.source);
   if (!isVersionId(value.version) || !Number.isFinite(parseInstant(value.createdAt))
-    || !isManifestSource(value.source) || !isRecord(value.serviceDateRange)
+    || !sourceIsValid || !isRecord(value.serviceDateRange)
     || !isDateRange(value.serviceDateRange.start, value.serviceDateRange.end)
     || !isBoundingBox(value.boundingBox) || !isCounts(value.counts) || !isRecord(value.quality)) {
     throw new TypeError('Invalid transit manifest metadata');
   }
   if (!isFileInventory(value.files) || !isManifestIndexes(value.indexes, value.files, value.schemaVersion)
-    || (value.schemaVersion === 2 && !isProviderCoverage(value.providerCoverage))) {
+    || (value.schemaVersion === 2
+      && (!isProviderSourceMap(value.source) || !isProviderCoverage(value.providerCoverage, value.source)))) {
     throw new TypeError('Invalid transit manifest inventory or indexes');
   }
 

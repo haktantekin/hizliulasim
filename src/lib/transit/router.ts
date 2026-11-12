@@ -1,6 +1,8 @@
-import type { Coordinate, RoutePreference, TransitConnection, TransitManifest, TransitTransfer } from './contracts.ts';
+import type { Coordinate, RoutePreference, RouteTravelMode, TransitConnection, TransitManifest, TransitMode,
+  TransitTransfer } from './contracts.ts';
 import { getServiceContext, isServiceActive, serviceTimeToEpochMs, type ServiceDay } from './service-calendar.ts';
-import { streamSnapshotConnections, TransitSnapshotError, type LoadedSnapshot } from './snapshot-source.ts';
+import { loadSnapshotTransferGraph, streamSnapshotConnections, TransitSnapshotError,
+  type LoadedSnapshot } from './snapshot-source.ts';
 import { createTransferCandidateLoader, estimateWalk } from './spatial.ts';
 
 export interface RouterLimits {
@@ -33,6 +35,15 @@ const maxDominatedHistoryVariants = 8;
 const hashId = /^[a-f0-9]{64}$/;
 const { boardingBufferSeconds, transferBufferSeconds } = estimateWalk(0);
 const preferences = ['fastest', 'less-walking', 'fewer-transfers'] as const;
+const allTransitModes = ['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'cable_car', 'minibus'] as const;
+type VehicleMode = Exclude<TransitMode, 'walking'>;
+
+export function getAllowedTransitModes(travelMode: RouteTravelMode): ReadonlySet<VehicleMode> {
+  if (travelMode === 'walking') return new Set();
+  if (travelMode === 'bus') return new Set(['bus', 'minibus']);
+  if (travelMode === 'metro') return new Set(['metro', 'tram', 'rail', 'funicular', 'cable_car']);
+  return new Set(allTransitModes);
+}
 
 export interface StopWalk {
   stopId: string;
@@ -46,6 +57,8 @@ export interface RouterQuery {
   destination: Coordinate;
   access: readonly StopWalk[];
   egress: readonly StopWalk[];
+  /** Vehicle modes enforced while expanding topology edges, not after route selection. */
+  allowedModes?: ReadonlySet<VehicleMode>;
   preference?: RoutePreference;
   limits?: Partial<RouterLimits>;
 }
@@ -110,6 +123,8 @@ export type SnapshotRouterResult = RouterResult & {
     connectionShards: number;
     /** Unique transfer and endpoint stop-grid shard reads started. */
     transferShards: number;
+    /** Present for schema-v2 searches after its compact transfer graph is validated. */
+    transferGraphLoaded?: boolean;
   };
 };
 
@@ -286,7 +301,9 @@ function isConnection(value: unknown): value is TransitConnection {
     && (directionId === '' || directionId === '0' || directionId === '1') && typeof headsign === 'string'
     && isIntegerBetween(stopSequence, 0, Number.MAX_SAFE_INTEGER - 1)
     && isIntegerBetween(arrivalStopSequence, stopSequence + 1, Number.MAX_SAFE_INTEGER)
-    && isIntegerBetween(pickupType, 0, 3) && isIntegerBetween(dropOffType, 0, 3);
+    && isIntegerBetween(pickupType, 0, 3) && isIntegerBetween(dropOffType, 0, 3)
+    && (value.mode === undefined || allTransitModes.includes(value.mode as VehicleMode))
+    && (value.durationSecondsEstimated === undefined || typeof value.durationSecondsEstimated === 'boolean');
 }
 
 function instantiate(connection: TransitConnection, day: ServiceDay): ConnectionInstance {
@@ -705,6 +722,7 @@ async function* streamBucket(snapshot: LoadedSnapshot, bucket: Bucket, manifest:
     checkTime();
     const record = value as TransitConnection;
     if (!isConnection(record) || record.serviceClass !== bucket.classId || Math.floor(record.departure / hourSeconds) !== bucket.hour
+      || (manifest.schemaVersion === 2 && record.mode === undefined)
       || !Object.hasOwn(indexes.stops, record.fromStopId) || !Object.hasOwn(indexes.stops, record.toStopId)
       || !Object.hasOwn(indexes.routes, record.routeId) || !Object.hasOwn(indexes.patterns, record.patternId)
       || !Object.hasOwn(indexes.shapes, record.shapeId) || !Object.hasOwn(indexes.calendarRules, record.serviceId)
@@ -915,14 +933,26 @@ interface TopologyEdge {
 interface TransitTopology {
   outgoing: ReadonlyMap<string, readonly TopologyEdge[]>;
   representatives: ReadonlyMap<string, TransitConnection>;
+  transfers: ReadonlyMap<string, readonly TransitTransfer[]>;
 }
 
-interface TopologyTransition {
+interface TopologyRideTransition {
+  kind: 'ride';
   previous: TopologyState;
   edge: TopologyEdge;
   departureSeconds: number;
   arrivalSeconds: number;
 }
+
+interface TopologyTransferTransition {
+  kind: 'transfer';
+  previous: TopologyState;
+  transfer: TransitTransfer;
+  departureSeconds: number;
+  arrivalSeconds: number;
+}
+
+type TopologyTransition = TopologyRideTransition | TopologyTransferTransition;
 
 interface TopologyState {
   key: string;
@@ -930,6 +960,7 @@ interface TopologyState {
   patternId: string | null;
   sequence: number;
   canAlight: boolean;
+  changeBuffered: boolean;
   boardings: number;
   elapsedSeconds: number;
   walkingSeconds: number;
@@ -1003,12 +1034,22 @@ function topologyStateKey(stopId: string, patternId: string | null, sequence: nu
 async function loadTransitTopology(snapshot: LoadedSnapshot, buckets: readonly Bucket[], checkTime: () => void,
   diagnostics: SnapshotRouterResult['diagnostics']): Promise<TransitTopology> {
   const key = JSON.stringify([snapshot.pointer.manifestSha256, ...buckets.map(({ path }) => path)]);
+  if (snapshot.manifest.schemaVersion === 2) diagnostics.transferGraphLoaded = true;
   const cached = topologyCache.get(key);
   if (cached) return cached;
 
   const loading = (async () => {
     const outgoing = new Map<string, Map<string, TopologyEdge>>();
     const representatives = new Map<string, TransitConnection>();
+    const transferEdges = await loadSnapshotTransferGraph(snapshot);
+    checkTime();
+    const transfers = new Map<string, TransitTransfer[]>();
+    for (const transfer of transferEdges) {
+      const edges = transfers.get(transfer.fromStopId) ?? [];
+      edges.push(transfer);
+      transfers.set(transfer.fromStopId, edges);
+    }
+    for (const edges of transfers.values()) edges.sort((first, second) => compareIds(first.toStopId, second.toStopId));
     const paths = new Set<string>();
     for (const bucket of buckets) {
       checkTime();
@@ -1040,7 +1081,7 @@ async function loadTransitTopology(snapshot: LoadedSnapshot, buckets: readonly B
         || first.connection.arrivalStopSequence - second.connection.arrivalStopSequence
         || compareIds(first.connection.toStopId, second.connection.toStopId)));
     }
-    return { outgoing: sorted, representatives };
+    return { outgoing: sorted, representatives, transfers };
   })();
   topologyCache.set(key, loading);
   while (topologyCache.size > 2) topologyCache.delete(topologyCache.keys().next().value!);
@@ -1067,6 +1108,17 @@ function topologyJourney(destination: TopologyDestination, input: RouterQuery,
     walkingSeconds: destination.state.access.walkingSeconds,
   }];
   for (const transition of transitions) {
+    if (transition.kind === 'transfer') {
+      const transfer = transition.transfer;
+      journey.push({
+        kind: 'walk', role: 'transfer', fromStopId: transfer.fromStopId, toStopId: transfer.toStopId,
+        departureEpochMs: start + transition.departureSeconds * 1000,
+        arrivalEpochMs: start + transition.arrivalSeconds * 1000,
+        distanceMeters: transfer.distanceMeters, walkingSeconds: estimateWalk(transfer.distanceMeters).walkingSeconds,
+        evidence: transfer.evidence,
+      });
+      continue;
+    }
     const edge = transition.edge.connection;
     const vehicle = representatives.get(edge.patternId) ?? edge;
     journey.push({
@@ -1107,6 +1159,7 @@ export async function routeTransitTopology(snapshot: LoadedSnapshot, input: Rout
     const topology = await loadTransitTopology(snapshot, buckets, checkTime, diagnostics);
     checkTime();
     const preference = input.preference ?? 'fastest';
+    const allowedModes = input.allowedModes ?? new Set<VehicleMode>(allTransitModes);
     const compare = (first: TopologyState, second: TopologyState) => compareTopologyMetrics(first, second, preference);
     const queue = new TopologyQueue(compare);
     const best = new Map<string, TopologyState>();
@@ -1117,7 +1170,7 @@ export async function routeTransitTopology(snapshot: LoadedSnapshot, input: Rout
       assertStopWalk(access);
       const key = topologyStateKey(access.stopId, null, -1, 0);
       const state: TopologyState = {
-        key, stopId: access.stopId, patternId: null, sequence: -1, canAlight: true, boardings: 0,
+        key, stopId: access.stopId, patternId: null, sequence: -1, canAlight: true, changeBuffered: false, boardings: 0,
         elapsedSeconds: access.walkingSeconds, walkingSeconds: access.walkingSeconds, access, transition: null,
       };
       const previous = best.get(key);
@@ -1141,13 +1194,36 @@ export async function routeTransitTopology(snapshot: LoadedSnapshot, input: Rout
         }) < 0) choice = { state, egress };
       }
 
+      if (state.canAlight) {
+        for (const transfer of topology.transfers.get(state.stopId) ?? []) {
+          const elapsedSeconds = state.elapsedSeconds + transfer.seconds;
+          if (elapsedSeconds > limits.horizonSeconds) continue;
+          const key = topologyStateKey(transfer.toStopId, null, -1, state.boardings);
+          const next: TopologyState = {
+            key, stopId: transfer.toStopId, patternId: null, sequence: -1, canAlight: true, changeBuffered: true,
+            boardings: state.boardings, elapsedSeconds,
+            walkingSeconds: state.walkingSeconds + estimateWalk(transfer.distanceMeters).walkingSeconds,
+            access: state.access,
+            transition: { kind: 'transfer', previous: state, transfer,
+              departureSeconds: state.elapsedSeconds, arrivalSeconds: elapsedSeconds },
+          };
+          const previous = best.get(key);
+          if (previous && compare(previous, next) <= 0) continue;
+          best.set(key, next);
+          if (best.size > limits.maxTotalLabels) throw new BudgetExceeded('total-labels');
+          queue.push(next);
+        }
+      }
+
       for (const edge of topology.outgoing.get(state.stopId) ?? []) {
         const connection = edge.connection;
+        if (!allowedModes.has(connection.mode ?? 'bus')) continue;
         const continuing = state.patternId === connection.patternId && state.sequence === connection.stopSequence;
         if (!continuing && ((!state.canAlight && state.patternId !== null) || connection.pickupType !== 0)) continue;
         const boardings = state.boardings + (continuing ? 0 : 1);
         if (boardings > limits.maxBoardings) continue;
-        const wait = continuing ? 0 : state.boardings === 0 ? boardingBufferSeconds : transferBufferSeconds;
+        const wait = continuing ? 0 : state.boardings === 0 ? boardingBufferSeconds
+          : state.changeBuffered ? 0 : transferBufferSeconds;
         const departureSeconds = state.elapsedSeconds + wait;
         const elapsedSeconds = departureSeconds + edge.durationSeconds;
         if (elapsedSeconds > limits.horizonSeconds) continue;
@@ -1156,8 +1232,9 @@ export async function routeTransitTopology(snapshot: LoadedSnapshot, input: Rout
         const next: TopologyState = {
           key, stopId: connection.toStopId, patternId: connection.patternId,
           sequence: connection.arrivalStopSequence, canAlight: connection.dropOffType === 0,
+          changeBuffered: false,
           boardings, elapsedSeconds, walkingSeconds: state.walkingSeconds, access: state.access,
-          transition: { previous: state, edge, departureSeconds, arrivalSeconds: elapsedSeconds },
+          transition: { kind: 'ride', previous: state, edge, departureSeconds, arrivalSeconds: elapsedSeconds },
         };
         const previous = best.get(key);
         if (previous && compare(previous, next) <= 0) continue;

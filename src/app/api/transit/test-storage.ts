@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import type { TestContext } from 'node:test';
 import { gzipSync } from 'node:zlib';
-import { parseManifest, type TransitManifest } from '../../../lib/transit/contracts.ts';
+import { parseManifest, type TransitManifest, type TransitTransfer } from '../../../lib/transit/contracts.ts';
 import { clearTransitSnapshotCacheForTests } from '../../../lib/transit/snapshot-source.ts';
-import { manifestFixture } from '../../../lib/transit/test-fixtures.ts';
+import { manifestFixture, multimodalManifestFixture } from '../../../lib/transit/test-fixtures.ts';
 
 const sha256 = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
 const originCell = '4100_2900';
@@ -27,6 +27,8 @@ export const contentPath = 'content-links.json.gz';
 export const checkedAt = '2026-11-09T22:00:00.000Z';
 
 interface PublishOptions {
+  schemaVersion?: 1 | 2;
+  transferEdges?: TransitTransfer[];
   classId?: string;
   laterBucket?: boolean;
   noServiceToDestination?: boolean;
@@ -36,12 +38,13 @@ interface PublishOptions {
 
 function fixture(options: PublishOptions) {
   const classId = options.classId ?? serviceClass;
-  const manifest = structuredClone(parseManifest(manifestFixture));
+  const manifest = structuredClone(parseManifest(options.schemaVersion === 2 ? multimodalManifestFixture : manifestFixture));
   const connection = {
     departure: 36_300, arrival: 37_200, stopSequence: 1, arrivalStopSequence: 2,
     tripId: 'test-trip', routeId: '0', serviceId: '0', serviceClass: classId, patternId, shapeId,
     directionId: '0', headsign: 'Merkez', fromStopId: '0',
     toStopId: options.noServiceToDestination ? 'decoy' : '1', pickupType: 0, dropOffType: 0,
+    ...(manifest.schemaVersion === 2 && { mode: 'bus' as const, durationSecondsEstimated: false }),
   };
   const payloads: Record<string, unknown> = {
     [originStopPath]: { cell: originCell, precision: 0.01,
@@ -61,6 +64,9 @@ function fixture(options: PublishOptions) {
     [contentPath]: { schemaVersion: 1, links: {
       '0': { title: 'Başlangıç durağı', canonicalUrl: 'https://hizliulasim.com/otobus-duraklari/baslangic-100' },
     } },
+    ...(manifest.schemaVersion === 2 && {
+      [manifest.indexes.transferGraph]: { transfers: options.transferEdges ?? [] },
+    }),
     ...options.overrides,
   };
   manifest.indexes = {

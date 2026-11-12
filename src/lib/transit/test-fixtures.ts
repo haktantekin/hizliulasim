@@ -91,6 +91,15 @@ export const multimodalManifestFixture = {
   ...manifestFixture,
   schemaVersion: 2,
   version: 'fixture_v2',
+  source: {
+    providers: {
+      iett: { provider: 'iett', modes: ['bus'], resourceUrl: 'https://data.ibb.gov.tr/gtfs.zip', retrievedAt: '2026-11-10T12:00:00+03:00', bytes: 128, sha256: '3'.repeat(64), status: 'current' },
+      metro: { provider: 'metro', modes: ['metro', 'tram', 'funicular', 'cable_car'], resourceUrl: 'https://api.ibb.gov.tr/metro.json', retrievedAt: '2026-11-10T12:01:00+03:00', bytes: 128, sha256: '4'.repeat(64), status: 'current' },
+      tcdd: { provider: 'tcdd', modes: ['rail'], resourceUrl: 'https://www.tcddtasimacilik.gov.tr/marmaray/tr/neredennereye', retrievedAt: '2026-11-10T12:02:00+03:00', bytes: 128, sha256: '5'.repeat(64), status: 'current' },
+      sehirhatlari: { provider: 'sehirhatlari', modes: ['ferry'], resourceUrl: 'https://sehirhatlari.istanbul/tr/seferler', retrievedAt: '2026-11-10T12:03:00+03:00', bytes: 128, sha256: '6'.repeat(64), status: 'stale' },
+      minibus: { provider: 'minibus', modes: ['minibus'], resourceUrl: 'https://api.ibb.gov.tr/minibus.json', retrievedAt: '2026-11-10T12:04:00+03:00', bytes: 128, sha256: '7'.repeat(64), status: 'current' },
+    },
+  },
   providerCoverage: [
     { provider: 'iett', modes: ['bus'], retrievedAt: '2026-11-10T12:00:00+03:00', status: 'current', sourceSha256: '3'.repeat(64) },
     { provider: 'metro', modes: ['metro', 'tram', 'funicular', 'cable_car'], retrievedAt: '2026-11-10T12:01:00+03:00', status: 'current', sourceSha256: '4'.repeat(64) },

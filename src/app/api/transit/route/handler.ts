@@ -1,6 +1,6 @@
-import { parseRouteRequest, type RouteTravelMode, type TransitItinerary } from '../../../../lib/transit/contracts.ts';
+import { parseRouteRequest, type TransitItinerary } from '../../../../lib/transit/contracts.ts';
 import { buildItinerary } from '../../../../lib/transit/itinerary.ts';
-import { DEFAULT_ROUTER_LIMITS, getTopologyConnectionPaths, routeTransitTopology,
+import { DEFAULT_ROUTER_LIMITS, getAllowedTransitModes, getTopologyConnectionPaths, routeTransitTopology,
   type RouterLimits, type StopWalk } from '../../../../lib/transit/router.ts';
 import { loadActiveSnapshotWithPreflight, TransitSnapshotError } from '../../../../lib/transit/snapshot-source.ts';
 import { estimateWalk, findNearbyStops, getNearbyStopGridPaths, loadNearbyStopGrid,
@@ -30,15 +30,6 @@ function errorResponse(code: RouteErrorCode): Response {
 
 function stopWalk({ stop, distanceMeters }: NearbyStop): StopWalk {
   return { stopId: stop.stopId, distanceMeters, walkingSeconds: estimateWalk(distanceMeters).walkingSeconds };
-}
-
-function matchesTravelMode(itinerary: TransitItinerary, travelMode: RouteTravelMode): boolean {
-  if (travelMode === 'transit') return true;
-  if (travelMode === 'walking') return itinerary.steps.every(({ mode }) => mode === 'walking');
-  const modes = travelMode === 'bus'
-    ? new Set(['bus', 'minibus'])
-    : new Set(['metro', 'tram', 'rail', 'funicular']);
-  return itinerary.steps.some((step) => step.kind === 'ride' && modes.has(step.mode));
 }
 
 interface RouteHandlerOptions {
@@ -119,6 +110,7 @@ export function createTransitRouteHandler({
       const snapshot = await loadActiveSnapshotWithPreflight((manifest) => [
         ...getNearbyStopGridPaths(manifest, points).values(),
         ...getTopologyConnectionPaths(manifest, query.departureAt, limits, checkTime),
+        ...(manifest.schemaVersion === 2 ? [manifest.indexes.transferGraph] : []),
       ], { checkTime, signal: abort.signal, connectionPreflight: 'compressed',
         onFallback: (reason) => { fallbackReason = reason; } });
       version = snapshot.version;
@@ -134,7 +126,9 @@ export function createTransitRouteHandler({
       checkTime();
       if (!access.length || !egress.length) return fail('NO_ROUTE');
 
-      const result = await routeTransitTopology(snapshot, { ...query, access, egress, limits },
+      const result = await routeTransitTopology(snapshot, {
+        ...query, access, egress, limits, allowedModes: getAllowedTransitModes(query.travelMode),
+      },
         { clock, checkTime, diagnostics });
       checkTime();
       if (result.status === 'budget-exceeded') return fail('ROUTE_TIMEOUT', result.budget);
@@ -144,11 +138,12 @@ export function createTransitRouteHandler({
       for (const journey of result.journeys.slice(0, maxAlternatives)) {
         checkTime();
         const itinerary = await buildItinerary(journey, snapshot, { now });
-        if (matchesTravelMode(itinerary, query.travelMode)) itineraries.push(itinerary);
+        itineraries.push(itinerary);
       }
       checkTime();
       if (!itineraries.length) return fail('NO_ROUTE');
-      const response = json({ itineraries, metadata: { dataVersion: version, usedFallback },
+      const response = json({ itineraries, metadata: { dataVersion: version, usedFallback,
+        ...(snapshot.manifest.schemaVersion === 2 && { providerCoverage: snapshot.manifest.providerCoverage }) },
         diagnostics: { ...diagnostics, originCandidates, destinationCandidates } });
       checkTime();
       alternatives = itineraries.length;

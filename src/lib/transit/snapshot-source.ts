@@ -11,6 +11,7 @@ import {
   type TransitFileMetadata,
   type TransitManifest,
   type TransitSnapshotPointer,
+  type TransitTransfer,
 } from './contracts.ts';
 import { SnapshotCache } from './snapshot-cache.ts';
 
@@ -627,6 +628,32 @@ export async function loadSnapshotShard<T>(snapshot: LoadedSnapshot, relativePat
   // Cache private JSON buffers. Parsing again gives each caller its own mutable result.
   shardCache.set(key, expanded, expanded.buffer.byteLength + 2 * key.length + 128);
   return value as T;
+}
+
+/** Load and fully validate the compact, directional transfer graph declared by schema v2. */
+export async function loadSnapshotTransferGraph(snapshot: LoadedSnapshot): Promise<readonly TransitTransfer[]> {
+  if (snapshot.manifest.schemaVersion === 1) return [];
+  const value = await loadSnapshotShard<unknown>(snapshot, snapshot.manifest.indexes.transferGraph);
+  if (!isRecord(value) || !Array.isArray(value.transfers)) throw new TransitSnapshotError('INVALID_SHARD');
+  const transfers: TransitTransfer[] = [];
+  const seen = new Set<string>();
+  for (const entry of value.transfers) {
+    if (!isRecord(entry) || typeof entry.fromStopId !== 'string' || typeof entry.toStopId !== 'string'
+      || entry.fromStopId === entry.toStopId || !Object.hasOwn(snapshot.manifest.indexes.stops, entry.fromStopId)
+      || !Object.hasOwn(snapshot.manifest.indexes.stops, entry.toStopId)
+      || !Number.isSafeInteger(entry.distanceMeters) || (entry.distanceMeters as number) < 0
+      || (entry.distanceMeters as number) > 350 || !Number.isSafeInteger(entry.seconds)
+      || (entry.seconds as number) < Math.ceil((entry.distanceMeters as number) / 1.1) + 60
+      || (entry.seconds as number) > 3600 || !isRecord(entry.evidence)
+      || !['source', 'cms', 'manual'].includes(entry.evidence.type as string)
+      || typeof entry.evidence.reference !== 'string' || entry.evidence.reference.trim() === ''
+      || Buffer.byteLength(entry.evidence.reference) > 512) throw new TransitSnapshotError('INVALID_SHARD');
+    const key = `${entry.fromStopId}\0${entry.toStopId}`;
+    if (seen.has(key)) throw new TransitSnapshotError('INVALID_SHARD');
+    seen.add(key);
+    transfers.push(entry as unknown as TransitTransfer);
+  }
+  return transfers;
 }
 
 async function readSnapshot(storage: SnapshotStorage, name: PointerName): Promise<LoadedSnapshot> {
