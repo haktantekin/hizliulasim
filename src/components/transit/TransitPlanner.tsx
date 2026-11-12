@@ -130,6 +130,7 @@ function useRouteRequest(route: PlannerRoute, dispatch: Dispatch<PlannerAction>)
           destination: [destination.latitude, destination.longitude],
           departureAt,
           preference,
+          travelMode: 'transit',
         }, signal);
         if (!signal.aborted) dispatch({ type: 'route-succeeded', id, departureAt: departureAt.toISOString(), alternatives: itineraries });
       } catch (error) {

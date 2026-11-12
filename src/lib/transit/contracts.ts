@@ -6,6 +6,7 @@ export const MAX_ROUTE_DEPARTURE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Coordinate = [latitude: number, longitude: number];
 export type RoutePreference = 'fastest' | 'less-walking' | 'fewer-transfers';
+export type RouteTravelMode = 'transit' | 'walking' | 'bus' | 'metro';
 export type TransitMode = 'bus' | 'metro' | 'tram' | 'rail' | 'ferry' | 'funicular' | 'minibus' | 'walking';
 export type GeometryQuality = 'exact' | 'approximate';
 
@@ -151,6 +152,7 @@ export interface TransitRouteRequest {
   destination: Coordinate;
   departureAt: Date;
   preference: RoutePreference;
+  travelMode: RouteTravelMode;
 }
 
 export interface TransitBoardingPoint {
@@ -388,7 +390,7 @@ export function parseManifest(value: unknown): TransitManifest {
 }
 
 const routeRequestFields = [
-  'originLat', 'originLng', 'destinationLat', 'destinationLng', 'departureAt', 'preference',
+  'originLat', 'originLng', 'destinationLat', 'destinationLng', 'departureAt', 'preference', 'travelMode',
 ] as const;
 
 function readRouteString(body: Record<string, unknown>, name: string): string {
@@ -430,5 +432,10 @@ export function parseRouteRequest(value: unknown, now = new Date()): TransitRout
     throw new TypeError('Invalid preference');
   }
 
-  return { origin, destination, departureAt: new Date(departure), preference };
+  const travelMode = readRouteString(value, 'travelMode');
+  if (travelMode !== 'transit' && travelMode !== 'walking' && travelMode !== 'bus' && travelMode !== 'metro') {
+    throw new TypeError('Invalid travelMode');
+  }
+
+  return { origin, destination, departureAt: new Date(departure), preference, travelMode };
 }

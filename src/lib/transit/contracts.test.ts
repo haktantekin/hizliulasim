@@ -14,6 +14,7 @@ function requestBody(overrides: Record<string, unknown> = {}): Record<string, un
     destinationLng: 29.04,
     departureAt: '2026-11-10T15:00:00+03:00',
     preference: 'fastest',
+    travelMode: 'transit',
     ...overrides,
   };
   for (const [name, value] of Object.entries(fields)) if (value === null) delete fields[name];
@@ -230,13 +231,16 @@ test('rejects malformed service calendars in the indexes', () => {
   assert.throws(() => parseManifest({ ...manifestFixture, indexes }));
 });
 
-test('parses the public route preferences, coordinates and an offset departure', () => {
-  for (const preference of ['fastest', 'less-walking', 'fewer-transfers']) {
-    assert.deepEqual(parseRouteRequest(requestBody({ preference }), now), {
+test('parses public route preferences, travel modes, coordinates and an offset departure', () => {
+  for (const [preference, travelMode] of [
+    ['fastest', 'transit'], ['less-walking', 'walking'], ['fewer-transfers', 'bus'], ['fastest', 'metro'],
+  ] as const) {
+    assert.deepEqual(parseRouteRequest(requestBody({ preference, travelMode }), now), {
       origin: [41.01, 29.01],
       destination: [41.05, 29.04],
       departureAt: new Date('2026-11-10T12:00:00.000Z'),
       preference,
+      travelMode,
     });
   }
 });
@@ -287,6 +291,12 @@ test('rejects non-ISO, offset-free and impossible departure times', () => {
 test('rejects unsupported route preferences', () => {
   for (const preference of ['time', 'walking', 'transfers', '']) {
     assert.throws(() => parseRouteRequest(requestBody({ preference }), now));
+  }
+});
+
+test('rejects unsupported travel modes', () => {
+  for (const travelMode of ['car', 'train', 'cycling', '']) {
+    assert.throws(() => parseRouteRequest(requestBody({ travelMode }), now));
   }
 });
 

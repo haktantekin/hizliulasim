@@ -33,6 +33,7 @@ export interface TransitRouteResponse {
 
 const rideModes = new Set(['bus', 'metro', 'tram', 'rail', 'ferry', 'funicular', 'minibus']);
 const pointRoles = new Set(['origin', 'board', 'alight', 'transfer', 'destination']);
+const travelModes = new Set(['transit', 'walking', 'bus', 'metro']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -109,7 +110,7 @@ export async function requestTransitRoutes(
   signal?.throwIfAborted();
   const origin = canonicalizeRouteCoordinates(...input.origin);
   const destination = canonicalizeRouteCoordinates(...input.destination);
-  if (!origin || !destination || !Number.isFinite(input.departureAt.getTime())) {
+  if (!origin || !destination || !Number.isFinite(input.departureAt.getTime()) || !travelModes.has(input.travelMode)) {
     throw new TransitRouteError('INVALID_REQUEST');
   }
 
@@ -120,6 +121,7 @@ export async function requestTransitRoutes(
     destinationLng: destination[1],
     departureAt: input.departureAt.toISOString(),
     preference: input.preference,
+    travelMode: input.travelMode,
   });
 
   let response: Response;

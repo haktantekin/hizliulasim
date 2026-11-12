@@ -9,6 +9,7 @@ const input: TransitRouteRequest = {
   destination: [41.021234, 29.021234],
   departureAt: new Date('2026-11-10T07:00:00Z'),
   preference: 'less-walking',
+  travelMode: 'transit',
 };
 const board = { role: 'board', name: 'Çarşı', coordinate: [41, 29] } as const;
 const itinerary: TransitItinerary = {
@@ -41,7 +42,7 @@ const payload = {
   diagnostics: { connectionBuckets: 1, connectionShards: 1, originCandidates: 2, destinationCandidates: 3 },
 };
 
-test('posts the six route contract fields without putting coordinates in the request URL', async (t) => {
+test('posts the seven route contract fields without putting coordinates in the request URL', async (t) => {
   const fetchRoute = t.mock.method(globalThis, 'fetch', async () => Response.json(payload));
   const signal = new AbortController().signal;
 
@@ -54,7 +55,7 @@ test('posts the six route contract fields without putting coordinates in the req
   assert.deepEqual(JSON.parse(String(init?.body)), {
     originLat: 41.00123, originLng: 28.99988,
     destinationLat: 41.02123, destinationLng: 29.02123,
-    departureAt: '2026-11-10T07:00:00.000Z', preference: 'less-walking',
+    departureAt: '2026-11-10T07:00:00.000Z', preference: 'less-walking', travelMode: 'transit',
   });
   assert.equal(init?.cache, 'no-store');
   assert.equal(init?.signal, signal);
@@ -75,12 +76,12 @@ test('requests the same coordinates before and after sharing a route near a boar
 
   await requestTransitRoutes({
     origin: [origin.latitude, origin.longitude], destination: [destination.latitude, destination.longitude],
-    departureAt: input.departureAt, preference,
+    departureAt: input.departureAt, preference, travelMode: input.travelMode,
   });
   await requestTransitRoutes({
     origin: [restored.origin.latitude, restored.origin.longitude],
     destination: [restored.destination.latitude, restored.destination.longitude],
-    departureAt: new Date(restored.departureAt), preference: restored.preference,
+    departureAt: new Date(restored.departureAt), preference: restored.preference, travelMode: input.travelMode,
   });
 
   const requestBodies = fetchRoute.mock.calls.map(({ arguments: [, init] }) => JSON.parse(String(init?.body)));

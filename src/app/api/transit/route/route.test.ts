@@ -16,6 +16,7 @@ const params: Record<string, unknown> = {
   originLat: 41.000987, originLng: 28.999913,
   destinationLat: 41.021234, destinationLng: 29.021234,
   departureAt: '2026-11-10T07:00:00Z', preference: 'fastest',
+  travelMode: 'transit',
 };
 const now = () => new Date(checkedAt);
 const routeRequest = (
@@ -111,6 +112,15 @@ test('preflights adjacent stop grids and the first connection hour before routin
     usedFallback: false, connectionShards: 1, transferShards: 2, originCandidates: 1,
     destinationCandidates: 1, alternatives: 1 }]);
   assert.doesNotMatch(JSON.stringify(logs), /41\.000987|29\.021234|originLat|Başlangıç|hizliulasim|internal-assets/u);
+});
+
+test('filters static alternatives by the requested vehicle family', async (t) => {
+  const storage = fixtureStorage(t);
+  storage.publish('current', 'current_test');
+  const { get } = routeHandler();
+
+  assert.equal((await get(routeRequest((body) => { body.travelMode = 'bus'; }))).status, 200);
+  await expectError(await get(routeRequest((body) => { body.travelMode = 'metro'; })), 404, 'NO_ROUTE');
 });
 
 test('default route continues after the former wall-clock deadline', async (t) => {

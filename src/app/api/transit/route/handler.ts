@@ -1,4 +1,4 @@
-import { parseRouteRequest, type TransitItinerary } from '../../../../lib/transit/contracts.ts';
+import { parseRouteRequest, type RouteTravelMode, type TransitItinerary } from '../../../../lib/transit/contracts.ts';
 import { buildItinerary } from '../../../../lib/transit/itinerary.ts';
 import { DEFAULT_ROUTER_LIMITS, getStartupConnectionPaths, routeTransitSnapshot,
   type RouterLimits, type StopWalk } from '../../../../lib/transit/router.ts';
@@ -29,6 +29,15 @@ function errorResponse(code: RouteErrorCode): Response {
 
 function stopWalk({ stop, distanceMeters }: NearbyStop): StopWalk {
   return { stopId: stop.stopId, distanceMeters, walkingSeconds: estimateWalk(distanceMeters).walkingSeconds };
+}
+
+function matchesTravelMode(itinerary: TransitItinerary, travelMode: RouteTravelMode): boolean {
+  if (travelMode === 'transit') return true;
+  if (travelMode === 'walking') return itinerary.steps.every(({ mode }) => mode === 'walking');
+  const modes = travelMode === 'bus'
+    ? new Set(['bus', 'minibus'])
+    : new Set(['metro', 'tram', 'rail', 'funicular']);
+  return itinerary.steps.some((step) => step.kind === 'ride' && modes.has(step.mode));
 }
 
 interface RouteHandlerOptions {
@@ -122,9 +131,11 @@ export function createTransitRouteHandler({
       const itineraries: TransitItinerary[] = [];
       for (const journey of result.journeys.slice(0, maxAlternatives)) {
         checkTime();
-        itineraries.push(await buildItinerary(journey, snapshot, { now }));
+        const itinerary = await buildItinerary(journey, snapshot, { now });
+        if (matchesTravelMode(itinerary, query.travelMode)) itineraries.push(itinerary);
       }
       checkTime();
+      if (!itineraries.length) return fail('NO_ROUTE');
       const response = json({ itineraries, metadata: { dataVersion: version, usedFallback },
         diagnostics: { ...diagnostics, originCandidates, destinationCandidates } });
       checkTime();
