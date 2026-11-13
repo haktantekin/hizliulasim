@@ -5,6 +5,7 @@ export interface AuthUser {
   username: string;
   role: string;
   avatar_url?: string;
+  google_linked?: boolean;
 }
 
 export interface AuthTokens {
@@ -76,6 +77,16 @@ export async function registerUser(email: string, password: string, name: string
 export async function googleLogin(credential: string) {
   return authFetch<{ user: AuthUser }>(
     `${AUTH_API_BASE}/google`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    }
+  );
+}
+
+export async function googleLink(credential: string) {
+  return authFetch<{ linked: true; email: string }>(
+    `${AUTH_API_BASE}/google/link`,
     {
       method: 'POST',
       body: JSON.stringify({ credential }),

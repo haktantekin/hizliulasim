@@ -98,3 +98,7 @@ settings.json
 !docs/superpowers/plans/2026-11-13-google-sign-in.md
 !docs/superpowers/specs/2026-11-13-google-sign-in-design.md
 *.md
+!src/app/api/auth/google/link/route.test.ts
+!src/components/auth/google-account-link-state.test.ts
+!docs/superpowers/plans/2026-11-13-google-account-linking.md
+!docs/superpowers/specs/2026-11-13-google-account-linking-design.md

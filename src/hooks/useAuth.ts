@@ -4,6 +4,7 @@ import { setUser, setFavorites, setPreferences, logout as logoutAction, setUserL
 import {
   loginUser,
   googleLogin,
+  googleLink,
   registerUser,
   getProfile,
   logoutUser,
@@ -35,6 +36,17 @@ export const useGoogleLogin = () => {
     mutationFn: (credential: string) => googleLogin(credential),
     onSuccess: (data) => {
       dispatch(setUser({ user: data.user }));
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useGoogleLink = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (credential: string) => googleLink(credential),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });

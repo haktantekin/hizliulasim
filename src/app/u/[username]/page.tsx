@@ -7,6 +7,7 @@ import { setAvatar } from '@/store/slices/userSlice';
 import { User, MessageSquare, Bus, ParkingCircle, Camera, Loader2, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import AuthModal from '@/components/ui/AuthModal';
+import GoogleAccountLinkCard from '@/components/auth/GoogleAccountLinkCard';
 import { formatTrDateTime } from '@/lib/dateTime';
 
 
@@ -206,6 +207,10 @@ export default function UserProfilePage() {
           )}
         </div>
       </div>
+
+      {isOwnProfile && (
+        <GoogleAccountLinkCard linked={Boolean(currentUser?.google_linked)} />
+      )}
 
       {/* Guest: Login prompt */}
       {!isAuthenticated ? (
