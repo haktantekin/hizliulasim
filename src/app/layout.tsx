@@ -11,6 +11,7 @@ import Script from "next/script";
 import CookieBanner from '../components/ui/CookieBanner';
 import { googleAnalyticsId, googleAnalyticsSetup } from '../lib/googleAnalytics';
 import IettAlertBar from '../components/iett/IettAlertBar';
+import { getCachedIettAlertBarAlerts } from '../services/iett-alert-bar-cache';
 
 const outfit = Outfit({ subsets: ["latin"], display: "swap" });
 
@@ -64,11 +65,13 @@ export const viewport: Viewport = {
   themeColor: '#272445',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialIettAlerts = await getCachedIettAlertBarAlerts();
+
   return (
     <html lang="tr">
       <head>
@@ -151,7 +154,7 @@ export default function RootLayout({
         <ReduxProvider>
           <QueryProvider>
             <DrawerProvider>
-            <IettAlertBar />
+            <IettAlertBar initialAlerts={initialIettAlerts} />
             <Header />
             <div className="min-h-screen">
               {children}

@@ -5,6 +5,8 @@ import {
   getIettAlerts,
   sortIettAlertsByRecency,
 } from './iett-alerts.ts';
+import type { IettAlertsResult } from './iett-alerts.ts';
+import { loadIettAlertBarAlerts } from './iett-alert-bar.ts';
 import type { IETTDuyuru } from '../types/iett.ts';
 
 function alert(lineCode: string, time: string, changes: Partial<IETTDuyuru> = {}): IETTDuyuru {
@@ -132,4 +134,28 @@ test('rejects an upstream error and a malformed CMS payload without leaking its 
     getIettAlerts({}, { fetcher: () => cmsResponse({ data: [alert('../1', '16:00')], status: 'current', fetchedAt: 'bad' }) }),
     IettAlertsUnavailableError,
   );
+});
+
+test('loads at most five alerts for the initial alert-bar render', async () => {
+  let receivedQuery: unknown;
+  const result: IettAlertsResult = {
+    data: ['1', '2', '3', '4', '5', '6'].map((lineCode) => alert(lineCode, '16:10')),
+    metadata: { source: 'current', fetchedAt: '2026-11-13T13:00:00Z' },
+  };
+
+  const alerts = await loadIettAlertBarAlerts(async (query) => {
+    receivedQuery = query;
+    return result;
+  });
+
+  assert.deepEqual(receivedQuery, { limit: 5 });
+  assert.deepEqual(alerts.map((item) => item.HATKODU), ['1', '2', '3', '4', '5']);
+});
+
+test('returns no initial alert-bar content when the alert source is unavailable', async () => {
+  const alerts = await loadIettAlertBarAlerts(async () => {
+    throw new Error('private upstream failure');
+  });
+
+  assert.deepEqual(alerts, []);
 });

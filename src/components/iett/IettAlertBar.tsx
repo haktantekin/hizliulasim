@@ -7,37 +7,15 @@ import type { IETTDuyuru } from '@/types/iett';
 import {
   buildIettAlertDestination,
   extractIettAlertTime,
-  parseIettAlertList,
   summarizeIettAlertMessage,
 } from './alert-presentation';
 
 const rotationMs = 6_000;
 
-export default function IettAlertBar() {
-  const [alerts, setAlerts] = useState<IETTDuyuru[]>([]);
+export default function IettAlertBar({ initialAlerts }: { initialAlerts: IETTDuyuru[] }) {
+  const alerts = initialAlerts;
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-
-  useEffect(() => {
-    const abort = new AbortController();
-
-    async function loadAlerts() {
-      try {
-        const response = await fetch('/api/iett/duyurular?limit=5', {
-          cache: 'no-store',
-          signal: abort.signal,
-        });
-        if (!response.ok) return;
-        const parsed = parseIettAlertList(await response.json());
-        if (parsed !== null) setAlerts(parsed);
-      } catch {
-        // Alerts are an enhancement; a failure must not leave an empty banner behind.
-      }
-    }
-
-    void loadAlerts();
-    return () => abort.abort();
-  }, []);
 
   useEffect(() => {
     if (paused || alerts.length < 2) return;
@@ -57,7 +35,7 @@ export default function IettAlertBar() {
   return (
     <aside
       aria-label="Güncel İETT uyarıları"
-      className="border-b border-white/10 bg-brand-dark-blue text-white"
+      className="min-h-[37px] border-b border-white/10 bg-brand-dark-blue text-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
