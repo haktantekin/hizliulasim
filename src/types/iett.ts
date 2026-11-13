@@ -34,13 +34,11 @@ export interface IETTPlanlananSefer {
 }
 
 export interface IETTDuyuru {
-  HESSION: string;
+  HATKODU: string;
   HAT: string;
   TIP: string;
-  DESSION: string;
+  GUNCELLEME_SAATI: string;
   MESAJ: string;
-  DUESSION: string;
-  GUNCESSION: string;
 }
 
 export interface IETTHatOtoKonum {
