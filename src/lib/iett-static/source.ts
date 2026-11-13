@@ -22,7 +22,7 @@ import {
 
 const mib = 1024 ** 2;
 const maxPointerBytes = 4 * 1024;
-const maxManifestBytes = 2 * mib;
+const maxManifestBytes = 16 * mib;
 const maxCompressedShardBytes = 16 * mib;
 const maxExpandedShardBytes = 64 * mib;
 const maxJsonDepth = 64;

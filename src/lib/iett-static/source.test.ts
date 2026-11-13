@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test, type TestContext } from 'node:test';
@@ -90,6 +90,7 @@ interface VersionOptions {
   expandedDirectoryBytes?: Buffer;
   corruptLineHash?: boolean;
   schemaThree?: boolean;
+  manifestStopCount?: number;
 }
 
 async function stageVersion(root: string, version: string, options: VersionOptions = {}) {
@@ -126,6 +127,15 @@ async function stageVersion(root: string, version: string, options: VersionOptio
     path,
     { bytes: bytes.length, sha256: sha256(bytes) },
   ]));
+  const stopIndex: Record<string, string> = {
+    [stopCode]: `stops/${sha256(stopCode)}.json.gz`,
+  };
+  for (let index = 2; index <= (options.manifestStopCount ?? 1); index++) {
+    const code = String(index);
+    const path = `stops/${sha256(code)}.json.gz`;
+    files[path] = { bytes: 20, sha256: '0'.repeat(64) };
+    stopIndex[code] = path;
+  }
   if (options.corruptLineHash) files[`lines/${sha256(lineCode)}.json.gz`].sha256 = '0'.repeat(64);
   const manifest = {
     schemaVersion: options.schemaThree ? 3 : 1,
@@ -146,13 +156,13 @@ async function stageVersion(root: string, version: string, options: VersionOptio
       transit: { version: 'transit_v1', manifestSha256: '3'.repeat(64) },
     },
     counts: options.schemaThree
-      ? { lines: 1, schedules: 1, lineStops: 1, stops: 1, paths: 1 }
-      : { lines: 1, schedules: 1, lineStops: 1, stops: 1 },
+      ? { lines: 1, schedules: 1, lineStops: 1, stops: Object.keys(stopIndex).length, paths: 1 }
+      : { lines: 1, schedules: 1, lineStops: 1, stops: Object.keys(stopIndex).length },
     files,
     indexes: {
       directory: 'directory.json.gz',
       lines: { [lineCode]: `lines/${sha256(lineCode)}.json.gz` },
-      stops: { [stopCode]: `stops/${sha256(stopCode)}.json.gz` },
+      stops: stopIndex,
     },
   };
   const versionRoot = join(root, 'versions', version);
@@ -218,6 +228,19 @@ test('loads schema 3 manifest with schema 2 route payloads from GTFS-only proven
   assert.equal(active.manifest.schemaVersion, 3);
   assert.deepEqual(Object.keys(active.manifest.source), ['transit']);
   assert.equal((await loadIettStaticLine('1'))?.data.paths?.[0]?.quality, 'exact');
+});
+
+test('loads a verified Istanbul-sized manifest between 2 MiB and the 16 MiB publication limit', async (t) => {
+  const root = await setupStorage(t);
+  const pointer = await stageVersion(root, 'istanbul_v3', {
+    schemaThree: true,
+    manifestStopCount: 14_000,
+  });
+  const manifest = await readFile(join(root, 'versions', pointer.version, 'manifest.json'));
+  assert.ok(manifest.length > 2 * mib && manifest.length < 16 * mib);
+  await writePointer(root, 'current', pointer);
+
+  assert.equal((await loadActiveIettStaticPackage()).version, 'istanbul_v3');
 });
 
 test('falls back as a whole when the current line shard hash is corrupt', async (t) => {
