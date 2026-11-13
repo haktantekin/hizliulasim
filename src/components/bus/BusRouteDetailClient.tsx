@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import type { IETTPlanlananSefer, IETTHatOtoKonum, IETTHat, IETTDurakDetay } from '@/types/iett';
-import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot, Heart, Navigation, Loader2 } from 'lucide-react';
+import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot, Heart, Loader2 } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useUpdateFavorite } from '@/hooks/useAuth';
 import AuthModal from '@/components/ui/AuthModal';
@@ -13,6 +13,8 @@ import { buildDurakSlug } from '@/lib/slugify';
 import IettDataFreshness from './IettDataFreshness';
 import LiveFeatureLoginPrompt from './LiveFeatureLoginPrompt';
 import { parseIettFreshnessHeaders, scheduleDataLabel, type IettFreshness } from '@/lib/iett-static/presentation';
+import type { IettStaticPath } from '@/lib/iett-static/contracts';
+import { selectIettRoutePath } from './route-path';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
   ssr: false,
@@ -60,6 +62,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   const [hat, setHat] = useState<IETTHat | null>(null);
   const [seferler, setSeferler] = useState<IETTPlanlananSefer[]>([]);
   const [duraklar, setDuraklar] = useState<IETTDurakDetay[]>([]);
+  const [paths, setPaths] = useState<IettStaticPath[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(false);
   const [freshness, setFreshness] = useState<IettFreshness | null>(null);
@@ -108,14 +111,20 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
     async function fetchData() {
       setDataLoading(true);
       setDataError(false);
+      setHat(null);
+      setSeferler([]);
+      setDuraklar([]);
+      setPaths([]);
       try {
-        const [hatRes, seferRes, durakRes] = await Promise.allSettled([
-          fetch(`/api/iett/hatlar?kod=${hatKodu}`),
-          fetch(`/api/iett/sefer-saatleri?hatKodu=${hatKodu}`),
-          fetch(`/api/iett/durak-detay?hatKodu=${hatKodu}`),
+        const encodedCode = encodeURIComponent(hatKodu);
+        const [hatRes, seferRes, durakRes, pathRes] = await Promise.allSettled([
+          fetch(`/api/iett/hatlar?kod=${encodedCode}`),
+          fetch(`/api/iett/sefer-saatleri?hatKodu=${encodedCode}`),
+          fetch(`/api/iett/durak-detay?hatKodu=${encodedCode}`),
+          fetch(`/api/iett/guzergah?hatKodu=${encodedCode}`),
         ]);
 
-        const freshnessResponse = [seferRes, hatRes, durakRes]
+        const freshnessResponse = [seferRes, hatRes, durakRes, pathRes]
           .find((result): result is PromiseFulfilledResult<Response> => result.status === 'fulfilled' && result.value.ok);
         if (freshnessResponse) setFreshness(parseIettFreshnessHeaders(freshnessResponse.value.headers));
 
@@ -124,6 +133,8 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
           if (Array.isArray(hatData) && hatData.length > 0) {
             setHat(hatData[0]);
           }
+        } else {
+          setDataError(true);
         }
 
         if (seferRes.status === 'fulfilled' && seferRes.value.ok) {
@@ -132,6 +143,10 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 
         if (durakRes.status === 'fulfilled' && durakRes.value.ok) {
           setDuraklar(await durakRes.value.json());
+        }
+
+        if (pathRes.status === 'fulfilled' && pathRes.value.ok) {
+          setPaths(await pathRes.value.json());
         }
       } catch {
         setDataError(true);
@@ -445,7 +460,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       )}
 
       {activeTab === 'route' && (
-        <RouteStopsTab duraklar={duraklar} konumlar={isAuthenticated ? konumlar : []} hatKodu={hatKodu} userLocation={userLocation} />
+        <RouteStopsTab paths={paths} duraklar={duraklar} konumlar={isAuthenticated ? konumlar : []} userLocation={userLocation} />
       )}
 
       {activeTab === 'schedule' && (
@@ -632,7 +647,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 // Güzergah / Duraklar Tab Component
 // ==========================================
 
-function RouteStopsTab({ duraklar, konumlar, hatKodu, userLocation }: { duraklar: IETTDurakDetay[]; konumlar: IETTHatOtoKonum[]; hatKodu: string; userLocation: UserLocation }) {
+function RouteStopsTab({ paths, duraklar, konumlar, userLocation }: { paths: IettStaticPath[]; duraklar: IETTDurakDetay[]; konumlar: IETTHatOtoKonum[]; userLocation: UserLocation }) {
   const [selectedDirection, setSelectedDirection] = useState<string>('D');
   const [userStopCode, setUserStopCode] = useState<string | null>(null);
   const [showPastStops, setShowPastStops] = useState(false);
@@ -664,6 +679,11 @@ function RouteStopsTab({ duraklar, konumlar, hatKodu, userLocation }: { duraklar
       .filter((d) => d.YON === selectedDirection)
       .sort((a, b) => a.SIRANO - b.SIRANO);
   }, [duraklar, selectedDirection]);
+
+  const routePath = useMemo(
+    () => selectIettRoutePath(paths, duraklar, selectedDirection),
+    [paths, duraklar, selectedDirection],
+  );
 
   // Auto-select nearest stop when location is active
   useEffect(() => {
@@ -788,7 +808,7 @@ function RouteStopsTab({ duraklar, konumlar, hatKodu, userLocation }: { duraklar
 
       {/* Route map */}
       {allDirectionStops.length > 0 && (
-        <RouteMap duraklar={duraklar} selectedDirection={selectedDirection} />
+        <RouteMap duraklar={duraklar} selectedDirection={selectedDirection} path={routePath} />
       )}
 
       {/* Stops count + past stops toggle */}

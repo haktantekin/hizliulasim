@@ -18,8 +18,19 @@ export interface IettStaticSourceArtifact {
   sha256: string;
 }
 
+export interface IettStaticScheduleSource {
+  lineCode: string;
+  artifact: IettStaticSourceArtifact;
+}
+
+export interface IettStaticPath {
+  direction: 'D' | 'G';
+  quality: 'exact' | 'approximate';
+  coordinates: [number, number][];
+}
+
 export interface IettStaticManifest {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   version: string;
   generatedAt: string;
   serviceDateRange: { start: string; end: string };
@@ -27,8 +38,9 @@ export interface IettStaticManifest {
     lines: IettStaticSourceArtifact;
     stops: IettStaticSourceArtifact;
     transit: IettStaticPointer;
+    schedules?: IettStaticScheduleSource[];
   };
-  counts: { lines: number; schedules: number; lineStops: number; stops: number };
+  counts: { lines: number; schedules: number; lineStops: number; stops: number; paths?: number };
   files: Record<string, IettStaticFileMetadata>;
   indexes: {
     directory: 'directory.json.gz';
@@ -38,18 +50,19 @@ export interface IettStaticManifest {
 }
 
 export interface IettStaticDirectory {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   generatedAt: string;
   lines: IETTHat[];
   stops: IETTDurak[];
 }
 
 export interface IettStaticLine {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   generatedAt: string;
   line: IETTHat;
   schedules: IETTPlanlananSefer[];
   stops: IETTDurakDetay[];
+  paths?: IettStaticPath[];
 }
 
 export interface IettStaticPassingLine {
@@ -60,7 +73,7 @@ export interface IettStaticPassingLine {
 }
 
 export interface IettStaticStop {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   generatedAt: string;
   stop: IETTDurak;
   lines: IettStaticPassingLine[];
@@ -172,15 +185,21 @@ function parseIndex(value: unknown, folder: 'lines' | 'stops', files: Record<str
 
 export function parseIettStaticManifest(value: unknown): IettStaticManifest {
   const topKeys = ['schemaVersion', 'version', 'generatedAt', 'serviceDateRange', 'source', 'counts', 'files', 'indexes'];
-  if (!isRecord(value) || !hasExactKeys(value, topKeys) || value.schemaVersion !== 1
+  if (!isRecord(value) || !hasExactKeys(value, topKeys) || (value.schemaVersion !== 1 && value.schemaVersion !== 2)
     || typeof value.version !== 'string' || !versionPattern.test(value.version)
     || !isInstant(value.generatedAt) || !isDateRange(value.serviceDateRange)
-    || !isRecord(value.source) || !hasExactKeys(value.source, ['lines', 'stops', 'transit'])
+    || !isRecord(value.source)
     || !isSourceArtifact(value.source.lines) || !isSourceArtifact(value.source.stops)) {
     throw new TypeError('Invalid İETT static manifest metadata');
   }
+  const schemaVersion = value.schemaVersion;
+  const expectedSourceKeys = schemaVersion === 2 ? ['lines', 'stops', 'schedules', 'transit'] : ['lines', 'stops', 'transit'];
+  if (!hasExactKeys(value.source, expectedSourceKeys)) throw new TypeError('Invalid İETT static manifest source');
   const transit = parseIettStaticPointer(value.source.transit);
-  if (!isRecord(value.counts) || !hasExactKeys(value.counts, ['lines', 'schedules', 'lineStops', 'stops'])
+  const expectedCountKeys = schemaVersion === 2
+    ? ['lines', 'schedules', 'lineStops', 'stops', 'paths']
+    : ['lines', 'schedules', 'lineStops', 'stops'];
+  if (!isRecord(value.counts) || !hasExactKeys(value.counts, expectedCountKeys)
     || !Object.values(value.counts).every(isNonnegativeInteger)
     || !isRecord(value.files) || Object.keys(value.files).length === 0
     || !Object.entries(value.files).every(([path, metadata]) => filePathPattern.test(path) && isFileMetadata(metadata))
@@ -191,6 +210,28 @@ export function parseIettStaticManifest(value: unknown): IettStaticManifest {
   const files = value.files as Record<string, IettStaticFileMetadata>;
   const lines = parseIndex(value.indexes.lines, 'lines', files);
   const stops = parseIndex(value.indexes.stops, 'stops', files);
+  let schedules: IettStaticScheduleSource[] | undefined;
+  if (schemaVersion === 2) {
+    if (!Array.isArray(value.source.schedules) || value.source.schedules.length === 0
+      || value.source.schedules.length > 10_000) {
+      throw new TypeError('Invalid İETT static schedule provenance');
+    }
+    schedules = value.source.schedules.map((entry) => {
+      if (!isRecord(entry) || !hasExactKeys(entry, ['lineCode', 'artifact'])
+        || typeof entry.lineCode !== 'string' || normalizeIettStaticCode(entry.lineCode) !== entry.lineCode
+        || !isSourceArtifact(entry.artifact)) {
+        throw new TypeError('Invalid İETT static schedule provenance entry');
+      }
+      return { lineCode: entry.lineCode, artifact: entry.artifact };
+    });
+    const scheduleCodes = schedules.map((entry) => entry.lineCode).sort();
+    const lineCodes = Object.keys(lines).sort();
+    if (new Set(scheduleCodes).size !== scheduleCodes.length
+      || scheduleCodes.length !== lineCodes.length
+      || scheduleCodes.some((code, index) => code !== lineCodes[index])) {
+      throw new TypeError('İETT static schedule provenance does not match line inventory');
+    }
+  }
   if (value.counts.lines !== Object.keys(lines).length || value.counts.stops !== Object.keys(stops).length) {
     throw new TypeError('Invalid İETT static manifest counts');
   }
@@ -199,11 +240,11 @@ export function parseIettStaticManifest(value: unknown): IettStaticManifest {
     throw new TypeError('İETT static manifest contains unreferenced files');
   }
   return {
-    schemaVersion: 1,
+    schemaVersion,
     version: value.version,
     generatedAt: value.generatedAt,
     serviceDateRange: value.serviceDateRange,
-    source: { lines: value.source.lines, stops: value.source.stops, transit },
+    source: { lines: value.source.lines, stops: value.source.stops, transit, ...(schedules === undefined ? {} : { schedules }) },
     counts: value.counts as IettStaticManifest['counts'],
     files,
     indexes: { directory: 'directory.json.gz', lines, stops },
@@ -218,7 +259,8 @@ function isLine(value: unknown): value is IETTHat {
 }
 
 function parseEnvelope(value: unknown, keys: readonly string[]): asserts value is Record<string, unknown> {
-  if (!isRecord(value) || !hasExactKeys(value, keys) || value.schemaVersion !== 1 || !isInstant(value.generatedAt)) {
+  if (!isRecord(value) || !hasExactKeys(value, keys)
+    || (value.schemaVersion !== 1 && value.schemaVersion !== 2) || !isInstant(value.generatedAt)) {
     throw new TypeError('Invalid İETT static payload envelope');
   }
 }
@@ -263,7 +305,12 @@ function isRouteStop(value: unknown, code: string): value is IETTDurakDetay {
 }
 
 export function parseIettStaticLine(value: unknown): IettStaticLine {
-  parseEnvelope(value, ['schemaVersion', 'generatedAt', 'line', 'schedules', 'stops']);
+  if (!isRecord(value) || (value.schemaVersion !== 1 && value.schemaVersion !== 2)) {
+    throw new TypeError('Invalid İETT static line payload envelope');
+  }
+  parseEnvelope(value, value.schemaVersion === 2
+    ? ['schemaVersion', 'generatedAt', 'line', 'schedules', 'stops', 'paths']
+    : ['schemaVersion', 'generatedAt', 'line', 'schedules', 'stops']);
   const parsedLine = value.line;
   if (!isLine(parsedLine) || !Array.isArray(value.schedules) || !Array.isArray(value.stops)
     || !value.schedules.every((entry) => isSchedule(entry, parsedLine.SHATKODU))
@@ -275,7 +322,24 @@ export function parseIettStaticLine(value: unknown): IettStaticLine {
   if (new Set(scheduleKeys).size !== scheduleKeys.length || new Set(stopKeys).size !== stopKeys.length) {
     throw new TypeError('Duplicate İETT static line record');
   }
+  if (value.schemaVersion === 2) {
+    if (!Array.isArray(value.paths) || value.paths.length > 2 || !value.paths.every(isPath)) {
+      throw new TypeError('Invalid İETT static line paths');
+    }
+    const directions = value.paths.map((path) => path.direction);
+    if (new Set(directions).size !== directions.length) throw new TypeError('Duplicate İETT static path direction');
+  }
   return value as unknown as IettStaticLine;
+}
+
+function isPath(value: unknown): value is IettStaticPath {
+  return isRecord(value) && hasExactKeys(value, ['direction', 'quality', 'coordinates'])
+    && (value.direction === 'D' || value.direction === 'G')
+    && (value.quality === 'exact' || value.quality === 'approximate')
+    && Array.isArray(value.coordinates) && value.coordinates.length >= 2 && value.coordinates.length <= 20_000
+    && value.coordinates.every((point) => Array.isArray(point) && point.length === 2
+      && typeof point[0] === 'number' && Number.isFinite(point[0]) && point[0] >= 39.5 && point[0] <= 42.5
+      && typeof point[1] === 'number' && Number.isFinite(point[1]) && point[1] >= 26 && point[1] <= 31);
 }
 
 function isStop(value: unknown): value is IETTDurak {

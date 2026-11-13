@@ -17,16 +17,16 @@ test('parses current package freshness headers and formats a Turkish update time
   assert.match(formatted, /^Veri güncellemesi: 13 Kasım 2026 /u);
 });
 
-test('labels previous and legacy fallback states without calling them live', () => {
+test('labels the previous verified package without exposing a runtime fallback state', () => {
   const previous = formatIettFreshness({ source: 'previous', version: 'v1', generatedAt: '2026-11-12T09:00:00Z' });
   assert.ok(previous);
   assert.match(previous, /Önceki doğrulanmış veri/u);
-  assert.equal(formatIettFreshness({ source: 'legacy', version: null, generatedAt: null }), 'Geçici yedek İETT kaynağı kullanılıyor.');
   assert.equal(scheduleDataLabel, 'Planlanan');
 });
 
 test('rejects malformed freshness headers', () => {
   assert.equal(parseIettFreshnessHeaders(new Headers({ 'X-Hizliulasim-Data-Source': 'live' })), null);
+  assert.equal(parseIettFreshnessHeaders(new Headers({ 'X-Hizliulasim-Data-Source': 'iett-legacy' })), null);
   assert.equal(parseIettFreshnessHeaders(new Headers({
     'X-Hizliulasim-Data-Source': 'iett-current',
     'X-Hizliulasim-Data-Generated-At': 'not-a-date',

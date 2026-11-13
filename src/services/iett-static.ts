@@ -1,14 +1,13 @@
 import type { IETTDurak, IETTDurakDetay, IETTHat, IETTPlanlananSefer } from '../types/iett.ts';
 import {
-  IettStaticSourceError,
   loadIettStaticDirectory,
   loadIettStaticLine,
   loadIettStaticStop,
   type LoadedIettStaticResource,
 } from '../lib/iett-static/source.ts';
-import { normalizeIettStaticCode } from '../lib/iett-static/contracts.ts';
+import { normalizeIettStaticCode, type IettStaticPath } from '../lib/iett-static/contracts.ts';
 
-export type IettStaticDataSource = 'current' | 'previous' | 'legacy';
+export type IettStaticDataSource = 'current' | 'previous';
 
 export interface IettStaticMetadata {
   source: IettStaticDataSource;
@@ -41,25 +40,13 @@ interface Dependencies {
   loadDirectory: typeof loadIettStaticDirectory;
   loadLine: typeof loadIettStaticLine;
   loadStop: typeof loadIettStaticStop;
-  legacyGetHat(code?: string): Promise<IETTHat[]>;
-  legacyGetDurak(code?: string): Promise<IETTDurak[]>;
-  legacyGetDurakDetay(code: string, timeoutMs?: number): Promise<IETTDurakDetay[]>;
-  legacyGetHatlarByDurak(code: string): Promise<IettPassingLine[]>;
-  legacyGetSchedules(code: string): Promise<IETTPlanlananSefer[]>;
 }
 
 const defaultDependencies: Dependencies = {
   loadDirectory: loadIettStaticDirectory,
   loadLine: loadIettStaticLine,
   loadStop: loadIettStaticStop,
-  legacyGetHat: async (code = '') => (await import('./iett.ts')).getHat(code),
-  legacyGetDurak: async (code = '') => (await import('./iett.ts')).getDurak(code),
-  legacyGetDurakDetay: async (code, timeoutMs) => (await import('./iett.ts')).getDurakDetay(code, timeoutMs),
-  legacyGetHatlarByDurak: async (code) => (await import('./iett.ts')).getHatlarByDurak(code),
-  legacyGetSchedules: async (code) => (await import('./iett.ts')).getPlanlananSeferSaati(code),
 };
-
-const legacyCacheTtlMs = 5 * 60 * 1000;
 
 function localResult<Resource, Data>(resource: LoadedIettStaticResource<Resource>, data: Data): IettStaticResult<Data> {
   return {
@@ -72,8 +59,8 @@ function localResult<Resource, Data>(resource: LoadedIettStaticResource<Resource
   };
 }
 
-function legacyResult<T>(data: T): IettStaticResult<T> {
-  return { data, metadata: { source: 'legacy', version: null, generatedAt: null } };
+function emptyResult<T>(data: T): IettStaticResult<T> {
+  return { data, metadata: { source: 'current', version: null, generatedAt: null } };
 }
 
 function normalizeSearch(value: string): string {
@@ -105,119 +92,68 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export function createIettStaticService(dependencies: Partial<Dependencies> = {}) {
   const deps: Dependencies = { ...defaultDependencies, ...dependencies };
-  const legacyCache = new Map<string, { expiresAt: number; promise: Promise<unknown> }>();
 
-  async function cachedLegacy<T>(key: string, loader: () => Promise<T>): Promise<T> {
-    const now = Date.now();
-    const cached = legacyCache.get(key);
-    if (cached && cached.expiresAt > now) return cached.promise as Promise<T>;
-    const promise = loader();
-    legacyCache.set(key, { expiresAt: now + legacyCacheTtlMs, promise });
-    try {
-      return await promise;
-    } catch (error) {
-      if (legacyCache.get(key)?.promise === promise) legacyCache.delete(key);
-      throw error;
-    }
-  }
-
-  async function localFirst<T>(local: () => Promise<IettStaticResult<T>>, legacy: () => Promise<T>): Promise<IettStaticResult<T>> {
-    try {
-      return await local();
-    } catch (error) {
-      if (!(error instanceof IettStaticSourceError)) throw error;
-      return legacyResult(await legacy());
-    }
+  async function lineData<T>(code: string, pick: (line: NonNullable<Awaited<ReturnType<Dependencies['loadLine']>>>['data']) => T, empty: T) {
+    const normalized = normalizeIettStaticCode(code);
+    if (normalized === null) return emptyResult(empty);
+    const line = await deps.loadLine(normalized);
+    if (line !== null) return localResult(line, pick(line.data));
+    return localResult(await deps.loadDirectory(), empty);
   }
 
   return {
     async getHatlar({ code, query }: { code?: string; query?: string }): Promise<IettStaticResult<IETTHat[]>> {
       const normalized = code === undefined ? null : normalizeIettStaticCode(code);
-      if (code !== undefined && normalized === null) return legacyResult([]);
-      return localFirst(async () => {
-        if (normalized !== null) {
-          const line = await deps.loadLine(normalized);
-          if (line !== null) return localResult(line, [line.data.line]);
-          const directory = await deps.loadDirectory();
-          return localResult(directory, [] as IETTHat[]);
-        }
-        const directory = await deps.loadDirectory();
-        const lines = query === undefined ? directory.data.lines : filterIettHatlar(directory.data.lines, query);
-        return localResult(directory, lines);
-      }, async () => {
-        const lines = await cachedLegacy(`hatlar:${normalized ?? '*'}`, () => deps.legacyGetHat(normalized ?? ''));
-        return query === undefined ? lines : filterIettHatlar(lines, query);
-      });
+      if (code !== undefined && normalized === null) return emptyResult([]);
+      if (normalized !== null) {
+        const line = await deps.loadLine(normalized);
+        if (line !== null) return localResult(line, [line.data.line]);
+        return localResult(await deps.loadDirectory(), [] as IETTHat[]);
+      }
+      const directory = await deps.loadDirectory();
+      const lines = query === undefined ? directory.data.lines : filterIettHatlar(directory.data.lines, query);
+      return localResult(directory, lines);
     },
 
-    async getSchedules(code: string): Promise<IettStaticResult<IETTPlanlananSefer[]>> {
-      const normalized = normalizeIettStaticCode(code);
-      if (normalized === null) return legacyResult([]);
-      return localFirst(async () => {
-        const line = await deps.loadLine(normalized);
-        if (line !== null) return localResult(line, line.data.schedules);
-        return localResult(await deps.loadDirectory(), [] as IETTPlanlananSefer[]);
-      }, () => cachedLegacy(`schedules:${normalized}`, () => deps.legacyGetSchedules(normalized)));
+    getSchedules(code: string): Promise<IettStaticResult<IETTPlanlananSefer[]>> {
+      return lineData(code, (line) => line.schedules, [] as IETTPlanlananSefer[]);
     },
 
-    async getRouteStops(code: string): Promise<IettStaticResult<IETTDurakDetay[]>> {
-      const normalized = normalizeIettStaticCode(code);
-      if (normalized === null) return legacyResult([]);
-      return localFirst(async () => {
-        const line = await deps.loadLine(normalized);
-        if (line !== null) return localResult(line, line.data.stops);
-        return localResult(await deps.loadDirectory(), [] as IETTDurakDetay[]);
-      }, () => cachedLegacy(`route-stops:${normalized}`, () => deps.legacyGetDurakDetay(normalized)));
+    getRouteStops(code: string): Promise<IettStaticResult<IETTDurakDetay[]>> {
+      return lineData(code, (line) => line.stops, [] as IETTDurakDetay[]);
+    },
+
+    getPaths(code: string): Promise<IettStaticResult<IettStaticPath[]>> {
+      return lineData(code, (line) => line.paths ?? [], [] as IettStaticPath[]);
     },
 
     async getStop(code: string): Promise<IettStaticResult<IETTDurak | null>> {
-      if (!/^[0-9]{1,12}$/.test(code)) return legacyResult(null);
-      return localFirst(async () => {
-        const stop = await deps.loadStop(code);
-        if (stop !== null) return localResult(stop, stop.data.stop);
-        return localResult(await deps.loadDirectory(), null as IETTDurak | null);
-      }, async () => (await cachedLegacy(`stop:${code}`, () => deps.legacyGetDurak(code)))[0] ?? null);
+      if (!/^[0-9]{1,12}$/.test(code)) return emptyResult(null);
+      const stop = await deps.loadStop(code);
+      if (stop !== null) return localResult(stop, stop.data.stop);
+      return localResult(await deps.loadDirectory(), null as IETTDurak | null);
     },
 
     async getLinesByStop(code: string): Promise<IettStaticResult<IettPassingLine[]>> {
-      if (!/^[0-9]{1,12}$/.test(code)) return legacyResult([]);
-      return localFirst(async () => {
-        const stop = await deps.loadStop(code);
-        if (stop !== null) return localResult(stop, stop.data.lines);
-        return localResult(await deps.loadDirectory(), [] as IettPassingLine[]);
-      }, () => cachedLegacy(`stop-lines:${code}`, () => deps.legacyGetHatlarByDurak(code)));
+      if (!/^[0-9]{1,12}$/.test(code)) return emptyResult([]);
+      const stop = await deps.loadStop(code);
+      if (stop !== null) return localResult(stop, stop.data.lines);
+      return localResult(await deps.loadDirectory(), [] as IettPassingLine[]);
     },
 
     async getNearestStop(lat: number, lng: number): Promise<IettStaticResult<IettNearestStop | null>> {
-      return localFirst(async () => {
-        const directory = await deps.loadDirectory();
-        let nearest: IettNearestStop | null = null;
-        for (const stop of directory.data.stops) {
-          const distanceMeters = haversineDistance(lat, lng, stop.YKOORDINATI, stop.XKOORDINATI);
-          if (nearest === null || distanceMeters < nearest.distanceMeters) {
-            nearest = {
-              durakKodu: stop.SDPICARETNO, durakAdi: stop.SDURAKADI, ilceAdi: stop.ILCEADI,
-              lat: stop.YKOORDINATI, lng: stop.XKOORDINATI, distanceMeters,
-            };
-          }
+      const directory = await deps.loadDirectory();
+      let nearest: IettNearestStop | null = null;
+      for (const stop of directory.data.stops) {
+        const distanceMeters = haversineDistance(lat, lng, stop.YKOORDINATI, stop.XKOORDINATI);
+        if (nearest === null || distanceMeters < nearest.distanceMeters) {
+          nearest = {
+            durakKodu: stop.SDPICARETNO, durakAdi: stop.SDURAKADI, ilceAdi: stop.ILCEADI,
+            lat: stop.YKOORDINATI, lng: stop.XKOORDINATI, distanceMeters,
+          };
         }
-        return localResult(directory, nearest);
-      }, async () => {
-        const stops = await cachedLegacy('all-route-stops', () => deps.legacyGetDurakDetay('', 90_000));
-        const unique = new Map<string, IETTDurakDetay>();
-        for (const stop of stops) if (stop.DURAKKODU && !unique.has(stop.DURAKKODU)) unique.set(stop.DURAKKODU, stop);
-        let nearest: IettNearestStop | null = null;
-        for (const stop of unique.values()) {
-          const distanceMeters = haversineDistance(lat, lng, stop.YKOORDINATI, stop.XKOORDINATI);
-          if (nearest === null || distanceMeters < nearest.distanceMeters) {
-            nearest = {
-              durakKodu: stop.DURAKKODU, durakAdi: stop.DURAKADI, ilceAdi: stop.ILCEADI,
-              lat: stop.YKOORDINATI, lng: stop.XKOORDINATI, distanceMeters,
-            };
-          }
-        }
-        return nearest;
-      });
+      }
+      return localResult(directory, nearest);
     },
   };
 }
@@ -227,6 +163,7 @@ const service = createIettStaticService();
 export const getStaticHatlar = service.getHatlar;
 export const getStaticSchedules = service.getSchedules;
 export const getStaticRouteStops = service.getRouteStops;
+export const getStaticPaths = service.getPaths;
 export const getStaticStop = service.getStop;
 export const getStaticLinesByStop = service.getLinesByStop;
 export const getStaticNearestStop = service.getNearestStop;

@@ -18,26 +18,28 @@ const routeStop: IETTDurakDetay = {
   DURAKKODU: '100', DURAKADI: 'KADIKÖY', XKOORDINATI: 29.024045, YKOORDINATI: 40.992889,
   DURAKTIPI: 'CCMODERN', ISLETMEBOLGE: 'Anadolu2', ISLETMEALTBOLGE: 'Kadıköy', ILCEADI: 'Kadıköy',
 };
+const path = {
+  direction: 'D' as const,
+  quality: 'exact' as const,
+  coordinates: [[40.992889, 29.024045], [41.001, 29.031]] as [number, number][],
+};
 
 function resource<T>(data: T, usedFallback = false): LoadedIettStaticResource<T> {
   return { data, version: usedFallback ? 'previous_v1' : 'current_v1', generatedAt: '2026-11-13T09:00:00Z', usedFallback };
 }
 
 function dependencies(overrides: Record<string, unknown> = {}) {
-  const unavailable = async () => { throw new Error('legacy should not be called'); };
   return {
     loadDirectory: async () => resource({ schemaVersion: 1 as const, generatedAt: '2026-11-13T09:00:00Z', lines: [line], stops: [stop] }),
     loadLine: async (code: string) => code === '15ÇK' ? resource({
-      schemaVersion: 1 as const, generatedAt: '2026-11-13T09:00:00Z', line,
+      schemaVersion: 2 as const, generatedAt: '2026-11-13T09:00:00Z', line,
       schedules: [{ SHATKODU: '15ÇK', HATADI: line.SHATADI, SGUZERAH: '15ÇK_D', SYON: 'D', SGUNTIPI: 'C', GUZERGAH_ISARETI: null, SSERVISTIPI: 'Planlanan', DT: '06:15' }],
-      stops: [routeStop],
+      stops: [routeStop], paths: [path],
     }) : null,
     loadStop: async (code: string) => code === '100' ? resource({
       schemaVersion: 1 as const, generatedAt: '2026-11-13T09:00:00Z', stop,
       lines: [{ hatKodu: '15ÇK', hatAdi: line.SHATADI, yon: 'D' as const, sirano: 1 }],
     }) : null,
-    legacyGetHat: unavailable, legacyGetDurak: unavailable, legacyGetDurakDetay: unavailable,
-    legacyGetHatlarByDurak: unavailable,
     ...overrides,
   };
 }
@@ -48,6 +50,7 @@ test('serves line, schedule, route-stop, stop and passing-line data without lega
   assert.equal((await service.getHatlar({ query: 'kadıköykirazlıtepe' })).data[0].SHATKODU, '15ÇK');
   assert.equal((await service.getSchedules('15çk')).data[0].SSERVISTIPI, 'Planlanan');
   assert.equal((await service.getRouteStops('15çk')).data[0].DURAKKODU, '100');
+  assert.deepEqual((await service.getPaths('15çk')).data, [path]);
   assert.equal((await service.getStop('100')).data?.SDURAKADI, 'KADIKÖY');
   assert.equal((await service.getLinesByStop('100')).data[0].hatKodu, '15ÇK');
 });
@@ -63,16 +66,19 @@ test('preserves whole-package previous fallback metadata', async () => {
   assert.equal(result.metadata.version, 'previous_v1');
 });
 
-test('uses one shared cached legacy result only when the package is unavailable', async () => {
-  let calls = 0;
+test('fails closed for every public bus lookup when the package is unavailable', async () => {
   const service = createIettStaticService(dependencies({
     loadDirectory: async () => { throw new IettStaticSourceError('DATA_UNAVAILABLE'); },
-    legacyGetHat: async () => { calls++; return [line]; },
+    loadLine: async () => { throw new IettStaticSourceError('DATA_UNAVAILABLE'); },
+    loadStop: async () => { throw new IettStaticSourceError('DATA_UNAVAILABLE'); },
   }));
-  const [first, second] = await Promise.all([service.getHatlar({}), service.getHatlar({})]);
-  assert.equal(calls, 1);
-  assert.equal(first.metadata.source, 'legacy');
-  assert.deepEqual(second.data, [line]);
+  await assert.rejects(service.getHatlar({}), { code: 'DATA_UNAVAILABLE' });
+  await assert.rejects(service.getSchedules('15çk'), { code: 'DATA_UNAVAILABLE' });
+  await assert.rejects(service.getRouteStops('15çk'), { code: 'DATA_UNAVAILABLE' });
+  await assert.rejects(service.getPaths('15çk'), { code: 'DATA_UNAVAILABLE' });
+  await assert.rejects(service.getStop('100'), { code: 'DATA_UNAVAILABLE' });
+  await assert.rejects(service.getLinesByStop('100'), { code: 'DATA_UNAVAILABLE' });
+  await assert.rejects(service.getNearestStop(40.993, 29.024), { code: 'DATA_UNAVAILABLE' });
 });
 
 test('finds the nearest stop from the directory without loading every stop shard', async () => {

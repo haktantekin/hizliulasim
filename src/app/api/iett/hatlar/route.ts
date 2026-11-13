@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getStaticHatlar, iettStaticResponseHeaders } from '@/services/iett-static';
+import { iettStaticErrorResponse } from '../static-response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,8 @@ export async function GET(request: Request) {
     });
     return NextResponse.json(result.data, { headers: iettStaticResponseHeaders(result.metadata) });
   } catch (error) {
+    const unavailable = iettStaticErrorResponse(error);
+    if (unavailable) return unavailable;
     console.error('IETT hatlar API error:', error);
     return NextResponse.json(
       { error: 'IETT hat bilgileri alınamadı' },

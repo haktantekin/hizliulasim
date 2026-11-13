@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { IETTDurakDetay } from '@/types/iett';
+import type { IettRoutePathModel } from './route-path';
 
 interface RouteMapProps {
   duraklar: IETTDurakDetay[];
   selectedDirection: string;
+  path: IettRoutePathModel | null;
 }
 
 // Brand colors
@@ -14,7 +16,7 @@ const COLORS: Record<string, string> = {
   G: '#6bb88c', // green for Dönüş
 };
 
-export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps) {
+export default function RouteMap({ duraklar, selectedDirection, path }: RouteMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
@@ -105,15 +107,14 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
     const group = L.featureGroup();
     const color = COLORS[selectedDirection] || '#304269';
 
-    // Coordinates for polyline
-    const latlngs = stops.map((s) => [s.YKOORDINATI, s.XKOORDINATI] as [number, number]);
-
-    // Polyline
-    L.polyline(latlngs, {
-      color,
-      weight: 4,
-      opacity: 0.7,
-    }).addTo(group);
+    if (path && path.coordinates.length >= 2) {
+      L.polyline(path.coordinates, {
+        color,
+        weight: 5,
+        opacity: 0.85,
+        ...(path.quality === 'approximate' ? { dashArray: '9 8' } : {}),
+      }).addTo(group);
+    }
 
     // Stop markers with name labels
     stops.forEach((stop, idx) => {
@@ -176,13 +177,20 @@ export default function RouteMap({ duraklar, selectedDirection }: RouteMapProps)
 
     // Fit bounds with padding
     map.fitBounds(group.getBounds(), { padding: [30, 30] });
-  }, [duraklar, selectedDirection, isLoaded]);
+  }, [duraklar, selectedDirection, path, isLoaded]);
 
   return (
-    <div
-      ref={mapContainerRef}
-      className="w-full h-[300px] md:h-[400px] border border-gray-200 rounded-xl overflow-hidden"
-      style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
-    />
+    <div className="relative">
+      <div
+        ref={mapContainerRef}
+        className="w-full h-[300px] md:h-[400px] border border-gray-200 rounded-xl overflow-hidden"
+        style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
+      />
+      {path?.quality === 'approximate' && (
+        <div className="absolute bottom-2 left-2 z-[500] rounded-md bg-white/95 px-2 py-1 text-[11px] text-gray-600 shadow">
+          Kesik çizgi: duraklardan oluşturulan yaklaşık güzergâh
+        </div>
+      )}
+    </div>
   );
 }

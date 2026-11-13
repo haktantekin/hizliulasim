@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getStaticNearestStop, iettStaticResponseHeaders } from '@/services/iett-static';
+import { iettStaticErrorResponse } from '../static-response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result.data, { headers: iettStaticResponseHeaders(result.metadata) });
   } catch (error) {
+    const unavailable = iettStaticErrorResponse(error);
+    if (unavailable) return unavailable;
     console.error('IETT yakin-durak API error:', error);
     return NextResponse.json(
       { error: 'Yakin durak hesaplanamadi' },

@@ -95,6 +95,31 @@ function manifestFixture() {
   };
 }
 
+function manifestV2Fixture() {
+  const fixture = manifestFixture();
+  return {
+    ...fixture,
+    schemaVersion: 2,
+    source: {
+      ...fixture.source,
+      schedules: [{
+        lineCode: '1',
+        artifact: {
+          url: 'https://api.ibb.gov.tr/iett/UlasimAnaVeri/PlanlananSeferSaati.asmx',
+          retrievedAt: '2026-11-13T08:52:00+03:00', bytes: 4096, sha256: '7'.repeat(64),
+        },
+      }],
+    },
+    counts: { ...fixture.counts, paths: 1 },
+  };
+}
+
+const routePath = {
+  direction: 'D' as const,
+  quality: 'exact' as const,
+  coordinates: [[40.992889, 29.024045], [41.001, 29.031]] as [number, number][],
+};
+
 test('normalizes safe İETT codes without allowing raw path input', () => {
   assert.equal(normalizeIettStaticCode(' 15çk '), '15ÇK');
   assert.equal(normalizeIettStaticCode('500-t'), '500-T');
@@ -131,6 +156,18 @@ test('validates manifest inventory, provenance, counts, and hashed indexes', () 
   const unsafeSource = manifestFixture();
   unsafeSource.source.lines.url = 'http://api.ibb.gov.tr/iett/lines';
   assert.throws(() => parseIettStaticManifest(unsafeSource));
+
+  const current = parseIettStaticManifest(manifestV2Fixture());
+  assert.equal(current.schemaVersion, 2);
+  assert.equal(current.source.schedules?.[0]?.lineCode, '1');
+
+  const foreignSchedule = manifestV2Fixture();
+  foreignSchedule.source.schedules[0].lineCode = '2';
+  assert.throws(() => parseIettStaticManifest(foreignSchedule));
+
+  const duplicateSchedule = manifestV2Fixture();
+  duplicateSchedule.source.schedules.push({ ...duplicateSchedule.source.schedules[0] });
+  assert.throws(() => parseIettStaticManifest(duplicateSchedule));
 });
 
 test('parses a directory with unique legacy-compatible line records', () => {
@@ -152,6 +189,9 @@ test('parses a directory with unique legacy-compatible line records', () => {
   assert.throws(() => parseIettStaticDirectory({
     schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line], stops: [{ ...stop, XKOORDINATI: 180 }],
   }));
+  assert.equal(parseIettStaticDirectory({
+    schemaVersion: 2, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line], stops: [stop],
+  }).schemaVersion, 2);
 });
 
 test('parses one line shard and rejects inconsistent schedules, stops, and coordinates', () => {
@@ -164,6 +204,20 @@ test('parses one line shard and rejects inconsistent schedules, stops, and coord
   assert.throws(() => parseIettStaticLine({ ...payload, stops: [{ ...routeStop, HATKODU: '2' }] }));
   assert.throws(() => parseIettStaticLine({ ...payload, stops: [{ ...routeStop, XKOORDINATI: 180 }] }));
   assert.throws(() => parseIettStaticLine({ ...payload, stops: [{ ...routeStop, SIRANO: 0 }] }));
+
+  const currentPayload = {
+    ...payload, schemaVersion: 2, paths: [routePath],
+  };
+  assert.deepEqual(parseIettStaticLine(currentPayload), currentPayload);
+  assert.throws(() => parseIettStaticLine({
+    ...currentPayload, paths: [routePath, { ...routePath }],
+  }));
+  assert.throws(() => parseIettStaticLine({
+    ...currentPayload, paths: [{ ...routePath, coordinates: [[40.99, 29.02]] }],
+  }));
+  assert.throws(() => parseIettStaticLine({
+    ...currentPayload, paths: [{ ...routePath, coordinates: [[40.99, 29.02], [41, 180]] }],
+  }));
 });
 
 test('parses a stop shard and rejects duplicate or mismatched passing lines', () => {
@@ -176,4 +230,5 @@ test('parses a stop shard and rejects duplicate or mismatched passing lines', ()
   assert.throws(() => parseIettStaticStop({ ...payload, stop: { ...stop, SDPICARETNO: '../2' } }));
   assert.throws(() => parseIettStaticStop({ ...payload, stop: { ...stop, YKOORDINATI: -10 } }));
   assert.throws(() => parseIettStaticStop({ ...payload, lines: [{ ...passingLine, yon: 'X' }] }));
+  assert.equal(parseIettStaticStop({ ...payload, schemaVersion: 2 }).schemaVersion, 2);
 });
