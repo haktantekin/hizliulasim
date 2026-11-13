@@ -13,6 +13,7 @@ import AuthModal from './AuthModal';
 import DrawerSearchForm from './DrawerSearchForm';
 import { bottomBarItems } from '../../lib/bottomBarNavigation';
 import { bottomDrawerItems } from '../../lib/siteNavigation';
+import { getBottomBarLayerStyle } from '../../lib/uiLayers';
 
 const drawerIcons = {
   home: Home,
@@ -172,7 +173,10 @@ const BottomBar = () => {
 
   return (
     <>
-      <div className={`fixed bottom-3 left-0 w-full transition-opacity duration-300 ${drawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      <div
+        className={`bottom-3 left-0 w-full transition-opacity duration-300 ${drawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        style={getBottomBarLayerStyle()}
+      >
         <nav className="flex justify-around items-center max-w-md w-[90%] mx-auto py-2 border border-gray-200 shadow-none bg-white rounded-full">
           {bottomBarItems.map((item) => {
             const Icon = bottomBarIcons[item.icon];

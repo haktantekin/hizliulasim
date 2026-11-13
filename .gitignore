@@ -82,3 +82,4 @@ settings.json
 !src/lib/minibusDetailHeadings.test.ts
 !src/lib/minibusDirectory.test.ts
 !src/lib/minibusLinesFallback.test.ts
+!src/lib/uiLayers.test.ts
