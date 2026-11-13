@@ -7,6 +7,9 @@ import { MapPin, Bus, Navigation, Loader2, Search, ChevronDown, ChevronUp } from
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { buildDurakSlug } from '@/lib/slugify';
+import { useAppSelector } from '@/store/hooks';
+import AuthModal from '@/components/ui/AuthModal';
+import LiveFeatureLoginPrompt from '@/components/bus/LiveFeatureLoginPrompt';
 
 const NearestStopMap = dynamic(() => import('../bus/NearestStopMap'), {
   ssr: false,
@@ -61,6 +64,8 @@ function walkingTime(meters: number): string {
 
 export default function HomeBusFinder() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAppSelector((state) => state.user);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   // Location
   const [userLocation, setUserLocation] = useState<UserLocation>({ status: 'idle' });
 
@@ -169,21 +174,21 @@ export default function HomeBusFinder() {
 
   // Fetch vehicles
   const fetchVehicles = useCallback(async () => {
-    if (!hatKodu) return;
+    if (!hatKodu || !isAuthenticated) return;
     setKonumLoading(true);
     try {
-      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}`);
+      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}`, { credentials: 'include', cache: 'no-store' });
       if (res.ok) setKonumlar(await res.json());
     } catch { /* silent */ }
     setKonumLoading(false);
-  }, [hatKodu]);
+  }, [hatKodu, isAuthenticated]);
 
   useEffect(() => {
-    if (!hatKodu || !selectedDirection) return;
+    if (authLoading || !isAuthenticated || !hatKodu || !selectedDirection) return;
     fetchVehicles();
     const interval = setInterval(fetchVehicles, 30000);
     return () => clearInterval(interval);
-  }, [hatKodu, selectedDirection, fetchVehicles]);
+  }, [authLoading, hatKodu, isAuthenticated, selectedDirection, fetchVehicles]);
 
   // Stops in selected direction
   const directionStops = useMemo(() => {
@@ -230,6 +235,7 @@ export default function HomeBusFinder() {
 
   // Best approaching vehicle
   const vehicleInfo = useMemo(() => {
+    if (!isAuthenticated) return null;
     if (!nearestStop) return null;
     const { stop } = nearestStop;
     const stopIndex = directionStops.findIndex((d) => d.DURAKKODU === stop.DURAKKODU);
@@ -301,7 +307,7 @@ export default function HomeBusFinder() {
 
     const others = konumlar.filter((v) => v.kapino !== best.vehicle.kapino);
     return { best, etaText, others };
-  }, [nearestStop, konumlar, directionStops, hat]);
+  }, [nearestStop, konumlar, directionStops, hat, isAuthenticated]);
 
   // Remaining stops (from user's nearest stop onward)
   const remainingStops = useMemo(() => {
@@ -457,7 +463,11 @@ export default function HomeBusFinder() {
             ) : null}
 
             {/* Approaching vehicle */}
-            {nearestStop && vehicleInfo ? (
+            {authLoading ? (
+              <div className="flex justify-center py-3"><Loader2 className="h-5 w-5 animate-spin text-brand-soft-blue" /></div>
+            ) : !isAuthenticated ? (
+              <LiveFeatureLoginPrompt onLogin={() => setAuthModalOpen(true)} compact />
+            ) : nearestStop && vehicleInfo ? (
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0">
                   <Bus className="w-4 h-4 text-green-600" />
@@ -567,6 +577,7 @@ export default function HomeBusFinder() {
           </div>
         </>
       )}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
 }

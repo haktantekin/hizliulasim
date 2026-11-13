@@ -11,6 +11,7 @@ import NearestStopAssistant from './NearestStopAssistant';
 import Link from 'next/link';
 import { buildDurakSlug } from '@/lib/slugify';
 import IettDataFreshness from './IettDataFreshness';
+import LiveFeatureLoginPrompt from './LiveFeatureLoginPrompt';
 import { parseIettFreshnessHeaders, scheduleDataLabel, type IettFreshness } from '@/lib/iett-static/presentation';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
@@ -92,11 +93,12 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>([]);
   const [konumLoading, setKonumLoading] = useState(false);
   const [konumError, setKonumError] = useState(false);
+  const [liveAuthRequired, setLiveAuthRequired] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [durakAdlari, setDurakAdlari] = useState<Record<string, string>>({});
 
   // Favorites
-  const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
+  const { isAuthenticated, isLoading: authLoading, favorites } = useAppSelector((state) => state.user);
   const updateFavorite = useUpdateFavorite();
   const isFavorite = isAuthenticated && hat !== null && favorites.routes.some((r) => r.id === hat.SHATKODU);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -164,12 +166,18 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   }, [durakAdlari]);
 
   const fetchKonumlar = useCallback(async () => {
+    if (!isAuthenticated) return;
     setKonumLoading(true);
     setKonumError(false);
     try {
-      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}`);
+      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}`, { credentials: 'include', cache: 'no-store' });
+      if (res.status === 401) {
+        setLiveAuthRequired(true);
+        return;
+      }
       if (!res.ok) throw new Error('fetch failed');
       const data: IETTHatOtoKonum[] = await res.json();
+      setLiveAuthRequired(false);
       setKonumlar(data);
       setLastRefresh(new Date());
       fetchDurakAdlari(data);
@@ -178,15 +186,16 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
     } finally {
       setKonumLoading(false);
     }
-  }, [hatKodu]);
+  }, [hatKodu, isAuthenticated]);
 
   // Fetch live locations when vehicles or route tab is active
   useEffect(() => {
+    if (!isAuthenticated || authLoading) return;
     if (activeTab !== 'vehicles' && activeTab !== 'route') return;
     fetchKonumlar();
     const interval = setInterval(fetchKonumlar, 30000); // auto-refresh every 30s
     return () => clearInterval(interval);
-  }, [activeTab, fetchKonumlar]);
+  }, [activeTab, authLoading, fetchKonumlar, isAuthenticated]);
 
   // Group schedules by direction and day type
   const groupedSchedule = useMemo(() => {
@@ -361,7 +370,14 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 
       {/* Nearest Stop Assistant */}
       {duraklar.length > 0 && (
-        <NearestStopAssistant hatKodu={hatKodu} hat={hat} duraklar={duraklar} userLocation={userLocation} />
+        <NearestStopAssistant
+          hatKodu={hatKodu}
+          hat={hat}
+          duraklar={duraklar}
+          userLocation={userLocation}
+          isAuthenticated={isAuthenticated}
+          onLogin={() => setAuthModalOpen(true)}
+        />
       )}
 
       {/* Tabs */}
@@ -402,7 +418,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
         >
 
           Canlı Araç Konumları
-          {konumlar.length > 0 && (
+          {isAuthenticated && konumlar.length > 0 && (
             <span className="bg-brand-green text-white text-xs px-1.5 py-0.5 rounded-full">
               {konumlar.length}
             </span>
@@ -429,7 +445,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       )}
 
       {activeTab === 'route' && (
-        <RouteStopsTab duraklar={duraklar} konumlar={konumlar} hatKodu={hatKodu} userLocation={userLocation} />
+        <RouteStopsTab duraklar={duraklar} konumlar={isAuthenticated ? konumlar : []} hatKodu={hatKodu} userLocation={userLocation} />
       )}
 
       {activeTab === 'schedule' && (
@@ -521,6 +537,11 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       )}
 
       {activeTab === 'vehicles' && (
+        authLoading ? (
+          <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-brand-soft-blue" /></div>
+        ) : !isAuthenticated || liveAuthRequired ? (
+          <LiveFeatureLoginPrompt onLogin={() => setAuthModalOpen(true)} />
+        ) : (
         <div className="space-y-3">
           {/* Live vehicle map */}
           {duraklar.length > 0 && (
@@ -599,6 +620,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
             </div>
           )}
         </div>
+        )
       )}
 
 

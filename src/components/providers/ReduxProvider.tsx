@@ -33,13 +33,7 @@ function Persistor() {
 function AuthRestorer() {
   const dispatch = useAppDispatch();
   useEffect(() => {
-    // Skip /api/auth/me call if no auth_token cookie exists (user not logged in)
-    const hasToken = document.cookie.split(';').some((c) => c.trim().startsWith('auth_token='));
-    if (!hasToken) {
-      dispatch(setUserLoading(false));
-      return;
-    }
-
+    // auth_token is httpOnly, so only the server can determine whether a session exists.
     const restoreSession = async () => {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' });

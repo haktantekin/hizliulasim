@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import type { IETTDurakDetay, IETTHatOtoKonum, IETTHat } from '@/types/iett';
 import type { UserLocation } from './BusRouteDetailClient';
 import { MapPin, Bus, Navigation, Loader2, ArrowRightLeft } from 'lucide-react';
+import LiveFeatureLoginPrompt from './LiveFeatureLoginPrompt';
 
 const NearestStopMap = dynamic(() => import('./NearestStopMap'), {
   ssr: false,
@@ -20,6 +21,8 @@ interface Props {
   hat: IETTHat;
   duraklar: IETTDurakDetay[];
   userLocation: UserLocation;
+  isAuthenticated: boolean;
+  onLogin: () => void;
 }
 
 interface VehicleCandidate {
@@ -57,7 +60,7 @@ function walkingTime(meters: number): string {
   return `~${minutes} dk yürüme`;
 }
 
-export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocation }: Props) {
+export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocation, isAuthenticated, onLogin }: Props) {
   const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>([]);
   const [konumLoading, setKonumLoading] = useState(false);
   const [selectedDirection, setSelectedDirection] = useState<string | null>('D');
@@ -72,24 +75,28 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
   }, [duraklar]);
 
   const fetchVehicles = useCallback(async () => {
+    if (!isAuthenticated) return;
     setKonumLoading(true);
     try {
-      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}&_t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}&_t=${Date.now()}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (res.ok) {
         setKonumlar(await res.json());
         setLastRefresh(new Date());
       }
     } catch { /* silent */ }
     setKonumLoading(false);
-  }, [hatKodu]);
+  }, [hatKodu, isAuthenticated]);
 
   // Auto-fetch vehicles when location is active, refresh every 30s
   useEffect(() => {
-    if (userLocation.status !== 'active') return;
+    if (!isAuthenticated || userLocation.status !== 'active') return;
     fetchVehicles();
     const interval = setInterval(fetchVehicles, 30000);
     return () => clearInterval(interval);
-  }, [userLocation.status, fetchVehicles]);
+  }, [userLocation.status, fetchVehicles, isAuthenticated]);
 
   // Find nearest stop
   const nearestStop = useMemo(() => {
@@ -111,6 +118,7 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
 
   // Select best approaching vehicle
   const vehicleInfo = useMemo(() => {
+    if (!isAuthenticated) return null;
     if (!nearestStop) return null;
     const { stop } = nearestStop;
 
@@ -203,7 +211,7 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
       : null;
 
     return { best, etaText, others, vehicleStopName };
-  }, [nearestStop, konumlar, duraklar, hat]);
+  }, [nearestStop, konumlar, duraklar, hat, isAuthenticated]);
 
   // Don't render if location not active
   if (userLocation.status !== 'active') return null;
@@ -290,7 +298,9 @@ export default function NearestStopAssistant({ hatKodu, hat, duraklar, userLocat
           </div>
         )}
 
-        {nearestStop && vehicleInfo ? (
+        {!isAuthenticated ? (
+          <LiveFeatureLoginPrompt onLogin={onLogin} compact />
+        ) : nearestStop && vehicleInfo ? (
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0">
               <Bus className="w-4 h-4 text-green-600" />
