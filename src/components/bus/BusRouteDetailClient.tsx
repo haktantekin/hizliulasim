@@ -16,6 +16,7 @@ import type { IettStaticPath } from '@/lib/iett-static/contracts';
 import { selectIettRoutePath } from './route-path';
 import { loadBusRouteDetailResponses } from './bus-route-detail-data';
 import IettLineAlerts from '@/components/iett/IettLineAlerts';
+import { buildBusRouteTabs, type BusRouteTabId } from './bus-route-tabs';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
   ssr: false,
@@ -59,7 +60,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   const [dataError, setDataError] = useState(false);
   const [freshness, setFreshness] = useState<IettFreshness | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule'>('schedule');
+  const [activeTab, setActiveTab] = useState<BusRouteTabId>('schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -291,71 +292,33 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       <IettDataFreshness freshness={freshness} className="text-right" />
       <IettLineAlerts lineCode={hat.SHATKODU} />
 
-      {/* Location status banner */}
-      {userLocation.status === 'loading' && (
-        <div className="flex items-center gap-2 bg-brand-light-blue/20 border border-brand-soft-blue/20 rounded-xl px-4 py-2.5">
-          <Loader2 className="w-4 h-4 text-brand-soft-blue animate-spin" />
-          <span className="text-sm text-gray-600">Konumunuz alınıyor...</span>
-        </div>
-      )}
-      {(userLocation.status === 'denied' || userLocation.status === 'error') && (
-        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
-          <span className="text-sm text-gray-500">
-            {userLocation.status === 'denied' ? 'Konum izni reddedildi.' : 'Konum alınamadı.'}
-          </span>
-          <button onClick={requestLocation} className="text-xs text-brand-soft-blue hover:underline">Tekrar Dene</button>
-        </div>
-      )}
-
-      {/* Nearest Stop Assistant */}
-      {duraklar.length > 0 && (
-        <NearestStopAssistant
-          duraklar={duraklar}
-          userLocation={userLocation}
-        />
-      )}
-
       {/* Tabs */}
       <div className="flex border-b border-gray-200 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('schedule')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === 'schedule'
-              ? 'border-brand-soft-blue text-brand-soft-blue'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          {hat.SHATKODU} Sefer Saatleri
-          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] text-brand-soft-blue">{scheduleDataLabel}</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('route')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === 'route'
-              ? 'border-brand-soft-blue text-brand-soft-blue'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Güzergah
-          {duraklar.length > 0 && (
-            <span className="bg-brand-soft-blue/10 text-brand-soft-blue text-xs px-1.5 py-0.5 rounded-full">
-              {duraklar.length}
-            </span>
-          )}
-        </button>
-        {wpContent && (
+        {buildBusRouteTabs({
+          lineCode: hat.SHATKODU,
+          stopCount: duraklar.length,
+          hasWpContent: Boolean(wpContent),
+        }).map((tab) => (
           <button
-            onClick={() => setActiveTab('info')}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'info'
+              activeTab === tab.id
                 ? 'border-brand-soft-blue text-brand-soft-blue'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {hat.SHATKODU} Hat Bilgileri
+            {tab.label}
+            {tab.id === 'schedule' && (
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] text-brand-soft-blue">{scheduleDataLabel}</span>
+            )}
+            {tab.id === 'route' && duraklar.length > 0 && (
+              <span className="bg-brand-soft-blue/10 text-brand-soft-blue text-xs px-1.5 py-0.5 rounded-full">
+                {duraklar.length}
+              </span>
+            )}
           </button>
-        )}
-
+        ))}
       </div>
 
       {/* Tab Content */}
@@ -365,6 +328,29 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 
       {activeTab === 'route' && (
         <RouteStopsTab paths={paths} duraklar={duraklar} userLocation={userLocation} />
+      )}
+
+      {activeTab === 'nearest' && (
+        <div className="space-y-3">
+          {userLocation.status === 'loading' && (
+            <div className="flex items-center gap-2 bg-brand-light-blue/20 border border-brand-soft-blue/20 rounded-xl px-4 py-2.5">
+              <Loader2 className="w-4 h-4 text-brand-soft-blue animate-spin" />
+              <span className="text-sm text-gray-600">Konumunuz alınıyor...</span>
+            </div>
+          )}
+          {(userLocation.status === 'denied' || userLocation.status === 'error') && (
+            <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
+              <span className="text-sm text-gray-500">
+                {userLocation.status === 'denied' ? 'Konum izni reddedildi.' : 'Konum alınamadı.'}
+              </span>
+              <button onClick={requestLocation} className="text-xs text-brand-soft-blue hover:underline">Tekrar Dene</button>
+            </div>
+          )}
+          <NearestStopAssistant
+            duraklar={duraklar}
+            userLocation={userLocation}
+          />
+        </div>
       )}
 
       {activeTab === 'schedule' && (

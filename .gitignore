@@ -83,3 +83,4 @@ settings.json
 !src/lib/minibusDirectory.test.ts
 !src/lib/minibusLinesFallback.test.ts
 !src/lib/uiLayers.test.ts
+!src/components/bus/bus-route-tabs.test.ts
