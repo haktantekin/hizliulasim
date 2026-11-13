@@ -1,4 +1,3 @@
-import HomeCards from "@/components/home/homeCards";
 import HomeBusFinder from "@/components/home/HomeBusFinder";
 import NearbyStopBusesWidget from "@/components/home/NearbyStopBusesWidget";
 import DistrictIsparkWidget from "@/components/home/DistrictIsparkWidget";
@@ -25,13 +24,14 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: seo?.robots ? { index: seo.robots.index, follow: seo.robots.follow } : undefined,
   };
 }
-import QuickLinks from "../components/home/QuickLinks";
 import LatestPostsRow from "../components/home/LatestPostsRow";
 import SaatBilgileriRow from "../components/home/SaatBilgileriRow";
 import HomeSearchBar from "../components/home/HomeSearchBar";
+import HomeActionLinks from "../components/home/HomeActionLinks";
+import TodayIstanbulPanel from "../components/home/TodayIstanbulPanel";
 import TrafficIndex from "../components/home/TrafficIndex";
 import Link from "next/link";
-import { ParkingCircle, TrainFront, Zap, Navigation, Accessibility, MapPin, BookOpenText, BusFront } from "lucide-react";
+import { ParkingCircle, Accessibility, MapPin } from "lucide-react";
 
 export default function Home() {
   return (
@@ -44,85 +44,10 @@ export default function Home() {
         <span className='text-brand-orange font-bold text-xl'>Hızlı Ulaşım</span>&apos;a hoş geldiniz!
       </div>
       <HomeSearchBar />
+      <TodayIstanbulPanel />
 
-      <div className="grid grid-cols-2 gap-3 mt-4">
-        <Link
-          href="/rayli-sistemler"
-          className="block rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 p-4 text-white hover:opacity-90 transition-opacity"
-        >
-          <div className="flex items-center gap-2">
-            <TrainFront className="w-7 h-7 flex-none" />
-            <div>
-              <div className="font-bold text-sm">Raylı Sistemler</div>
-              <div className="text-[11px] text-white/80">Metro, tramvay, füniküler</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/otopark-ucretleri"
-          className="block rounded-xl bg-gradient-to-r from-brand-soft-blue to-brand-dark-blue p-4 text-white hover:opacity-90 transition-opacity"
-        >
-          <div className="flex items-center gap-3">
-            <ParkingCircle className="w-8 h-8 flex-none" />
-            <div>
-              <div className="font-bold text-sm">İSPARK OTOPARK</div>
-              <div className="text-xs text-white/80">Anlık doluluk bilgileri</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/sarj-istasyonlari"
-          className="block rounded-xl bg-gradient-to-r from-green-600 to-emerald-700 p-4 text-white hover:opacity-90 transition-opacity"
-        >
-          <div className="flex items-center gap-3">
-            <Zap className="w-7 h-7 flex-none" />
-            <div>
-              <div className="font-bold text-sm">Şarj İstasyonları</div>
-              <div className="text-xs text-white/80">Yakınımdaki elektrikli araç şarj noktaları</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/yol-tarifi"
-          className="block rounded-xl bg-gradient-to-r from-brand-orange to-orange-600 p-4 text-white hover:opacity-90 transition-opacity"
-        >
-          <div className="flex items-center gap-3">
-            <Navigation className="w-7 h-7 flex-none" />
-            <div>
-              <div className="font-bold text-sm">Yol Tarifi</div>
-              <div className="text-xs text-white/80">Toplu taşıma ile nereye, nasıl giderim?</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/ulasim-rehberi"
-          className="block rounded-xl bg-gradient-to-r from-violet-600 to-indigo-700 p-4 text-white hover:opacity-90 transition-opacity"
-        >
-          <div className="flex items-center gap-3">
-            <BookOpenText className="w-7 h-7 flex-none" />
-            <div>
-              <div className="font-bold text-sm">Ulaşım Rehberi</div>
-              <div className="text-xs text-white/80">İstanbul ulaşım içerikleri</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/minibus-hatlari"
-          className="block rounded-xl bg-gradient-to-r from-cyan-600 to-teal-700 p-4 text-white hover:opacity-90 transition-opacity"
-        >
-          <div className="flex items-center gap-3">
-            <BusFront className="w-7 h-7 flex-none" />
-            <div>
-              <div className="font-bold text-sm">Minibüs Hatları</div>
-              <div className="text-xs text-white/80">İl ve ilçelere göre hatlar</div>
-            </div>
-          </div>
-        </Link>
+      <div className="mt-4">
+        <HomeActionLinks group="guide" />
       </div>
 
       <div className="mt-6">
@@ -202,6 +127,10 @@ export default function Home() {
 
       <div className="mt-6">
         <LatestPostsRow />
+      </div>
+
+      <div className="mt-4">
+        <HomeActionLinks group="services" />
       </div>
 
       <div className="mt-6">

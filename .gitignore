@@ -102,3 +102,12 @@ settings.json
 !src/components/auth/google-account-link-state.test.ts
 !docs/superpowers/plans/2026-11-13-google-account-linking.md
 !docs/superpowers/specs/2026-11-13-google-account-linking-design.md
+!src/lib/recommendations/contracts.test.ts
+!src/lib/recommendations/calendar.test.ts
+!src/lib/recommendations/rank.test.ts
+!src/lib/recommendations/weather.test.ts
+!src/lib/recommendations/source-cache.test.ts
+!src/lib/recommendations/source.test.ts
+!src/app/api/recommendations/today/handler.test.ts
+!src/components/home/daily-recommendations-state.test.ts
+!src/lib/homeActionLinks.test.ts

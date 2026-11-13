@@ -9,7 +9,7 @@ const result: IettAlertsResult = {
     GUNCELLEME_SAATI: 'Kayit Saati: 16:10', MESAJ: 'Güzergâh değişikliği.',
     KAYNAK_URL: null,
   }],
-  metadata: { source: 'stale', fetchedAt: '2026-11-13T13:00:00Z' },
+  metadata: { source: 'stale', fetchedAt: '2026-11-13T13:00:00Z', total: 229 },
 };
 
 test('returns public alert data with cache and freshness headers', async () => {
@@ -21,6 +21,7 @@ test('returns public alert data with cache and freshness headers', async () => {
   assert.deepEqual(await response.json(), result.data);
   assert.deepEqual(received, { lineCode: '1', limit: 5 });
   assert.equal(response.headers.get('x-hizliulasim-alert-source'), 'stale');
+  assert.equal(response.headers.get('x-hizliulasim-alert-total'), '229');
   assert.match(response.headers.get('cache-control') ?? '', /stale-while-revalidate/);
 });
 

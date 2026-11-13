@@ -75,6 +75,13 @@ export function buildTransitPlannerUrl(state: ShareablePlannerState): string {
   return query ? `/yol-tarifi?${query}` : '/yol-tarifi';
 }
 
+export function buildTransitPlannerDestinationUrl(destination: PlannerLocation): string {
+  const params = new URLSearchParams();
+  writeLocation(params, 'd', destination);
+  const query = params.toString();
+  return query ? `/yol-tarifi?${query}` : '/yol-tarifi';
+}
+
 export function parseTransitPlannerUrl(params: URLSearchParams): Partial<ShareablePlannerState> {
   const state: Partial<ShareablePlannerState> = {};
   const origin = readLocation(params, 'o', 'Başlangıç');

@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildTransitPlannerUrl, parseTransitPlannerUrl, type ShareablePlannerState } from './share-url.ts';
+import {
+  buildTransitPlannerDestinationUrl,
+  buildTransitPlannerUrl,
+  parseTransitPlannerUrl,
+  type ShareablePlannerState,
+} from './share-url.ts';
 
 const state: ShareablePlannerState = {
   origin: { name: 'Şişli & Çağlayan', latitude: 41.06078543, longitude: 28.98765432 },
@@ -27,6 +32,25 @@ test('shares both endpoints with Turkish labels, bounded precision and the selec
     destination: { name: 'Kadıköy İskelesi + Rıhtım', latitude: 40.99069, longitude: 29.02123 },
     preference: 'fewer-transfers', travelMode: 'metro', selectedAlternative: 2,
   });
+});
+
+test('builds a destination-only planner URL without triggering an origin or route search', () => {
+  const url = buildTransitPlannerDestinationUrl({
+    name: `  ${'İ🚉'.repeat(100)}  `,
+    latitude: 40.99068888,
+    longitude: 29.02123333,
+  });
+  const params = new URL(url, 'https://hizliulasim.com').searchParams;
+  assert.deepEqual([...params.keys()].sort(), ['d', 'dn']);
+  assert.equal(params.get('d'), '40.99069,29.02123');
+  assert.equal(params.get('dn'), 'İ🚉'.repeat(60));
+  assert.deepEqual(parseTransitPlannerUrl(params), {
+    destination: { name: 'İ🚉'.repeat(60), latitude: 40.99069, longitude: 29.02123 },
+  });
+});
+
+test('falls back to the empty planner when a recommendation destination is outside the route area', () => {
+  assert.equal(buildTransitPlannerDestinationUrl({ name: 'Ankara', latitude: 39.9334, longitude: 32.8597 }), '/yol-tarifi');
 });
 
 test('preserves the planner state when URLSearchParams has no size value', (t) => {

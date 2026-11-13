@@ -11,7 +11,7 @@ export type IettAlertSource = 'current' | 'stale';
 
 export interface IettAlertsResult {
   data: IETTDuyuru[];
-  metadata: { source: IettAlertSource; fetchedAt: string };
+  metadata: { source: IettAlertSource; fetchedAt: string; total: number };
 }
 
 interface IettAlertsQuery {
@@ -95,7 +95,7 @@ function parseEnvelope(value: unknown): IettAlertsResult {
   if (data.some((entry) => entry === null)) throw new IettAlertsUnavailableError();
   return {
     data: data as IETTDuyuru[],
-    metadata: { source: value.status, fetchedAt: value.fetchedAt },
+    metadata: { source: value.status, fetchedAt: value.fetchedAt, total: data.length },
   };
 }
 
@@ -172,7 +172,7 @@ export async function getIettAlerts(
     if (Buffer.byteLength(text, 'utf8') > maxBodyBytes) throw new IettAlertsUnavailableError();
     const parsed = parseEnvelope(JSON.parse(text) as unknown);
     if (query.lineCode !== undefined && normalizedLine === null) {
-      return { data: [], metadata: parsed.metadata };
+      return { data: [], metadata: { ...parsed.metadata, total: 0 } };
     }
     const filtered = normalizedLine === null
       ? parsed.data
@@ -180,7 +180,10 @@ export async function getIettAlerts(
     const sorted = sortIettAlertsByRecency(filtered, istanbulMinutes((dependencies.now ?? (() => new Date()))()));
     const visible = query.lineCode === undefined ? deduplicateAnnouncements(sorted) : sorted;
     const limit = query.limit === undefined ? visible.length : Math.max(0, Math.min(20, Math.trunc(query.limit)));
-    return { data: visible.slice(0, limit), metadata: parsed.metadata };
+    return {
+      data: visible.slice(0, limit),
+      metadata: { ...parsed.metadata, total: visible.length },
+    };
   } catch (error) {
     if (error instanceof IettAlertsUnavailableError) throw error;
     throw new IettAlertsUnavailableError();

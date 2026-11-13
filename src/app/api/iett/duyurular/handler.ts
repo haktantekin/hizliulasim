@@ -23,6 +23,7 @@ export function createIettAlertsGet(loadAlerts: AlertLoader = getIettAlerts) {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
           'X-Hizliulasim-Alert-Source': result.metadata.source,
           'X-Hizliulasim-Alert-Fetched-At': result.metadata.fetchedAt,
+          'X-Hizliulasim-Alert-Total': String(result.metadata.total),
         },
       });
     } catch {

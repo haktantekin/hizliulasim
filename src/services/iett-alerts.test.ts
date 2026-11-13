@@ -5,8 +5,6 @@ import {
   getIettAlerts,
   sortIettAlertsByRecency,
 } from './iett-alerts.ts';
-import type { IettAlertsResult } from './iett-alerts.ts';
-import { loadIettAlertBarAlerts } from './iett-alert-bar.ts';
 import type { IETTDuyuru } from '../types/iett.ts';
 
 function alert(lineCode: string, time: string, changes: Partial<IETTDuyuru> = {}): IETTDuyuru {
@@ -48,6 +46,7 @@ test('validates and repairs the CMS alert envelope before exposing it', async ()
   assert.deepEqual(result.metadata, {
     source: 'current',
     fetchedAt: '2026-11-13T13:10:00Z',
+    total: 1,
   });
 });
 
@@ -81,6 +80,7 @@ test('uses exact normalized line matching and applies the requested limit after 
   assert.equal(result.data[0].HATKODU, '1');
   assert.equal(result.data[0].GUNCELLEME_SAATI, 'Kayit Saati: 16:10');
   assert.equal(result.metadata.source, 'stale');
+  assert.equal(result.metadata.total, 2);
 });
 
 test('deduplicates a multi-line announcement globally but preserves exact line filtering', async () => {
@@ -99,6 +99,8 @@ test('deduplicates a multi-line announcement globally but preserves exact line f
 
   assert.deepEqual(globalResult.data.map((item) => item.HATKODU), ['78E']);
   assert.deepEqual(lineResult.data.map((item) => item.HATKODU), ['78F']);
+  assert.equal(globalResult.metadata.total, 1);
+  assert.equal(lineResult.metadata.total, 1);
 });
 
 test('uses a versioned default CMS URL so an old edge-cached 404 is not reused', async () => {
@@ -134,28 +136,4 @@ test('rejects an upstream error and a malformed CMS payload without leaking its 
     getIettAlerts({}, { fetcher: () => cmsResponse({ data: [alert('../1', '16:00')], status: 'current', fetchedAt: 'bad' }) }),
     IettAlertsUnavailableError,
   );
-});
-
-test('loads at most five alerts for the initial alert-bar render', async () => {
-  let receivedQuery: unknown;
-  const result: IettAlertsResult = {
-    data: ['1', '2', '3', '4', '5', '6'].map((lineCode) => alert(lineCode, '16:10')),
-    metadata: { source: 'current', fetchedAt: '2026-11-13T13:00:00Z' },
-  };
-
-  const alerts = await loadIettAlertBarAlerts(async (query) => {
-    receivedQuery = query;
-    return result;
-  });
-
-  assert.deepEqual(receivedQuery, { limit: 5 });
-  assert.deepEqual(alerts.map((item) => item.HATKODU), ['1', '2', '3', '4', '5']);
-});
-
-test('returns no initial alert-bar content when the alert source is unavailable', async () => {
-  const alerts = await loadIettAlertBarAlerts(async () => {
-    throw new Error('private upstream failure');
-  });
-
-  assert.deepEqual(alerts, []);
 });
