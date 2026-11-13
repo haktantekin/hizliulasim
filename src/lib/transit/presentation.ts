@@ -53,6 +53,8 @@ const travelModeLabels = {
   metro: 'Metro',
 } as const satisfies Record<RouteTravelMode, string>;
 
+const selectableTravelModes = ['transit', 'walking', 'bus'] as const satisfies readonly RouteTravelMode[];
+
 const providerLabels = {
   iett: 'İETT',
   metro: 'Metro İstanbul',
@@ -63,6 +65,10 @@ const providerLabels = {
 
 export function getTravelModeLabel(mode: RouteTravelMode): string {
   return travelModeLabels[mode];
+}
+
+export function getSelectableTravelModes() {
+  return selectableTravelModes;
 }
 
 export function getUsedTransitModes(itinerary: TransitItinerary): RideMode[] {

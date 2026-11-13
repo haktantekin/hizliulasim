@@ -1,25 +1,25 @@
-import { BusFront, Footprints, Route, TrainFront, type LucideIcon } from 'lucide-react';
+import { BusFront, Footprints, Route, type LucideIcon } from 'lucide-react';
 import type { RouteTravelMode } from '@/lib/transit/contracts';
-import { getTravelModeLabel } from '@/lib/transit/presentation';
+import { getSelectableTravelModes, getTravelModeLabel } from '@/lib/transit/presentation';
 
 interface TransitPlannerOptionsProps {
   travelMode: RouteTravelMode;
   onTravelModeChange: (value: RouteTravelMode) => void;
 }
 
-const travelModes = [
-  { value: 'transit', icon: Route },
-  { value: 'walking', icon: Footprints },
-  { value: 'bus', icon: BusFront },
-  { value: 'metro', icon: TrainFront },
-] as const satisfies readonly { value: RouteTravelMode; icon: LucideIcon }[];
+const travelModeIcons = {
+  transit: Route,
+  walking: Footprints,
+  bus: BusFront,
+} as const satisfies Record<ReturnType<typeof getSelectableTravelModes>[number], LucideIcon>;
 
 export default function TransitPlannerOptions({
   travelMode, onTravelModeChange,
 }: TransitPlannerOptionsProps) {
   return (
     <div role="group" aria-label="Ulaşım türü" className="flex flex-wrap gap-2">
-      {travelModes.map(({ value, icon: Icon }) => {
+      {getSelectableTravelModes().map((value) => {
+        const Icon = travelModeIcons[value];
         const selected = travelMode === value;
         return (
           <button

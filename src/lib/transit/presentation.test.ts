@@ -6,7 +6,7 @@ import * as presentation from './presentation.ts';
 
 const {
   buildTimelineItems, createPlannerState, getCurrentDepartureAt,
-  getCurrentLocationButtonVisibility, getModePresentation, getTransitCoverageNotice, getTravelModeLabel,
+  getCurrentLocationButtonVisibility, getModePresentation, getSelectableTravelModes, getTransitCoverageNotice, getTravelModeLabel,
   getUsedTransitModes, isPlannerLocation, reducePlanner,
 } = presentation;
 
@@ -33,6 +33,10 @@ test('labels the mixed public filter as Tümü while preserving its transit valu
   assert.equal(getTravelModeLabel('walking'), 'Yürüyerek');
   assert.equal(getTravelModeLabel('bus'), 'Otobüs');
   assert.equal(getTravelModeLabel('metro'), 'Metro');
+});
+
+test('offers only travel modes backed by the active public snapshot', () => {
+  assert.deepEqual(getSelectableTravelModes(), ['transit', 'walking', 'bus']);
 });
 
 const boardUrl = 'https://hizliulasim.com/otobus-duraklari/carsi-123456';
