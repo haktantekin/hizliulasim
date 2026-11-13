@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Mail, Lock, User, AtSign, Loader2, Check, AlertCircle } from 'lucide-react';
-import { useLogin, useRegister } from '../../hooks/useAuth';
+import { useGoogleLogin, useLogin, useRegister } from '../../hooks/useAuth';
+import GoogleSignInButton from '../auth/GoogleSignInButton';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -49,8 +50,9 @@ const AuthModal = ({ isOpen, onClose, defaultTab = 'login' }: AuthModalProps) =>
 
   const loginMutation = useLogin();
   const registerMutation = useRegister();
+  const googleMutation = useGoogleLogin();
 
-  const isLoading = loginMutation.isPending || registerMutation.isPending;
+  const isLoading = loginMutation.isPending || registerMutation.isPending || googleMutation.isPending;
 
   useEffect(() => {
     if (isOpen) setTab(defaultTab);
@@ -116,6 +118,17 @@ const AuthModal = ({ isOpen, onClose, defaultTab = 'login' }: AuthModalProps) =>
     }
   };
 
+  const handleGoogleCredential = useCallback((credential: string) => {
+    setError('');
+    googleMutation.mutate(credential, {
+      onSuccess: () => {
+        resetForm();
+        onClose();
+      },
+      onError: (err) => setError(err.message),
+    });
+  }, [googleMutation, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -168,6 +181,19 @@ const AuthModal = ({ isOpen, onClose, defaultTab = 'login' }: AuthModalProps) =>
           >
             Kayıt Ol
           </button>
+        </div>
+
+        <div className="px-5 pt-5">
+          <GoogleSignInButton
+            disabled={googleMutation.isPending}
+            onCredential={handleGoogleCredential}
+            onError={setError}
+          />
+          <div className="mt-4 flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs text-gray-400">veya e-posta ile</span>
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
         </div>
 
         {/* Form */}

@@ -73,6 +73,16 @@ export async function registerUser(email: string, password: string, name: string
   );
 }
 
+export async function googleLogin(credential: string) {
+  return authFetch<{ user: AuthUser }>(
+    `${AUTH_API_BASE}/google`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    }
+  );
+}
+
 export async function getProfile() {
   return authFetch<{ user: AuthUser; favorites: UserFavorites; preferences: UserPreferences }>(
     `${AUTH_API_BASE}/me`

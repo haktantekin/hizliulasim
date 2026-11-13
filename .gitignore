@@ -70,6 +70,14 @@ next-env.d.ts
 
 # local implementation notes
 /docs/superpowers/
+!/docs/superpowers/
+docs/superpowers/*
+!/docs/superpowers/plans/
+docs/superpowers/plans/*
+!/docs/superpowers/plans/2026-11-13-google-sign-in.md
+!/docs/superpowers/specs/
+docs/superpowers/specs/*
+!/docs/superpowers/specs/2026-11-13-google-sign-in-design.md
 /.superpowers/
 /scripts/seo/README.md
 settings.json
@@ -84,3 +92,9 @@ settings.json
 !src/lib/minibusLinesFallback.test.ts
 !src/lib/uiLayers.test.ts
 !src/components/bus/bus-route-tabs.test.ts
+!src/lib/auth/google.test.ts
+!src/app/api/auth/google/route.test.ts
+!src/components/auth/google-identity.test.ts
+!docs/superpowers/plans/2026-11-13-google-sign-in.md
+!docs/superpowers/specs/2026-11-13-google-sign-in-design.md
+*.md

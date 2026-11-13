@@ -3,6 +3,7 @@ import { useAppDispatch } from '../store/hooks';
 import { setUser, setFavorites, setPreferences, logout as logoutAction, setUserLoading } from '../store/slices/userSlice';
 import {
   loginUser,
+  googleLogin,
   registerUser,
   getProfile,
   logoutUser,
@@ -19,6 +20,19 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       loginUser(email, password),
+    onSuccess: (data) => {
+      dispatch(setUser({ user: data.user }));
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useGoogleLogin = () => {
+  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (credential: string) => googleLogin(credential),
     onSuccess: (data) => {
       dispatch(setUser({ user: data.user }));
       queryClient.invalidateQueries({ queryKey: ['profile'] });
