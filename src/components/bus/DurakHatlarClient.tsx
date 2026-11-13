@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Bus, ArrowRight, Loader2 } from 'lucide-react';
+import IettDataFreshness from './IettDataFreshness';
+import { parseIettFreshnessHeaders, type IettFreshness } from '@/lib/iett-static/presentation';
 
 interface GecenHat {
   hatKodu: string;
@@ -15,6 +17,7 @@ export default function DurakHatlarClient({ durakKodu, durakAdi }: { durakKodu: 
   const [hatlar, setHatlar] = useState<GecenHat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [freshness, setFreshness] = useState<IettFreshness | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -24,6 +27,7 @@ export default function DurakHatlarClient({ durakKodu, durakAdi }: { durakKodu: 
     fetch(`/api/iett/durak-hatlar?kod=${durakKodu}`)
       .then((res) => {
         if (!res.ok) throw new Error('fetch failed');
+        if (!cancelled) setFreshness(parseIettFreshnessHeaders(res.headers));
         return res.json();
       })
       .then((data: GecenHat[]) => {
@@ -44,6 +48,7 @@ export default function DurakHatlarClient({ durakKodu, durakAdi }: { durakKodu: 
       <h2 className="text-basetext-brand-soft-blue mb-4 flex flex-col items-center gap-2">
         {durakAdi} Durağından Geçen Otobüs Hatları
         {!loading && <span className="text-sm font-normal text-gray-400">({hatlar.length} hat)</span>}
+        {!loading && <IettDataFreshness freshness={freshness} />}
       </h2>
 
       {loading && (

@@ -7,6 +7,8 @@ import { Search, Bus, ArrowRight, X, Loader2, Heart } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useUpdateFavorite } from '@/hooks/useAuth';
 import AuthModal from '@/components/ui/AuthModal';
+import IettDataFreshness from './IettDataFreshness';
+import { parseIettFreshnessHeaders, type IettFreshness } from '@/lib/iett-static/presentation';
 
 export default function BusRoutesListClient() {
   const [hatlar, setHatlar] = useState<IETTHat[]>([]);
@@ -14,6 +16,7 @@ export default function BusRoutesListClient() {
   const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
   const [showCount, setShowCount] = useState(50);
+  const [freshness, setFreshness] = useState<IettFreshness | null>(null);
 
   const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
   const updateFavorite = useUpdateFavorite();
@@ -29,6 +32,7 @@ export default function BusRoutesListClient() {
         if (!res.ok) throw new Error('API error');
         const data: IETTHat[] = await res.json();
         if (cancelled) return;
+        setFreshness(parseIettFreshnessHeaders(res.headers));
         // Sort: numeric first, then alphabetical
         data.sort((a, b) => {
           const aNum = parseInt(a.SHATKODU);
@@ -86,7 +90,7 @@ export default function BusRoutesListClient() {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-700 font-medium">Hat bilgileri yüklenirken bir hata oluştu.</p>
-        <p className="text-sm text-red-500 mt-1">İETT servisi geçici olarak yanıt vermiyor olabilir.</p>
+        <p className="text-sm text-red-500 mt-1">Otobüs veri paketi şu anda kullanılamıyor.</p>
         <button
           onClick={() => { setError(false); setLoading(true); window.location.reload(); }}
           className="mt-3 px-4 py-2 bg-brand-soft-blue text-white text-sm rounded-lg hover:bg-brand-dark-blue transition-colors"
@@ -124,14 +128,17 @@ export default function BusRoutesListClient() {
       </div>
 
       {/* Results count */}
-      <div className="text-sm text-gray-500">
-        {search ? (
-          <span>
-            &quot;{search}&quot; için <strong>{filteredHatlar.length}</strong> hat bulundu
-          </span>
-        ) : (
-          <span>Toplam <strong>{hatlar.length}</strong> otobüs hattı</span>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500">
+        <div>
+          {search ? (
+            <span>
+              &quot;{search}&quot; için <strong>{filteredHatlar.length}</strong> hat bulundu
+            </span>
+          ) : (
+            <span>Toplam <strong>{hatlar.length}</strong> otobüs hattı</span>
+          )}
+        </div>
+        <IettDataFreshness freshness={freshness} />
       </div>
 
       {/* Results Grid */}

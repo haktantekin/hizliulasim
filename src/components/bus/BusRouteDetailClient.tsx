@@ -10,6 +10,8 @@ import AuthModal from '@/components/ui/AuthModal';
 import NearestStopAssistant from './NearestStopAssistant';
 import Link from 'next/link';
 import { buildDurakSlug } from '@/lib/slugify';
+import IettDataFreshness from './IettDataFreshness';
+import { parseIettFreshnessHeaders, scheduleDataLabel, type IettFreshness } from '@/lib/iett-static/presentation';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
   ssr: false,
@@ -59,6 +61,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   const [duraklar, setDuraklar] = useState<IETTDurakDetay[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(false);
+  const [freshness, setFreshness] = useState<IettFreshness | null>(null);
 
   const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule' | 'vehicles'>('schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
@@ -109,6 +112,10 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
           fetch(`/api/iett/sefer-saatleri?hatKodu=${hatKodu}`),
           fetch(`/api/iett/durak-detay?hatKodu=${hatKodu}`),
         ]);
+
+        const freshnessResponse = [seferRes, hatRes, durakRes]
+          .find((result): result is PromiseFulfilledResult<Response> => result.status === 'fulfilled' && result.value.ok);
+        if (freshnessResponse) setFreshness(parseIettFreshnessHeaders(freshnessResponse.value.headers));
 
         if (hatRes.status === 'fulfilled' && hatRes.value.ok) {
           const hatData = await hatRes.value.json();
@@ -266,7 +273,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
         </h2>
         <p className="text-sm text-gray-500 mb-6">
           {dataError
-            ? 'İETT API\'sine bağlanılamadı. Lütfen daha sonra tekrar deneyin.'
+            ? 'Otobüs veri paketi yüklenemedi. Lütfen daha sonra tekrar deneyin.'
             : (
               <>
                 <span className="font-semibold">{hatKodu}</span> kodlu otobüs hattı İETT sisteminde bulunamadı.
@@ -334,6 +341,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
           <div className="font-bold text-brand-soft-blue text-sm">{hat.TARIFE}</div>
         </div>
       </div>
+      <IettDataFreshness freshness={freshness} className="text-right" />
 
       {/* Location status banner */}
       {userLocation.status === 'loading' && (
@@ -367,6 +375,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
           }`}
         >
           {hat.SHATKODU} Sefer Saatleri
+          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] text-brand-soft-blue">{scheduleDataLabel}</span>
         </button>
         <button
           onClick={() => setActiveTab('route')}
@@ -425,6 +434,10 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 
       {activeTab === 'schedule' && (
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3">
+            <span className="text-sm font-medium text-brand-soft-blue">{scheduleDataLabel} sefer saatleri</span>
+            <IettDataFreshness freshness={freshness} />
+          </div>
           {/* Day Type Selector */}
           {dayTypes.length > 0 && (
             <div className="flex gap-2">

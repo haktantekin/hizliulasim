@@ -7,6 +7,8 @@ import { MapPin } from 'lucide-react';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import DurakHatlarClient from '@/components/bus/DurakHatlarClient';
 import Link from 'next/link';
+import IettDataFreshness from './IettDataFreshness';
+import { parseIettFreshnessHeaders, type IettFreshness } from '@/lib/iett-static/presentation';
 
 const DurakMap = dynamic(() => import('./DurakMap'), {
   ssr: false,
@@ -25,6 +27,7 @@ export default function DurakDetayClient({ durakKodu }: Props) {
   const [durak, setDurak] = useState<IETTDurak | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [freshness, setFreshness] = useState<IettFreshness | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,6 +40,7 @@ export default function DurakDetayClient({ durakKodu }: Props) {
           if (res.status === 404) return null;
           throw new Error('fetch failed');
         }
+        if (!cancelled) setFreshness(parseIettFreshnessHeaders(res.headers));
         return res.json();
       })
       .then((data) => {
@@ -75,7 +79,7 @@ export default function DurakDetayClient({ durakKodu }: Props) {
         <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
         <h2 className="text-2xl font-bold text-gray-700 mb-2">Durak Bilgisi Alınamadı</h2>
         <p className="text-gray-500">
-          İETT API&apos;sine bağlanılamadı. Lütfen daha sonra tekrar deneyin.
+          Otobüs veri paketi yüklenemedi. Lütfen daha sonra tekrar deneyin.
         </p>
         <Link
           href="/otobus-hatlari"
@@ -117,6 +121,7 @@ export default function DurakDetayClient({ durakKodu }: Props) {
                 <span className="text-green-600">♿ Engelli erişimi var</span>
               )}
             </div>
+            <IettDataFreshness freshness={freshness} className="mt-2" />
           </div>
         </div>
       </div>
