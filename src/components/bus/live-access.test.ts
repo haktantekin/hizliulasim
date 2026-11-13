@@ -3,8 +3,6 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const callers = [
-  'src/components/bus/BusRouteDetailClient.tsx',
-  'src/components/bus/NearestStopAssistant.tsx',
   'src/components/home/HomeBusFinder.tsx',
 ];
 

@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import type { IETTPlanlananSefer, IETTHatOtoKonum, IETTHat, IETTDurakDetay } from '@/types/iett';
-import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, RefreshCw, CircleDot, Heart, Loader2 } from 'lucide-react';
+import type { IETTPlanlananSefer, IETTHat, IETTDurakDetay } from '@/types/iett';
+import { Clock, Bus, MapPin, Route, Info, ChevronDown, ChevronUp, CircleDot, Heart, Loader2 } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useUpdateFavorite } from '@/hooks/useAuth';
 import AuthModal from '@/components/ui/AuthModal';
@@ -11,21 +11,12 @@ import NearestStopAssistant from './NearestStopAssistant';
 import Link from 'next/link';
 import { buildDurakSlug } from '@/lib/slugify';
 import IettDataFreshness from './IettDataFreshness';
-import LiveFeatureLoginPrompt from './LiveFeatureLoginPrompt';
 import { parseIettFreshnessHeaders, scheduleDataLabel, type IettFreshness } from '@/lib/iett-static/presentation';
 import type { IettStaticPath } from '@/lib/iett-static/contracts';
 import { selectIettRoutePath } from './route-path';
+import { loadBusRouteDetailResponses } from './bus-route-detail-data';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[350px] bg-gray-100 rounded-xl animate-pulse flex items-center justify-center">
-      <MapPin className="w-8 h-8 text-gray-300" />
-    </div>
-  ),
-});
-
-const LiveVehicleMap = dynamic(() => import('./LiveVehicleMap'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[350px] bg-gray-100 rounded-xl animate-pulse flex items-center justify-center">
@@ -67,7 +58,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
   const [dataError, setDataError] = useState(false);
   const [freshness, setFreshness] = useState<IettFreshness | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule' | 'vehicles'>('schedule');
+  const [activeTab, setActiveTab] = useState<'info' | 'route' | 'schedule'>('schedule');
   const [selectedDayType, setSelectedDayType] = useState<string>('C');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -92,16 +83,8 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
     requestLocation();
   }, [requestLocation]);
 
-  // Live vehicle locations - fetched client-side for real-time data
-  const [konumlar, setKonumlar] = useState<IETTHatOtoKonum[]>([]);
-  const [konumLoading, setKonumLoading] = useState(false);
-  const [konumError, setKonumError] = useState(false);
-  const [liveAuthRequired, setLiveAuthRequired] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [durakAdlari, setDurakAdlari] = useState<Record<string, string>>({});
-
   // Favorites
-  const { isAuthenticated, isLoading: authLoading, favorites } = useAppSelector((state) => state.user);
+  const { isAuthenticated, favorites } = useAppSelector((state) => state.user);
   const updateFavorite = useUpdateFavorite();
   const isFavorite = isAuthenticated && hat !== null && favorites.routes.some((r) => r.id === hat.SHATKODU);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -116,13 +99,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       setDuraklar([]);
       setPaths([]);
       try {
-        const encodedCode = encodeURIComponent(hatKodu);
-        const [hatRes, seferRes, durakRes, pathRes] = await Promise.allSettled([
-          fetch(`/api/iett/hatlar?kod=${encodedCode}`),
-          fetch(`/api/iett/sefer-saatleri?hatKodu=${encodedCode}`),
-          fetch(`/api/iett/durak-detay?hatKodu=${encodedCode}`),
-          fetch(`/api/iett/guzergah?hatKodu=${encodedCode}`),
-        ]);
+        const { hatRes, seferRes, durakRes, pathRes } = await loadBusRouteDetailResponses(hatKodu);
 
         const freshnessResponse = [seferRes, hatRes, durakRes, pathRes]
           .find((result): result is PromiseFulfilledResult<Response> => result.status === 'fulfilled' && result.value.ok);
@@ -156,61 +133,6 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
     }
     fetchData();
   }, [hatKodu]);
-
-  // Fetch stop names for vehicle locations
-  const fetchDurakAdlari = useCallback(async (vehicles: IETTHatOtoKonum[]) => {
-    const codes = [...new Set(vehicles.map((v) => v.yakinDurakKodu).filter(Boolean))];
-    const missing = codes.filter((c) => !durakAdlari[c]);
-    if (missing.length === 0) return;
-
-    const results: Record<string, string> = {};
-    await Promise.allSettled(
-      missing.map(async (code) => {
-        try {
-          const res = await fetch(`/api/iett/durak?kod=${code}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data?.SDURAKADI) results[code] = data.SDURAKADI;
-          }
-        } catch { /* ignore */ }
-      })
-    );
-    if (Object.keys(results).length > 0) {
-      setDurakAdlari((prev) => ({ ...prev, ...results }));
-    }
-  }, [durakAdlari]);
-
-  const fetchKonumlar = useCallback(async () => {
-    if (!isAuthenticated) return;
-    setKonumLoading(true);
-    setKonumError(false);
-    try {
-      const res = await fetch(`/api/iett/konum?hatKodu=${hatKodu}`, { credentials: 'include', cache: 'no-store' });
-      if (res.status === 401) {
-        setLiveAuthRequired(true);
-        return;
-      }
-      if (!res.ok) throw new Error('fetch failed');
-      const data: IETTHatOtoKonum[] = await res.json();
-      setLiveAuthRequired(false);
-      setKonumlar(data);
-      setLastRefresh(new Date());
-      fetchDurakAdlari(data);
-    } catch {
-      setKonumError(true);
-    } finally {
-      setKonumLoading(false);
-    }
-  }, [hatKodu, isAuthenticated]);
-
-  // Fetch live locations when vehicles or route tab is active
-  useEffect(() => {
-    if (!isAuthenticated || authLoading) return;
-    if (activeTab !== 'vehicles' && activeTab !== 'route') return;
-    fetchKonumlar();
-    const interval = setInterval(fetchKonumlar, 30000); // auto-refresh every 30s
-    return () => clearInterval(interval);
-  }, [activeTab, authLoading, fetchKonumlar, isAuthenticated]);
 
   // Group schedules by direction and day type
   const groupedSchedule = useMemo(() => {
@@ -386,12 +308,8 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       {/* Nearest Stop Assistant */}
       {duraklar.length > 0 && (
         <NearestStopAssistant
-          hatKodu={hatKodu}
-          hat={hat}
           duraklar={duraklar}
           userLocation={userLocation}
-          isAuthenticated={isAuthenticated}
-          onLogin={() => setAuthModalOpen(true)}
         />
       )}
 
@@ -423,22 +341,6 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
             </span>
           )}
         </button>
-        <button
-          onClick={() => setActiveTab('vehicles')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === 'vehicles'
-              ? 'border-brand-soft-blue text-brand-soft-blue'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-
-          Canlı Araç Konumları
-          {isAuthenticated && konumlar.length > 0 && (
-            <span className="bg-brand-green text-white text-xs px-1.5 py-0.5 rounded-full">
-              {konumlar.length}
-            </span>
-          )}
-        </button>
         {wpContent && (
           <button
             onClick={() => setActiveTab('info')}
@@ -460,7 +362,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
       )}
 
       {activeTab === 'route' && (
-        <RouteStopsTab paths={paths} duraklar={duraklar} konumlar={isAuthenticated ? konumlar : []} userLocation={userLocation} />
+        <RouteStopsTab paths={paths} duraklar={duraklar} userLocation={userLocation} />
       )}
 
       {activeTab === 'schedule' && (
@@ -551,94 +453,6 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
         </div>
       )}
 
-      {activeTab === 'vehicles' && (
-        authLoading ? (
-          <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-brand-soft-blue" /></div>
-        ) : !isAuthenticated || liveAuthRequired ? (
-          <LiveFeatureLoginPrompt onLogin={() => setAuthModalOpen(true)} />
-        ) : (
-        <div className="space-y-3">
-          {/* Live vehicle map */}
-          {duraklar.length > 0 && (
-            <LiveVehicleMap duraklar={duraklar} konumlar={konumlar} />
-          )}
-
-          {/* Refresh bar */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              {konumLoading
-                ? 'Araç konumları yükleniyor...'
-                : konumlar.length > 0
-                  ? `Hatta aktif ${konumlar.length} araç bulunmaktadır.`
-                  : ''}
-            </div>
-            <button
-              onClick={fetchKonumlar}
-              disabled={konumLoading}
-              className="flex items-center gap-1.5 text-xs text-brand-soft-blue hover:underline disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${konumLoading ? 'animate-spin' : ''}`} />
-              Yenile
-            </button>
-          </div>
-          {lastRefresh && (
-            <div className="text-xs text-gray-400">
-              Son güncelleme: {lastRefresh.toLocaleTimeString('tr-TR')}
-            </div>
-          )}
-
-          {konumError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-              Araç konum bilgileri alınamadı. Yeniden deneyin.
-            </div>
-          )}
-
-          {!konumLoading && konumlar.length === 0 && !konumError ? (
-            <div className="text-center py-8 text-gray-500">
-              <Bus className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p>Şu anda bu hatta aktif araç bulunmuyor.</p>
-              <p className="text-xs mt-1">Veriler her 30 saniyede otomatik güncellenir.</p>
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              {konumlar.map((k, idx) => {
-                // Parse the timestamp for display
-                const timeStr = k.son_konum_zamani
-                  ? k.son_konum_zamani.split(' ')[1]?.substring(0, 5)
-                  : '';
-
-                return (
-                  <div key={`vehicle-${idx}`} className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-3">
-                    <div className="w-10 h-10 bg-brand-soft-blue/10 rounded-full flex items-center justify-center">
-                      <Bus className="w-5 h-5 text-brand-soft-blue" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{k.kapino}</span>
-                        <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-                          {k.hatkodu}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-0.5 text-xs text-gray-500 mt-1">
-                        <span>Yön: {k.yon}</span>
-                        {k.yakinDurakKodu && (
-                          <span>Yakın Durak: {durakAdlari[k.yakinDurakKodu] || k.yakinDurakKodu}</span>
-                        )}
-                        {timeStr && (
-                          <span>Son Konum: {timeStr}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        )
-      )}
-
-
     </div>
   );
 }
@@ -647,7 +461,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 // Güzergah / Duraklar Tab Component
 // ==========================================
 
-function RouteStopsTab({ paths, duraklar, konumlar, userLocation }: { paths: IettStaticPath[]; duraklar: IETTDurakDetay[]; konumlar: IETTHatOtoKonum[]; userLocation: UserLocation }) {
+function RouteStopsTab({ paths, duraklar, userLocation }: { paths: IettStaticPath[]; duraklar: IETTDurakDetay[]; userLocation: UserLocation }) {
   const [selectedDirection, setSelectedDirection] = useState<string>('D');
   const [userStopCode, setUserStopCode] = useState<string | null>(null);
   const [showPastStops, setShowPastStops] = useState(false);
@@ -709,30 +523,6 @@ function RouteStopsTab({ paths, duraklar, konumlar, userLocation }: { paths: Iet
       setAutoSelected(true);
     }
   }, [userLocation, allDirectionStops, autoSelected]);
-
-  // Get vehicle stop codes in this direction for highlighting
-  const vehicleAtStopCodes = useMemo(() => {
-    const codes = new Set<string>();
-    for (const v of konumlar) {
-      if (v.yon === selectedDirection && v.yakinDurakKodu) {
-        codes.add(v.yakinDurakKodu);
-      }
-    }
-    return codes;
-  }, [konumlar, selectedDirection]);
-
-  // Map vehicle stop code -> vehicle info for tooltip
-  const vehicleByStopCode = useMemo(() => {
-    const map = new Map<string, IETTHatOtoKonum[]>();
-    for (const v of konumlar) {
-      if (v.yon === selectedDirection && v.yakinDurakKodu) {
-        const arr = map.get(v.yakinDurakKodu) || [];
-        arr.push(v);
-        map.set(v.yakinDurakKodu, arr);
-      }
-    }
-    return map;
-  }, [konumlar, selectedDirection]);
 
   // User stop index
   const userStopIndex = useMemo(() => {
@@ -838,8 +628,6 @@ function RouteStopsTab({ paths, duraklar, konumlar, userLocation }: { paths: Iet
           const isFirst = idx === 0;
           const isLast = idx === filteredStops.length - 1;
           const isUserStop = stop.DURAKKODU === userStopCode;
-          const hasBus = vehicleAtStopCodes.has(stop.DURAKKODU);
-          const busesHere = vehicleByStopCode.get(stop.DURAKKODU);
           // Check if this stop is a past stop (shown in showPastStops mode)
           const globalIdx = allDirectionStops.findIndex((d) => d.DURAKKODU === stop.DURAKKODU);
           const isPast = userStopCode && userStopIndex > 0 && globalIdx < userStopIndex;
@@ -853,19 +641,13 @@ function RouteStopsTab({ paths, duraklar, konumlar, userLocation }: { paths: Iet
                 />
                 <div
                   className={`rounded-full flex-shrink-0 border-2 flex items-center justify-center ${
-                    hasBus
-                      ? 'w-5 h-5 bg-green-500 border-green-500'
-                      : isUserStop
-                        ? 'w-4 h-4 bg-brand-orange border-brand-orange'
-                        : isFirst || isLast
-                          ? 'w-3 h-3 bg-brand-soft-blue border-brand-soft-blue'
-                          : 'w-3 h-3 bg-white border-gray-300 group-hover:border-brand-soft-blue'
+                    isUserStop
+                      ? 'w-4 h-4 bg-brand-orange border-brand-orange'
+                      : isFirst || isLast
+                        ? 'w-3 h-3 bg-brand-soft-blue border-brand-soft-blue'
+                        : 'w-3 h-3 bg-white border-gray-300 group-hover:border-brand-soft-blue'
                   }`}
-                >
-                  {hasBus && (
-                    <Bus className="w-3 h-3 text-white" />
-                  )}
-                </div>
+                />
                 <div
                   className={`w-0.5 flex-1 ${isLast ? 'bg-transparent' : isPast ? 'bg-gray-100' : 'bg-gray-200'}`}
                 />
@@ -876,21 +658,17 @@ function RouteStopsTab({ paths, duraklar, konumlar, userLocation }: { paths: Iet
                 <Link
                   href={`/otobus-duraklari/${buildDurakSlug(stop.DURAKADI, stop.DURAKKODU)}`}
                   className={`block border rounded-lg p-3 transition-all ${
-                    hasBus
-                      ? 'bg-green-50 border-green-200 shadow-sm'
-                      : isUserStop
-                        ? 'bg-orange-50 border-brand-orange/30 shadow-sm'
-                        : 'bg-white border-gray-100 group-hover:border-brand-soft-blue/30 group-hover:shadow-sm'
+                    isUserStop
+                      ? 'bg-orange-50 border-brand-orange/30 shadow-sm'
+                      : 'bg-white border-gray-100 group-hover:border-brand-soft-blue/30 group-hover:shadow-sm'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className={`font-medium text-sm transition-colors ${
-                        hasBus
-                          ? 'text-green-700'
-                          : isUserStop
-                            ? 'text-brand-orange'
-                            : 'text-gray-900 group-hover:text-brand-soft-blue'
+                        isUserStop
+                          ? 'text-brand-orange'
+                          : 'text-gray-900 group-hover:text-brand-soft-blue'
                       }`}>
                         {stop.DURAKADI}
                       </div>
@@ -903,16 +681,6 @@ function RouteStopsTab({ paths, duraklar, konumlar, userLocation }: { paths: Iet
                           </>
                         )}
                       </div>
-                      {hasBus && busesHere && (
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {busesHere.map((b) => (
-                            <span key={b.kapino} className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full font-medium">
-                              <Bus className="w-3 h-3" />
-                              {b.kapino}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                       {isUserStop && (
                         <span className="inline-block mt-1.5 text-xs text-brand-orange font-medium">📍 Bulunduğunuz durak</span>
                       )}
