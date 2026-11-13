@@ -73,6 +73,18 @@ test('uses exact normalized line matching and applies the requested limit after 
   assert.equal(result.metadata.source, 'stale');
 });
 
+test('does not broaden an invalid line-code filter to every alert', async () => {
+  const result = await getIettAlerts({ lineCode: '../1' }, {
+    fetcher: () => cmsResponse({
+      data: [alert('1', '16:10'), alert('10B', '16:20')],
+      status: 'current',
+      fetchedAt: '2026-11-13T13:00:00Z',
+    }),
+  });
+
+  assert.deepEqual(result.data, []);
+});
+
 test('rejects an upstream error and a malformed CMS payload without leaking its body', async () => {
   await assert.rejects(
     getIettAlerts({}, { fetcher: () => cmsResponse({ secret: 'upstream body' }, false) }),

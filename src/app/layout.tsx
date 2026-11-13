@@ -10,6 +10,7 @@ import Header from '../components/ui/Header';
 import Script from "next/script";
 import CookieBanner from '../components/ui/CookieBanner';
 import { googleAnalyticsId, googleAnalyticsSetup } from '../lib/googleAnalytics';
+import IettAlertBar from '../components/iett/IettAlertBar';
 
 const outfit = Outfit({ subsets: ["latin"], display: "swap" });
 
@@ -150,6 +151,7 @@ export default function RootLayout({
         <ReduxProvider>
           <QueryProvider>
             <DrawerProvider>
+            <IettAlertBar />
             <Header />
             <div className="min-h-screen">
               {children}

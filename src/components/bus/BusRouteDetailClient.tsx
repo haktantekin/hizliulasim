@@ -15,6 +15,7 @@ import { parseIettFreshnessHeaders, scheduleDataLabel, type IettFreshness } from
 import type { IettStaticPath } from '@/lib/iett-static/contracts';
 import { selectIettRoutePath } from './route-path';
 import { loadBusRouteDetailResponses } from './bus-route-detail-data';
+import IettLineAlerts from '@/components/iett/IettLineAlerts';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
   ssr: false,
@@ -288,6 +289,7 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
         </div>
       </div>
       <IettDataFreshness freshness={freshness} className="text-right" />
+      <IettLineAlerts lineCode={hat.SHATKODU} />
 
       {/* Location status banner */}
       {userLocation.status === 'loading' && (

@@ -132,6 +132,9 @@ export async function getIettAlerts(
     if (Buffer.byteLength(text, 'utf8') > maxBodyBytes) throw new IettAlertsUnavailableError();
     const parsed = parseEnvelope(JSON.parse(text) as unknown);
     const normalizedLine = query.lineCode === undefined ? null : normalizeIettStaticCode(query.lineCode);
+    if (query.lineCode !== undefined && normalizedLine === null) {
+      return { data: [], metadata: parsed.metadata };
+    }
     const filtered = normalizedLine === null
       ? parsed.data
       : parsed.data.filter((alert) => alert.HATKODU === normalizedLine);
