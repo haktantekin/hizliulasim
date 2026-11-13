@@ -87,3 +87,65 @@ test('finds the nearest stop from the directory without loading every stop shard
   assert.equal(nearest.data?.durakKodu, '100');
   assert.ok((nearest.data?.distanceMeters ?? 999) < 50);
 });
+
+test('repairs Turkish mojibake from an already-published static package', async () => {
+  const brokenLine: IETTHat = {
+    ...line,
+    SHATKODU: '11G',
+    SHATADI: 'NECÄ°P FAZIL METRO - YENÄ°DOÄžAN PERONLAR',
+    TARIFE: 'Ä°NDÄ°RÄ°MLÄ°',
+  };
+  const brokenStop: IETTDurak = {
+    ...stop,
+    SDPICARETNO: '200',
+    SDURAKADI: 'ÅžEHÄ°T EROL OLÃ‡OK',
+    ILCEADI: 'Ãœmraniye',
+  };
+  const brokenRouteStop: IETTDurakDetay = {
+    ...routeStop,
+    HATKODU: '11G',
+    YON_ADI: 'YENÄ°DOÄžAN',
+    DURAKKODU: '200',
+    DURAKADI: 'ÅžEHÄ°T EROL OLÃ‡OK',
+    ILCEADI: 'Ãœmraniye',
+  };
+  const service = createIettStaticService({
+    loadDirectory: async () => resource({
+      schemaVersion: 1 as const,
+      generatedAt: '2026-11-13T09:00:00Z',
+      lines: [brokenLine],
+      stops: [brokenStop],
+    }),
+    loadLine: async () => resource({
+      schemaVersion: 2 as const,
+      generatedAt: '2026-11-13T09:00:00Z',
+      line: brokenLine,
+      schedules: [{
+        SHATKODU: '11G',
+        HATADI: brokenLine.SHATADI,
+        SGUZERAH: brokenLine.SHATADI,
+        SYON: 'D',
+        SGUNTIPI: 'C',
+        GUZERGAH_ISARETI: 'GÄ°DÄ°Åž',
+        SSERVISTIPI: 'Planlanan',
+        DT: '06:45',
+      }],
+      stops: [brokenRouteStop],
+      paths: [path],
+    }),
+    loadStop: async () => resource({
+      schemaVersion: 1 as const,
+      generatedAt: '2026-11-13T09:00:00Z',
+      stop: brokenStop,
+      lines: [{ hatKodu: '11G', hatAdi: brokenLine.SHATADI, yon: 'D', sirano: 1 }],
+    }),
+  });
+
+  assert.equal((await service.getHatlar({ code: '11g' })).data[0].SHATADI, 'NECİP FAZIL METRO - YENİDOĞAN PERONLAR');
+  assert.equal((await service.getHatlar({ query: 'yeni doğan' })).data[0].SHATKODU, '11G');
+  assert.equal((await service.getSchedules('11g')).data[0].GUZERGAH_ISARETI, 'GİDİŞ');
+  assert.equal((await service.getRouteStops('11g')).data[0].DURAKADI, 'ŞEHİT EROL OLÇOK');
+  assert.equal((await service.getStop('200')).data?.ILCEADI, 'Ümraniye');
+  assert.equal((await service.getLinesByStop('200')).data[0].hatAdi, 'NECİP FAZIL METRO - YENİDOĞAN PERONLAR');
+  assert.equal((await service.getNearestStop(40.993, 29.024)).data?.durakAdi, 'ŞEHİT EROL OLÇOK');
+});

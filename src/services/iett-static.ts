@@ -6,6 +6,7 @@ import {
   type LoadedIettStaticResource,
 } from '../lib/iett-static/source.ts';
 import { normalizeIettStaticCode, type IettStaticPath } from '../lib/iett-static/contracts.ts';
+import { repairTurkishMojibake } from '../lib/textEncoding.ts';
 
 export type IettStaticDataSource = 'current' | 'previous';
 
@@ -67,11 +68,55 @@ function normalizeSearch(value: string): string {
   return value.toLocaleUpperCase('tr-TR').replace(/[^0-9A-ZÇĞİÖŞÜ]/gu, '');
 }
 
+function normalizeLineText(line: IETTHat): IETTHat {
+  return {
+    ...line,
+    SHATADI: repairTurkishMojibake(line.SHATADI),
+    TARIFE: repairTurkishMojibake(line.TARIFE),
+  };
+}
+
+function normalizeScheduleText(schedule: IETTPlanlananSefer): IETTPlanlananSefer {
+  return {
+    ...schedule,
+    HATADI: repairTurkishMojibake(schedule.HATADI),
+    SGUZERAH: repairTurkishMojibake(schedule.SGUZERAH),
+    GUZERGAH_ISARETI: schedule.GUZERGAH_ISARETI === null
+      ? null
+      : repairTurkishMojibake(schedule.GUZERGAH_ISARETI),
+    SSERVISTIPI: repairTurkishMojibake(schedule.SSERVISTIPI),
+  };
+}
+
+function normalizeRouteStopText(stop: IETTDurakDetay): IETTDurakDetay {
+  return {
+    ...stop,
+    YON_ADI: repairTurkishMojibake(stop.YON_ADI),
+    DURAKADI: repairTurkishMojibake(stop.DURAKADI),
+    DURAKTIPI: repairTurkishMojibake(stop.DURAKTIPI),
+    ISLETMEBOLGE: repairTurkishMojibake(stop.ISLETMEBOLGE),
+    ISLETMEALTBOLGE: repairTurkishMojibake(stop.ISLETMEALTBOLGE),
+    ILCEADI: repairTurkishMojibake(stop.ILCEADI),
+  };
+}
+
+function normalizeStopText(stop: IETTDurak): IETTDurak {
+  return {
+    ...stop,
+    SDURAKADI: repairTurkishMojibake(stop.SDURAKADI),
+    ILCEADI: repairTurkishMojibake(stop.ILCEADI),
+    DURAKTIPI: repairTurkishMojibake(stop.DURAKTIPI),
+    ENGELLIKULLANIMI: repairTurkishMojibake(stop.ENGELLIKULLANIMI),
+    BOLESSION: repairTurkishMojibake(stop.BOLESSION),
+  };
+}
+
 export function filterIettHatlar(lines: readonly IETTHat[], query: string): IETTHat[] {
   const text = query.toLocaleUpperCase('tr-TR').trim();
   const normalized = normalizeSearch(query);
-  if (!normalized) return [...lines];
-  return lines.filter((line) => {
+  const normalizedLines = lines.map(normalizeLineText);
+  if (!normalized) return normalizedLines;
+  return normalizedLines.filter((line) => {
     const code = line.SHATKODU.toLocaleUpperCase('tr-TR');
     const name = line.SHATADI.toLocaleUpperCase('tr-TR');
     return code.includes(text) || name.includes(text)
@@ -107,20 +152,20 @@ export function createIettStaticService(dependencies: Partial<Dependencies> = {}
       if (code !== undefined && normalized === null) return emptyResult([]);
       if (normalized !== null) {
         const line = await deps.loadLine(normalized);
-        if (line !== null) return localResult(line, [line.data.line]);
+        if (line !== null) return localResult(line, [normalizeLineText(line.data.line)]);
         return localResult(await deps.loadDirectory(), [] as IETTHat[]);
       }
       const directory = await deps.loadDirectory();
-      const lines = query === undefined ? directory.data.lines : filterIettHatlar(directory.data.lines, query);
+      const lines = filterIettHatlar(directory.data.lines, query ?? '');
       return localResult(directory, lines);
     },
 
     getSchedules(code: string): Promise<IettStaticResult<IETTPlanlananSefer[]>> {
-      return lineData(code, (line) => line.schedules, [] as IETTPlanlananSefer[]);
+      return lineData(code, (line) => line.schedules.map(normalizeScheduleText), [] as IETTPlanlananSefer[]);
     },
 
     getRouteStops(code: string): Promise<IettStaticResult<IETTDurakDetay[]>> {
-      return lineData(code, (line) => line.stops, [] as IETTDurakDetay[]);
+      return lineData(code, (line) => line.stops.map(normalizeRouteStopText), [] as IETTDurakDetay[]);
     },
 
     getPaths(code: string): Promise<IettStaticResult<IettStaticPath[]>> {
@@ -130,21 +175,26 @@ export function createIettStaticService(dependencies: Partial<Dependencies> = {}
     async getStop(code: string): Promise<IettStaticResult<IETTDurak | null>> {
       if (!/^[0-9]{1,12}$/.test(code)) return emptyResult(null);
       const stop = await deps.loadStop(code);
-      if (stop !== null) return localResult(stop, stop.data.stop);
+      if (stop !== null) return localResult(stop, normalizeStopText(stop.data.stop));
       return localResult(await deps.loadDirectory(), null as IETTDurak | null);
     },
 
     async getLinesByStop(code: string): Promise<IettStaticResult<IettPassingLine[]>> {
       if (!/^[0-9]{1,12}$/.test(code)) return emptyResult([]);
       const stop = await deps.loadStop(code);
-      if (stop !== null) return localResult(stop, stop.data.lines);
+      if (stop !== null) return localResult(stop, stop.data.lines.map((line) => ({
+        ...line,
+        hatAdi: repairTurkishMojibake(line.hatAdi),
+        yon: repairTurkishMojibake(line.yon),
+      })));
       return localResult(await deps.loadDirectory(), [] as IettPassingLine[]);
     },
 
     async getNearestStop(lat: number, lng: number): Promise<IettStaticResult<IettNearestStop | null>> {
       const directory = await deps.loadDirectory();
       let nearest: IettNearestStop | null = null;
-      for (const stop of directory.data.stops) {
+      for (const rawStop of directory.data.stops) {
+        const stop = normalizeStopText(rawStop);
         const distanceMeters = haversineDistance(lat, lng, stop.YKOORDINATI, stop.XKOORDINATI);
         if (nearest === null || distanceMeters < nearest.distanceMeters) {
           nearest = {
