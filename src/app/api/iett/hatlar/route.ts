@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getHat, searchHatlar } from '@/services/iett';
+import { getStaticHatlar, iettStaticResponseHeaders } from '@/services/iett-static';
 
-export const revalidate = 300; // 5 min cache
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -9,19 +10,11 @@ export async function GET(request: Request) {
     const q = searchParams.get('q');
     const kod = searchParams.get('kod');
 
-    if (kod) {
-      const hatlar = await getHat(kod.toUpperCase());
-      return NextResponse.json(hatlar);
-    }
-
-    if (q) {
-      const hatlar = await searchHatlar(q);
-      return NextResponse.json(hatlar);
-    }
-
-    // Return all lines
-    const hatlar = await getHat();
-    return NextResponse.json(hatlar);
+    const result = await getStaticHatlar({
+      ...(kod === null ? {} : { code: kod }),
+      ...(q === null ? {} : { query: q }),
+    });
+    return NextResponse.json(result.data, { headers: iettStaticResponseHeaders(result.metadata) });
   } catch (error) {
     console.error('IETT hatlar API error:', error);
     return NextResponse.json(

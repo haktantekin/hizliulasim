@@ -41,6 +41,7 @@ export interface IettStaticDirectory {
   schemaVersion: 1;
   generatedAt: string;
   lines: IETTHat[];
+  stops: IETTDurak[];
 }
 
 export interface IettStaticLine {
@@ -223,12 +224,16 @@ function parseEnvelope(value: unknown, keys: readonly string[]): asserts value i
 }
 
 export function parseIettStaticDirectory(value: unknown): IettStaticDirectory {
-  parseEnvelope(value, ['schemaVersion', 'generatedAt', 'lines']);
-  if (!Array.isArray(value.lines) || value.lines.length === 0 || !value.lines.every(isLine)) {
+  parseEnvelope(value, ['schemaVersion', 'generatedAt', 'lines', 'stops']);
+  if (!Array.isArray(value.lines) || value.lines.length === 0 || !value.lines.every(isLine)
+    || !Array.isArray(value.stops) || value.stops.length === 0 || !value.stops.every(isStop)) {
     throw new TypeError('Invalid İETT static directory lines');
   }
   const codes = value.lines.map((entry) => entry.SHATKODU);
-  if (new Set(codes).size !== codes.length) throw new TypeError('Duplicate İETT static directory line');
+  const stopCodes = value.stops.map((entry) => entry.SDPICARETNO);
+  if (new Set(codes).size !== codes.length || new Set(stopCodes).size !== stopCodes.length) {
+    throw new TypeError('Duplicate İETT static directory record');
+  }
   return value as unknown as IettStaticDirectory;
 }
 

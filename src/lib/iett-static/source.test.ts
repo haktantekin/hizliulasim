@@ -99,6 +99,7 @@ async function stageVersion(root: string, version: string, options: VersionOptio
     schemaVersion: 1,
     generatedAt: '2026-11-13T09:00:00+03:00',
     lines: [lineRecord(lineCode, lineName)],
+    stops: [stopPayload(stopCode, lineCode, lineName).stop],
   };
   const payloads: Record<string, Buffer> = {
     'directory.json.gz': gzipSync(options.expandedDirectoryBytes ?? Buffer.from(JSON.stringify(directory))),

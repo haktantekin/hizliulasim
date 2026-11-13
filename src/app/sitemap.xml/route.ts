@@ -1,4 +1,4 @@
-import { getHat } from '@/services/iett';
+import { getStaticHatlar } from '@/services/iett-static';
 import { loadSitemapGroups } from '@/lib/sitemapData';
 import { serializeSitemapIndex } from '@/lib/sitemapEngine';
 
@@ -8,7 +8,7 @@ export const revalidate = 3600;
 
 export async function GET() {
   const groups = await loadSitemapGroups({
-    getBusCodes: async () => (await getHat()).map((line) => line.SHATKODU),
+    getBusCodes: async () => (await getStaticHatlar({})).data.map((line) => line.SHATKODU),
   });
 
   return new Response(serializeSitemapIndex(groups, SITE_URL), {

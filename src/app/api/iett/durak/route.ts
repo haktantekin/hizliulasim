@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getDurak } from '@/services/iett';
+import { getStaticStop, iettStaticResponseHeaders } from '@/services/iett-static';
 
-export const revalidate = 3600; // 1 hour cache for stop data
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -15,15 +16,15 @@ export async function GET(request: Request) {
       );
     }
 
-    const duraklar = await getDurak(kod);
-    if (duraklar.length === 0) {
+    const result = await getStaticStop(kod);
+    if (result.data === null) {
       return NextResponse.json(
         { error: 'Durak bulunamadı' },
-        { status: 404 }
+        { status: 404, headers: iettStaticResponseHeaders(result.metadata) }
       );
     }
 
-    return NextResponse.json(duraklar[0]);
+    return NextResponse.json(result.data, { headers: iettStaticResponseHeaders(result.metadata) });
   } catch (error) {
     console.error('IETT durak API error:', error);
     return NextResponse.json(

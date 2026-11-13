@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getDurakDetay } from '@/services/iett';
+import { getStaticRouteStops, iettStaticResponseHeaders } from '@/services/iett-static';
 
-export const revalidate = 3600; // 1 hour cache
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -15,8 +16,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const duraklar = await getDurakDetay(hatKodu.toUpperCase());
-    return NextResponse.json(duraklar);
+    const result = await getStaticRouteStops(hatKodu);
+    return NextResponse.json(result.data, { headers: iettStaticResponseHeaders(result.metadata) });
   } catch (error) {
     console.error('IETT durak detay API error:', error);
     return NextResponse.json(

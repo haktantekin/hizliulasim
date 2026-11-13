@@ -6,7 +6,7 @@ import {
   normalizeIndexNowUrls,
   submitIndexNow,
 } from '@/lib/indexNow';
-import { getHat } from '@/services/iett';
+import { getStaticHatlar } from '@/services/iett-static';
 
 const SITE_URL = 'https://hizliulasim.com';
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   const busCode = requestUrl.searchParams.get('hat');
 
   if (scope === 'all') {
-    const routes = await getHat();
+    const routes = (await getStaticHatlar({})).data;
     requestedUrls.push(
       `${SITE_URL}/otobus-hatlari`,
       ...routes.map((route) => `${SITE_URL}/otobus-hatlari/${route.SHATKODU.toLowerCase()}`),

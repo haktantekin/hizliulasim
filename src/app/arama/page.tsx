@@ -14,7 +14,7 @@ import {
   resolveGoogleSearchEngineId,
 } from '@/lib/searchPage';
 import { canonicalMetadata, noIndexMetadata } from '@/lib/seoMetadata';
-import { searchHatlar } from '@/services/iett';
+import { getStaticHatlar } from '@/services/iett-static';
 import type { IETTHat } from '@/types/iett';
 
 type SearchPageProps = {
@@ -57,7 +57,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   if (searchMode === 'iett') {
     try {
-      busRoutes = await searchHatlar(query);
+      busRoutes = (await getStaticHatlar({ query })).data;
     } catch {
       busSearchFailed = true;
     }

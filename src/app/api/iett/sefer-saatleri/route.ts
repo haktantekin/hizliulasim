@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPlanlananSeferSaati } from '@/services/iett';
+import { getStaticSchedules, iettStaticResponseHeaders } from '@/services/iett-static';
 
-export const revalidate = 300;
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -15,8 +16,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const seferler = await getPlanlananSeferSaati(hatKodu.toUpperCase());
-    return NextResponse.json(seferler);
+    const result = await getStaticSchedules(hatKodu);
+    return NextResponse.json(result.data, { headers: iettStaticResponseHeaders(result.metadata) });
   } catch (error) {
     console.error('IETT sefer saatleri API error:', error);
     return NextResponse.json(

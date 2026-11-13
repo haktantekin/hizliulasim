@@ -135,16 +135,22 @@ test('validates manifest inventory, provenance, counts, and hashed indexes', () 
 
 test('parses a directory with unique legacy-compatible line records', () => {
   assert.deepEqual(parseIettStaticDirectory({
-    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line],
+    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line], stops: [stop],
   }).lines, [line]);
   assert.throws(() => parseIettStaticDirectory({
-    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line, { ...line }],
+    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line, { ...line }], stops: [stop],
   }));
   assert.throws(() => parseIettStaticDirectory({
-    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [{ ...line, HAT_UZUNLUGU: Number.NaN }],
+    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [{ ...line, HAT_UZUNLUGU: Number.NaN }], stops: [stop],
   }));
   assert.throws(() => parseIettStaticDirectory({
-    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [{ ...line, extra: true }],
+    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [{ ...line, extra: true }], stops: [stop],
+  }));
+  assert.throws(() => parseIettStaticDirectory({
+    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line], stops: [stop, { ...stop }],
+  }));
+  assert.throws(() => parseIettStaticDirectory({
+    schemaVersion: 1, generatedAt: '2026-11-13T09:00:00+03:00', lines: [line], stops: [{ ...stop, XKOORDINATI: 180 }],
   }));
 });
 

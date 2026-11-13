@@ -1,4 +1,4 @@
-import { getHat } from '@/services/iett';
+import { getStaticHatlar } from '@/services/iett-static';
 import { loadSitemapGroups } from '@/lib/sitemapData';
 import { serializeUrlSet } from '@/lib/sitemapEngine';
 
@@ -15,7 +15,7 @@ export async function GET(
 
   const groupName = name.slice(0, -4);
   const groups = await loadSitemapGroups({
-    getBusCodes: async () => (await getHat()).map((line) => line.SHATKODU),
+    getBusCodes: async () => (await getStaticHatlar({})).data.map((line) => line.SHATKODU),
   });
   const group = groups.find((item) => item.name === groupName);
   if (!group) {
