@@ -30,13 +30,13 @@ export interface IettStaticPath {
 }
 
 export interface IettStaticManifest {
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   version: string;
   generatedAt: string;
   serviceDateRange: { start: string; end: string };
   source: {
-    lines: IettStaticSourceArtifact;
-    stops: IettStaticSourceArtifact;
+    lines?: IettStaticSourceArtifact;
+    stops?: IettStaticSourceArtifact;
     transit: IettStaticPointer;
     schedules?: IettStaticScheduleSource[];
   };
@@ -185,18 +185,23 @@ function parseIndex(value: unknown, folder: 'lines' | 'stops', files: Record<str
 
 export function parseIettStaticManifest(value: unknown): IettStaticManifest {
   const topKeys = ['schemaVersion', 'version', 'generatedAt', 'serviceDateRange', 'source', 'counts', 'files', 'indexes'];
-  if (!isRecord(value) || !hasExactKeys(value, topKeys) || (value.schemaVersion !== 1 && value.schemaVersion !== 2)
+  if (!isRecord(value) || !hasExactKeys(value, topKeys)
+    || (value.schemaVersion !== 1 && value.schemaVersion !== 2 && value.schemaVersion !== 3)
     || typeof value.version !== 'string' || !versionPattern.test(value.version)
     || !isInstant(value.generatedAt) || !isDateRange(value.serviceDateRange)
-    || !isRecord(value.source)
-    || !isSourceArtifact(value.source.lines) || !isSourceArtifact(value.source.stops)) {
+    || !isRecord(value.source)) {
     throw new TypeError('Invalid İETT static manifest metadata');
   }
   const schemaVersion = value.schemaVersion;
-  const expectedSourceKeys = schemaVersion === 2 ? ['lines', 'stops', 'schedules', 'transit'] : ['lines', 'stops', 'transit'];
-  if (!hasExactKeys(value.source, expectedSourceKeys)) throw new TypeError('Invalid İETT static manifest source');
+  const expectedSourceKeys = schemaVersion === 3
+    ? ['transit']
+    : (schemaVersion === 2 ? ['lines', 'stops', 'schedules', 'transit'] : ['lines', 'stops', 'transit']);
+  if (!hasExactKeys(value.source, expectedSourceKeys)
+    || (schemaVersion !== 3 && (!isSourceArtifact(value.source.lines) || !isSourceArtifact(value.source.stops)))) {
+    throw new TypeError('Invalid İETT static manifest source');
+  }
   const transit = parseIettStaticPointer(value.source.transit);
-  const expectedCountKeys = schemaVersion === 2
+  const expectedCountKeys = schemaVersion >= 2
     ? ['lines', 'schedules', 'lineStops', 'stops', 'paths']
     : ['lines', 'schedules', 'lineStops', 'stops'];
   if (!isRecord(value.counts) || !hasExactKeys(value.counts, expectedCountKeys)
@@ -244,7 +249,14 @@ export function parseIettStaticManifest(value: unknown): IettStaticManifest {
     version: value.version,
     generatedAt: value.generatedAt,
     serviceDateRange: value.serviceDateRange,
-    source: { lines: value.source.lines, stops: value.source.stops, transit, ...(schedules === undefined ? {} : { schedules }) },
+    source: schemaVersion === 3
+      ? { transit }
+      : {
+          lines: value.source.lines as IettStaticSourceArtifact,
+          stops: value.source.stops as IettStaticSourceArtifact,
+          transit,
+          ...(schedules === undefined ? {} : { schedules }),
+        },
     counts: value.counts as IettStaticManifest['counts'],
     files,
     indexes: { directory: 'directory.json.gz', lines, stops },

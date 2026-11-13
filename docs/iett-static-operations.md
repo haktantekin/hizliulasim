@@ -7,7 +7,7 @@ The public bus catalogue uses a separate immutable package for lines, stops, pla
 The package serves these public features without an İETT request on each visit:
 
 - bus-line list, search, and line metadata;
-- planned departures downloaded from İETT for every line;
+- planned departures derived from verified GTFS connection shards;
 - ordered route stops and direction-aware route geometry;
 - stop detail, passing lines, and nearest-stop lookup;
 - bus entries in site search, sitemap, and IndexNow.
@@ -25,14 +25,14 @@ versions/<version>/lines/<sha256(line-code)>.json.gz
 versions/<version>/stops/<sha256(stop-code)>.json.gz
 ```
 
-Schema 2 line shards contain `schedules`, ordered `stops`, and at most one `D` and one `G` path. Exact geometry comes from the matching verified transit shape. When no exact shape exists, the producer stores an explicitly `approximate` path made from the ordered İETT stops.
+Schema 3 manifests use transit-only provenance. Their schema 2 line shards contain `schedules`, ordered `stops`, and at most one `D` and one `G` path. Exact geometry comes from the selected verified transit shape. When no exact shape exists, the producer stores an explicitly `approximate` path made from selected GTFS stops.
 
 Every pointer identifies a manifest SHA-256. The manifest inventories every gzip shard with its exact byte count and SHA-256. It also records:
 
-- the bulk line and stop SOAP artifacts;
-- one bounded schedule artifact per exact line code;
-- the verified transit-package pointer used for route geometry;
+- the verified transit-package pointer used for every derived field;
 - total line, stop, schedule, line-stop, and path counts.
+
+Schema 3 rejects legacy SOAP provenance fields.
 
 The frontend validates the pointer, manifest, provenance, gzip member, and payload contract. A broken current package causes the complete request to retry against `previous.json`; current and previous shards are never mixed. If neither package is valid, public static routes return `503 {"error":"DATA_UNAVAILABLE"}` and do not contact İETT.
 
@@ -59,30 +59,26 @@ Run **Toplu Ulaşım Veri Eşitleme** once a week and after a known İETT timeta
 
 The bus stages are:
 
-1. bulk line download;
-2. bulk stop download;
-3. line and stop normalization;
-4. per-line planned-departure download in bounded batches;
-5. exact or approximate route-path derivation;
-6. schema-2 staging;
-7. full validation;
-8. atomic publication.
+1. derive the public bus catalogue from the active verified GTFS snapshot;
+2. write schema 2 payload shards under a schema 3 manifest;
+3. validate the complete immutable package;
+4. publish the pointer atomically.
 
-The panel shows the durable timetable cursor as `completed lines / total lines` and the number of parsed departures. It is normal for this phase to require many background worker invocations. **Sürdür** resumes from the saved cursor and reuses already verified artifacts; it does not restart completed lines.
+After a successful main sync, these stages run automatically. To rebuild only the bus companion package from the already active transit version, use **Otobüs paketini oluştur**. That action does not download or rebuild GTFS and makes zero İETT SOAP requests. **Sürdür** resumes from the saved phase.
 
 Cancellation is safe before publication: the worker receives a cancellation marker, the unpublished work tree is cleaned, and `current.json` remains unchanged. Cancellation is disabled during bus publication. Never delete an active work directory or hand-edit a checkpoint.
 
-## First schema-2 production run
+## First schema-3 production run
 
 Deploy the CMS producer first, then start one complete sync. Before deploying or enabling the new frontend reader, verify all of the following:
 
-- the panel reaches `Tamamlandı` and the timetable cursor equals its total;
-- the active bus manifest has `schemaVersion: 2`;
-- `source.schedules` contains one unique entry for every line in the line index;
+- the panel reaches `Tamamlandı`;
+- the active bus manifest has `schemaVersion: 3`;
+- `source` has exactly one key, `transit`, matching the verified active transit pointer;
 - counts for `lines`, `stops`, `schedules`, and `paths` are nonzero and plausible;
 - representative D/G line shards contain planned departures and geometry;
 - `current.json` and its manifest are accessible over the exact production HTTPS origin;
-- a previous schema-1 package, if present, remains readable until schema 2 publishes.
+- previous schema-1/2 packages remain readable until schema 3 publishes.
 
 Only after those checks set `IETT_STATIC_BASE_URL` and deploy the frontend. This order prevents a frontend deployment from depending on a package that does not yet exist.
 
@@ -114,9 +110,11 @@ CMS focused checks, from a shell with the repository mounted at `/app`:
 ```sh
 php tests/transit-data-iett-static-source.test.php
 php tests/transit-data-iett-static-materializer.test.php
+php tests/transit-data-iett-static-gtfs-catalog.test.php
 php tests/transit-data-iett-static-publisher.test.php
 php tests/transit-data-checkpoint.test.php
+php tests/transit-data-iett-static-checkpoint.test.php
 php tests/transit-data-sync-admin.test.php
 ```
 
-Fixture tests prove contracts and recovery behavior; they do not prove the live host's filesystem atomicity, cache headers, source availability, or first real schema-2 package. Record those checks separately during the production run.
+Fixture tests prove contracts and recovery behavior; they do not prove the live host's filesystem atomicity, cache headers, or first real schema-3 package. Record those checks separately during the production run.

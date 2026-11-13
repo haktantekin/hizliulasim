@@ -89,6 +89,7 @@ interface VersionOptions {
   linePayloadOverride?: unknown;
   expandedDirectoryBytes?: Buffer;
   corruptLineHash?: boolean;
+  schemaThree?: boolean;
 }
 
 async function stageVersion(root: string, version: string, options: VersionOptions = {}) {
@@ -96,17 +97,30 @@ async function stageVersion(root: string, version: string, options: VersionOptio
   const lineName = options.lineName ?? `HAT ${version}`;
   const stopCode = options.stopCode ?? '1';
   const directory = {
-    schemaVersion: 1,
+    schemaVersion: options.schemaThree ? 2 : 1,
     generatedAt: '2026-11-13T09:00:00+03:00',
     lines: [lineRecord(lineCode, lineName)],
     stops: [stopPayload(stopCode, lineCode, lineName).stop],
   };
+  const selectedLinePayload = options.linePayloadOverride ?? linePayload(lineCode, lineName);
+  const lineData = options.schemaThree && options.linePayloadOverride === undefined
+    ? {
+        ...selectedLinePayload,
+        schemaVersion: 2,
+        paths: [{
+          direction: 'D', quality: 'exact',
+          coordinates: [[40.992889, 29.024045], [41.001, 29.031]],
+        }],
+      }
+    : selectedLinePayload;
+  const stopData = {
+    ...stopPayload(stopCode, lineCode, lineName),
+    ...(options.schemaThree ? { schemaVersion: 2 } : {}),
+  };
   const payloads: Record<string, Buffer> = {
     'directory.json.gz': gzipSync(options.expandedDirectoryBytes ?? Buffer.from(JSON.stringify(directory))),
-    [`lines/${sha256(lineCode)}.json.gz`]: gzipSync(JSON.stringify(
-      options.linePayloadOverride ?? linePayload(lineCode, lineName),
-    )),
-    [`stops/${sha256(stopCode)}.json.gz`]: gzipSync(JSON.stringify(stopPayload(stopCode, lineCode, lineName))),
+    [`lines/${sha256(lineCode)}.json.gz`]: gzipSync(JSON.stringify(lineData)),
+    [`stops/${sha256(stopCode)}.json.gz`]: gzipSync(JSON.stringify(stopData)),
   };
   const files = Object.fromEntries(Object.entries(payloads).map(([path, bytes]) => [
     path,
@@ -114,11 +128,13 @@ async function stageVersion(root: string, version: string, options: VersionOptio
   ]));
   if (options.corruptLineHash) files[`lines/${sha256(lineCode)}.json.gz`].sha256 = '0'.repeat(64);
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: options.schemaThree ? 3 : 1,
     version,
     generatedAt: '2026-11-13T09:00:00+03:00',
     serviceDateRange: { start: '2026-11-13', end: '2027-05-31' },
-    source: {
+    source: options.schemaThree ? {
+      transit: { version: 'transit_v1', manifestSha256: '3'.repeat(64) },
+    } : {
       lines: {
         url: 'https://api.ibb.gov.tr/iett/UlasimAnaVeri/HatDurakGuzergah.asmx',
         retrievedAt: '2026-11-13T08:50:00+03:00', bytes: 1024, sha256: '1'.repeat(64),
@@ -129,7 +145,9 @@ async function stageVersion(root: string, version: string, options: VersionOptio
       },
       transit: { version: 'transit_v1', manifestSha256: '3'.repeat(64) },
     },
-    counts: { lines: 1, schedules: 1, lineStops: 1, stops: 1 },
+    counts: options.schemaThree
+      ? { lines: 1, schedules: 1, lineStops: 1, stops: 1, paths: 1 }
+      : { lines: 1, schedules: 1, lineStops: 1, stops: 1 },
     files,
     indexes: {
       directory: 'directory.json.gz',
@@ -190,6 +208,16 @@ test('loads the current directory, normalized line code, and stop code from one 
   assert.equal((await loadIettStaticDirectory()).data.lines[0].SHATKODU, '15ÇK');
   assert.equal((await loadIettStaticLine(' 15çk '))?.data.line.SHATKODU, '15ÇK');
   assert.equal((await loadIettStaticStop('1'))?.data.stop.SDPICARETNO, '1');
+});
+
+test('loads schema 3 manifest with schema 2 route payloads from GTFS-only provenance', async (t) => {
+  const root = await setupStorage(t);
+  await writePointer(root, 'current', await stageVersion(root, 'current_v3', { schemaThree: true }));
+
+  const active = await loadActiveIettStaticPackage();
+  assert.equal(active.manifest.schemaVersion, 3);
+  assert.deepEqual(Object.keys(active.manifest.source), ['transit']);
+  assert.equal((await loadIettStaticLine('1'))?.data.paths?.[0]?.quality, 'exact');
 });
 
 test('falls back as a whole when the current line shard hash is corrupt', async (t) => {

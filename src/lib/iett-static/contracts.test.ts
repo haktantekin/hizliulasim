@@ -114,6 +114,16 @@ function manifestV2Fixture() {
   };
 }
 
+function manifestV3Fixture() {
+  const fixture = manifestFixture();
+  return {
+    ...fixture,
+    schemaVersion: 3,
+    source: { transit: fixture.source.transit },
+    counts: { ...fixture.counts, paths: 1 },
+  };
+}
+
 const routePath = {
   direction: 'D' as const,
   quality: 'exact' as const,
@@ -168,6 +178,16 @@ test('validates manifest inventory, provenance, counts, and hashed indexes', () 
   const duplicateSchedule = manifestV2Fixture();
   duplicateSchedule.source.schedules.push({ ...duplicateSchedule.source.schedules[0] });
   assert.throws(() => parseIettStaticManifest(duplicateSchedule));
+
+  const gtfsOnly = parseIettStaticManifest(manifestV3Fixture());
+  assert.equal(gtfsOnly.schemaVersion, 3);
+  assert.deepEqual(Object.keys(gtfsOnly.source), ['transit']);
+
+  const schemaThreeWithSoap = manifestV3Fixture() as ReturnType<typeof manifestV3Fixture> & {
+    source: ReturnType<typeof manifestV3Fixture>['source'] & { lines?: unknown };
+  };
+  schemaThreeWithSoap.source.lines = manifestFixture().source.lines;
+  assert.throws(() => parseIettStaticManifest(schemaThreeWithSoap));
 });
 
 test('parses a directory with unique legacy-compatible line records', () => {
