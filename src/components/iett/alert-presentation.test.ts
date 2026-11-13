@@ -15,6 +15,7 @@ test('extracts a valid update time without exposing the source label', () => {
 
 test('builds an encoded bus-line link from a safe normalized line code', () => {
   assert.equal(buildIettLineHref(' 11ÜS '), '/otobus-hatlari/11%C3%BCs');
+  assert.equal(buildIettLineHref('GENEL'), null);
   assert.equal(buildIettLineHref('../1'), null);
 });
 

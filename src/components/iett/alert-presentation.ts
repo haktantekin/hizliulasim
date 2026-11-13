@@ -30,7 +30,9 @@ export function extractIettAlertTime(value: string): string | null {
 
 export function buildIettLineHref(lineCode: string): string | null {
   const code = normalizedLineCode(lineCode);
-  return code === null ? null : `/otobus-hatlari/${encodeURIComponent(code.toLocaleLowerCase('tr-TR'))}`;
+  return code === null || code === 'GENEL'
+    ? null
+    : `/otobus-hatlari/${encodeURIComponent(code.toLocaleLowerCase('tr-TR'))}`;
 }
 
 export function buildIettLineAlertsEndpoint(lineCode: string): string | null {

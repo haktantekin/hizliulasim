@@ -2,7 +2,7 @@ import { normalizeIettStaticCode } from '../lib/iett-static/contracts.ts';
 import { repairTurkishMojibake } from '../lib/textEncoding.ts';
 import type { IETTDuyuru } from '../types/iett.ts';
 
-const defaultEndpoint = 'https://cms.hizliulasim.com/wp-json/hizliulasim/v1/iett-alerts';
+const defaultEndpoint = 'https://cms.hizliulasim.com/wp-json/hizliulasim/v1/iett-alerts?consumer=web-v2';
 const maxAlerts = 500;
 const maxBodyBytes = 2 * 1024 * 1024;
 const requestTimeoutMs = 10_000;
@@ -93,6 +93,16 @@ export function sortIettAlertsByRecency(alerts: readonly IETTDuyuru[], reference
     .map(({ alert }) => alert);
 }
 
+function deduplicateAnnouncements(alerts: readonly IETTDuyuru[]): IETTDuyuru[] {
+  const seen = new Set<string>();
+  return alerts.filter((alert) => {
+    const identity = `${alert.GUNCELLEME_SAATI}\u0000${alert.MESAJ}`;
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
+}
+
 function istanbulMinutes(date: Date): number {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', hour12: false,
@@ -139,8 +149,9 @@ export async function getIettAlerts(
       ? parsed.data
       : parsed.data.filter((alert) => alert.HATKODU === normalizedLine);
     const sorted = sortIettAlertsByRecency(filtered, istanbulMinutes((dependencies.now ?? (() => new Date()))()));
-    const limit = query.limit === undefined ? sorted.length : Math.max(0, Math.min(20, Math.trunc(query.limit)));
-    return { data: sorted.slice(0, limit), metadata: parsed.metadata };
+    const visible = query.lineCode === undefined ? deduplicateAnnouncements(sorted) : sorted;
+    const limit = query.limit === undefined ? visible.length : Math.max(0, Math.min(20, Math.trunc(query.limit)));
+    return { data: visible.slice(0, limit), metadata: parsed.metadata };
   } catch (error) {
     if (error instanceof IettAlertsUnavailableError) throw error;
     throw new IettAlertsUnavailableError();

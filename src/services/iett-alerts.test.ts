@@ -73,6 +73,36 @@ test('uses exact normalized line matching and applies the requested limit after 
   assert.equal(result.metadata.source, 'stale');
 });
 
+test('deduplicates a multi-line announcement globally but preserves exact line filtering', async () => {
+  const shared = {
+    GUNCELLEME_SAATI: '10 Kasım 2026',
+    MESAJ: '78E, 78F ve 78K Hatlarımız Hakkında',
+  };
+  const payload = {
+    data: [alert('78E', '10:00', shared), alert('78F', '10:00', shared), alert('78K', '10:00', shared)],
+    status: 'current',
+    fetchedAt: '2026-11-13T13:00:00Z',
+  };
+
+  const globalResult = await getIettAlerts({}, { fetcher: () => cmsResponse(payload) });
+  const lineResult = await getIettAlerts({ lineCode: '78F' }, { fetcher: () => cmsResponse(payload) });
+
+  assert.deepEqual(globalResult.data.map((item) => item.HATKODU), ['78E']);
+  assert.deepEqual(lineResult.data.map((item) => item.HATKODU), ['78F']);
+});
+
+test('uses a versioned default CMS URL so an old edge-cached 404 is not reused', async () => {
+  let requested = '';
+  await getIettAlerts({}, {
+    fetcher: (input) => {
+      requested = String(input);
+      return cmsResponse({ data: [], status: 'current', fetchedAt: '2026-11-13T13:00:00Z' });
+    },
+  });
+
+  assert.equal(new URL(requested).searchParams.get('consumer'), 'web-v2');
+});
+
 test('does not broaden an invalid line-code filter to every alert', async () => {
   const result = await getIettAlerts({ lineCode: '../1' }, {
     fetcher: () => cmsResponse({
