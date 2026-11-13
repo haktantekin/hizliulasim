@@ -14,6 +14,7 @@ function alert(lineCode: string, time: string, changes: Partial<IETTDuyuru> = {}
     TIP: 'Günlük',
     GUNCELLEME_SAATI: `Kayit Saati: ${time}`,
     MESAJ: `${lineCode} için güzergâh değişikliği.`,
+    KAYNAK_URL: null,
     ...changes,
   };
 }
@@ -31,6 +32,7 @@ test('validates and repairs the CMS alert envelope before exposing it', async ()
       data: [alert('11G', '16:07', {
         HAT: 'NECÄ°P FAZIL METRO - YENÄ°DOÄžAN',
         MESAJ: '  Yol   çalışması nedeniyle\n güzergâh değişti.  ',
+        KAYNAK_URL: 'https://www.iett.istanbul/Announcement/Detail/3350',
       })],
       status: 'current',
       fetchedAt: '2026-11-13T13:10:00Z',
@@ -40,6 +42,7 @@ test('validates and repairs the CMS alert envelope before exposing it', async ()
 
   assert.equal(result.data[0].HAT, 'NECİP FAZIL METRO - YENİDOĞAN');
   assert.equal(result.data[0].MESAJ, 'Yol çalışması nedeniyle güzergâh değişti.');
+  assert.equal(result.data[0].KAYNAK_URL, 'https://www.iett.istanbul/Announcement/Detail/3350');
   assert.deepEqual(result.metadata, {
     source: 'current',
     fetchedAt: '2026-11-13T13:10:00Z',
@@ -58,15 +61,20 @@ test('sorts update times by recency across Istanbul midnight and keeps unparseab
 });
 
 test('uses exact normalized line matching and applies the requested limit after sorting', async () => {
+  let requested = '';
   const result = await getIettAlerts({ lineCode: ' 1 ', limit: 1 }, {
-    fetcher: () => cmsResponse({
-      data: [alert('10B', '16:20'), alert('1', '15:10'), alert('1', '16:10')],
-      status: 'stale',
-      fetchedAt: '2026-11-13T13:00:00Z',
-    }),
+    fetcher: (input) => {
+      requested = String(input);
+      return cmsResponse({
+        data: [alert('10B', '16:20'), alert('1', '15:10'), alert('1', '16:10')],
+        status: 'stale',
+        fetchedAt: '2026-11-13T13:00:00Z',
+      });
+    },
     now: () => new Date('2026-11-13T13:30:00Z'),
   });
 
+  assert.equal(new URL(requested).searchParams.get('hatKodu'), '1');
   assert.equal(result.data.length, 1);
   assert.equal(result.data[0].HATKODU, '1');
   assert.equal(result.data[0].GUNCELLEME_SAATI, 'Kayit Saati: 16:10');

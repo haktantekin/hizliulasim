@@ -6,6 +6,7 @@ import type { IETTDuyuru } from '@/types/iett';
 import {
   buildIettLineAlertsEndpoint,
   extractIettAlertTime,
+  getIettAlertDetail,
   parseIettAlertList,
 } from './alert-presentation';
 
@@ -51,6 +52,7 @@ export default function IettLineAlerts({ lineCode }: { lineCode: string }) {
       <div className="divide-y divide-orange-200/80">
         {alerts.map((alert, index) => {
           const time = extractIettAlertTime(alert.GUNCELLEME_SAATI);
+          const detail = getIettAlertDetail(alert);
           return (
             <article key={`${alert.GUNCELLEME_SAATI}-${index}`} className="px-4 py-3">
               <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
@@ -62,7 +64,10 @@ export default function IettLineAlerts({ lineCode }: { lineCode: string }) {
                   </span>
                 )}
               </div>
-              <p className="text-sm leading-6 text-gray-800">{alert.MESAJ}</p>
+              <h3 className="text-sm font-bold leading-6 text-brand-dark-blue">{alert.HAT}</h3>
+              {detail && (
+                <p className="mt-1 text-sm leading-6 text-gray-800">{detail}</p>
+              )}
             </article>
           );
         })}

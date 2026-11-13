@@ -7,6 +7,7 @@ const result: IettAlertsResult = {
   data: [{
     HATKODU: '1', HAT: 'KİRAZLITEPE - KADIKÖY', TIP: 'Günlük',
     GUNCELLEME_SAATI: 'Kayit Saati: 16:10', MESAJ: 'Güzergâh değişikliği.',
+    KAYNAK_URL: null,
   }],
   metadata: { source: 'stale', fetchedAt: '2026-11-13T13:00:00Z' },
 };

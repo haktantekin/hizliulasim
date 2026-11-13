@@ -5,7 +5,7 @@ import { AlertTriangle, Clock3 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { IETTDuyuru } from '@/types/iett';
 import {
-  buildIettLineHref,
+  buildIettAlertDestination,
   extractIettAlertTime,
   parseIettAlertList,
   summarizeIettAlertMessage,
@@ -50,7 +50,8 @@ export default function IettAlertBar() {
   if (alerts.length === 0) return null;
 
   const active = alerts[activeIndex % alerts.length];
-  const lineHref = buildIettLineHref(active.HATKODU);
+  const destination = buildIettAlertDestination(active);
+  const lineHref = destination?.external === false ? destination.href : null;
   const time = extractIettAlertTime(active.GUNCELLEME_SAATI);
 
   return (
@@ -86,9 +87,21 @@ export default function IettAlertBar() {
           </Link>
         )}
 
-        <span aria-live="off" className="min-w-0 flex-1 truncate text-white/90">
-          {summarizeIettAlertMessage(active.MESAJ)}
-        </span>
+        {destination?.external ? (
+          <a
+            href={destination.href}
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            aria-live="off"
+            className="min-w-0 flex-1 truncate text-white/90 underline-offset-2 hover:underline"
+          >
+            {summarizeIettAlertMessage(active.MESAJ)}
+          </a>
+        ) : (
+          <span aria-live="off" className="min-w-0 flex-1 truncate text-white/90">
+            {summarizeIettAlertMessage(active.MESAJ)}
+          </span>
+        )}
 
         {alerts.length > 1 && (
           <span className="hidden shrink-0 items-center gap-1 sm:flex" aria-label={`${activeIndex + 1} / ${alerts.length}`}>

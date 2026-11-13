@@ -39,6 +39,7 @@ export interface IETTDuyuru {
   TIP: string;
   GUNCELLEME_SAATI: string;
   MESAJ: string;
+  KAYNAK_URL: string | null;
 }
 
 export interface IETTHatOtoKonum {

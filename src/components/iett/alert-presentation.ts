@@ -1,6 +1,7 @@
 import type { IETTDuyuru } from '@/types/iett';
 
-const alertKeys = ['GUNCELLEME_SAATI', 'HAT', 'HATKODU', 'MESAJ', 'TIP'] as const;
+const alertKeys = ['GUNCELLEME_SAATI', 'HAT', 'HATKODU', 'KAYNAK_URL', 'MESAJ', 'TIP'] as const;
+const legacyAlertKeys = ['GUNCELLEME_SAATI', 'HAT', 'HATKODU', 'MESAJ', 'TIP'] as const;
 const lineCodePattern = /^[0-9A-ZÇĞİÖŞÜ-]{1,32}$/u;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -12,16 +13,39 @@ function normalizedLineCode(value: string): string | null {
   return lineCodePattern.test(code) ? code : null;
 }
 
-function isAlert(value: unknown): value is IETTDuyuru {
-  if (!isRecord(value)) return false;
+function officialDetailUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'www.iett.istanbul' && !url.port
+      && !url.username && !url.password && !url.search && !url.hash
+      && /^\/Announcement\/Detail\/[0-9]{1,10}$/u.test(url.pathname)
+      ? url.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseAlert(value: unknown): IETTDuyuru | null {
+  if (!isRecord(value)) return null;
   const keys = Object.keys(value).sort();
-  if (keys.length !== alertKeys.length || keys.some((key, index) => key !== alertKeys[index])) return false;
-  return alertKeys.every((key) => typeof value[key] === 'string' && (value[key] as string).trim().length > 0)
-    && normalizedLineCode(value.HATKODU as string) !== null;
+  const isCurrent = keys.length === alertKeys.length && keys.every((key, index) => key === alertKeys[index]);
+  const isLegacy = keys.length === legacyAlertKeys.length && keys.every((key, index) => key === legacyAlertKeys[index]);
+  if (!isCurrent && !isLegacy) return null;
+  if (!legacyAlertKeys.every((key) => typeof value[key] === 'string' && (value[key] as string).trim().length > 0)
+    || normalizedLineCode(value.HATKODU as string) === null) return null;
+  const sourceUrl = value.KAYNAK_URL === null || value.KAYNAK_URL === undefined
+    ? null
+    : officialDetailUrl(value.KAYNAK_URL);
+  if (value.KAYNAK_URL !== null && value.KAYNAK_URL !== undefined && sourceUrl === null) return null;
+  return { ...value, KAYNAK_URL: sourceUrl } as IETTDuyuru;
 }
 
 export function parseIettAlertList(value: unknown): IETTDuyuru[] | null {
-  return Array.isArray(value) && value.length <= 20 && value.every(isAlert) ? value : null;
+  if (!Array.isArray(value) || value.length > 20) return null;
+  const alerts = value.map(parseAlert);
+  return alerts.every((alert) => alert !== null) ? alerts as IETTDuyuru[] : null;
 }
 
 export function extractIettAlertTime(value: string): string | null {
@@ -40,9 +64,22 @@ export function buildIettLineAlertsEndpoint(lineCode: string): string | null {
   return code === null ? null : `/api/iett/duyurular?hatKodu=${encodeURIComponent(code)}&limit=20`;
 }
 
+export function buildIettAlertDestination(alert: IETTDuyuru): { href: string; external: boolean } | null {
+  const localHref = buildIettLineHref(alert.HATKODU);
+  if (localHref !== null) return { href: localHref, external: false };
+  const externalHref = officialDetailUrl(alert.KAYNAK_URL);
+  return externalHref === null ? null : { href: externalHref, external: true };
+}
+
 export function summarizeIettAlertMessage(message: string, maximum = 140): string {
   const compact = message.trim().replace(/\s+/gu, ' ');
   if (compact.length <= maximum) return compact;
   if (maximum <= 1) return '…'.slice(0, maximum);
   return `${compact.slice(0, maximum - 1).trimEnd()}…`;
+}
+
+export function getIettAlertDetail(alert: IETTDuyuru): string | null {
+  const title = alert.HAT.trim().replace(/\s+/gu, ' ');
+  const detail = alert.MESAJ.trim().replace(/\s+/gu, ' ');
+  return detail === title ? null : alert.MESAJ;
 }

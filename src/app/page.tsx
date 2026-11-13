@@ -8,6 +8,7 @@ import HospitalPostsRow from "@/components/home/HospitalPostsRow";
 import OfficialOfficesPostsRow from "@/components/home/OfficialOfficesPostsRow";
 import MuseumPostsRow from "@/components/home/MuseumPostsRow";
 import TransitStructuresPostsRow from "@/components/home/TransitStructuresPostsRow";
+import IettLatestNews from "@/components/home/IettLatestNews";
 import type { Metadata } from 'next';
 import { fetchPageSeoBySlug } from '@/services/wordpress';
 import StructuredData from '@/components/seo/StructuredData';
@@ -193,6 +194,10 @@ export default function Home() {
 
       <div className="mt-4">
         <TrafficIndex />
+      </div>
+
+      <div className="mt-6">
+        <IettLatestNews />
       </div>
 
       <div className="mt-6">

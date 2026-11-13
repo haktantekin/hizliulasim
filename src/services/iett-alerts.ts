@@ -48,15 +48,40 @@ function normalizedText(value: unknown, maximum: number): string | null {
   return text;
 }
 
+function normalizedSourceUrl(value: unknown): string | null | false {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value !== 'string' || value.length > 160) return false;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.hostname !== 'www.iett.istanbul' || url.port
+      || url.username || url.password || url.search || url.hash
+      || !/^\/Announcement\/Detail\/[0-9]{1,10}$/u.test(url.pathname)) return false;
+    return url.href;
+  } catch {
+    return false;
+  }
+}
+
 function parseAlert(value: unknown): IETTDuyuru | null {
-  if (!isRecord(value) || !hasExactKeys(value, ['HATKODU', 'HAT', 'TIP', 'GUNCELLEME_SAATI', 'MESAJ'])) return null;
+  if (!isRecord(value)
+    || (!hasExactKeys(value, ['HATKODU', 'HAT', 'TIP', 'GUNCELLEME_SAATI', 'MESAJ'])
+      && !hasExactKeys(value, ['HATKODU', 'HAT', 'TIP', 'GUNCELLEME_SAATI', 'MESAJ', 'KAYNAK_URL']))) return null;
   const lineCode = typeof value.HATKODU === 'string' ? normalizeIettStaticCode(value.HATKODU) : null;
   const lineName = normalizedText(value.HAT, 256);
   const type = normalizedText(value.TIP, 64);
   const updatedAt = normalizedText(value.GUNCELLEME_SAATI, 128);
   const message = normalizedText(value.MESAJ, 4096);
-  if (lineCode === null || lineName === null || type === null || updatedAt === null || message === null) return null;
-  return { HATKODU: lineCode, HAT: lineName, TIP: type, GUNCELLEME_SAATI: updatedAt, MESAJ: message };
+  const sourceUrl = normalizedSourceUrl(value.KAYNAK_URL);
+  if (lineCode === null || lineName === null || type === null || updatedAt === null || message === null
+    || sourceUrl === false) return null;
+  return {
+    HATKODU: lineCode,
+    HAT: lineName,
+    TIP: type,
+    GUNCELLEME_SAATI: updatedAt,
+    MESAJ: message,
+    KAYNAK_URL: sourceUrl,
+  };
 }
 
 function parseEnvelope(value: unknown): IettAlertsResult {
@@ -112,10 +137,11 @@ function istanbulMinutes(date: Date): number {
   return hour * 60 + minute;
 }
 
-function alertsEndpoint(configured?: string): string {
+function alertsEndpoint(configured?: string, lineCode?: string): string {
   try {
     const url = new URL(configured?.trim() || process.env.IETT_ALERTS_CMS_URL?.trim() || defaultEndpoint);
     if (url.protocol !== 'https:' || url.username || url.password || url.hash) throw new Error('unsafe');
+    if (lineCode !== undefined) url.searchParams.set('hatKodu', lineCode);
     return url.href;
   } catch {
     throw new IettAlertsUnavailableError();
@@ -127,10 +153,14 @@ export async function getIettAlerts(
   dependencies: IettAlertsDependencies = {},
 ): Promise<IettAlertsResult> {
   const fetcher = dependencies.fetcher ?? fetch;
+  const normalizedLine = query.lineCode === undefined ? null : normalizeIettStaticCode(query.lineCode);
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), requestTimeoutMs);
   try {
-    const response = await fetcher(alertsEndpoint(dependencies.endpoint), {
+    const response = await fetcher(alertsEndpoint(
+      dependencies.endpoint,
+      normalizedLine ?? undefined,
+    ), {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: abort.signal,
@@ -141,7 +171,6 @@ export async function getIettAlerts(
     const text = await response.text();
     if (Buffer.byteLength(text, 'utf8') > maxBodyBytes) throw new IettAlertsUnavailableError();
     const parsed = parseEnvelope(JSON.parse(text) as unknown);
-    const normalizedLine = query.lineCode === undefined ? null : normalizeIettStaticCode(query.lineCode);
     if (query.lineCode !== undefined && normalizedLine === null) {
       return { data: [], metadata: parsed.metadata };
     }
