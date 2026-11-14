@@ -9,6 +9,7 @@ import { rankRecommendations } from '../../../../lib/recommendations/rank.ts';
 import { canonicalizeRouteCoordinates } from '../../../../lib/transit/route-search-area.ts';
 
 const ISTANBUL_CENTER: RecommendationLocation = { latitude: 41.0082, longitude: 28.9784 };
+const ISTANBUL_TAG = 'istanbul';
 
 export interface DailyRecommendationsHandlerDeps {
   loadSource(): Promise<RecommendationSource | null>;
@@ -44,6 +45,7 @@ export function createDailyRecommendationsHandler(deps: DailyRecommendationsHand
       overrides: source.overrides,
       weather,
       calendar,
+      cityTag: ISTANBUL_TAG,
       ...(location ? { location } : {}),
       now,
     }) : [];

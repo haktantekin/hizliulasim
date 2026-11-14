@@ -26,6 +26,7 @@ test('retries an empty CMS snapshot, then keeps the populated snapshot locally',
             href: '/ulasim-rehberi/avmler/capitol-avm',
             image: null,
             category: { slug: 'avmler', name: 'AVMler', parentSlug: 'ulasim-rehberi' },
+            tags: ['istanbul'],
             profile: {
               enabled: true,
               venueMode: 'indoor',
@@ -48,7 +49,7 @@ test('retries an empty CMS snapshot, then keeps the populated snapshot locally',
   const second = await fetchRecommendationSource(fetchImpl);
   const third = await fetchRecommendationSource(fetchImpl);
 
-  assert.match(requestedUrl, /\/hizliulasim\/v1\/daily-recommendations\?v=20261113-2-[0-9]+$/u);
+  assert.match(requestedUrl, /\/hizliulasim\/v1\/daily-recommendations\?v=20261114-1-[0-9]+$/u);
   assert.equal(requestedInit?.cache, 'no-store');
   assert.equal(requestCount, 2);
   assert.deepEqual(first?.candidates, []);

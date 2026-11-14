@@ -10,6 +10,7 @@ const validCandidate = {
   href: '/ulasim-rehberi/muzeler/istanbul-oyuncak-muzesi',
   image: { url: 'https://cms.hizliulasim.com/uploads/muze.jpg', alt: 'Oyuncak Müzesi' },
   category: { slug: 'muzeler', name: 'Müzeler', parentSlug: 'ulasim-rehberi' },
+  tags: ['istanbul', 'kultur'],
   profile: {
     enabled: true,
     venueMode: 'indoor',
@@ -41,6 +42,14 @@ const validPayload = {
 
 test('geçerli CMS öneri sözleşmesini güvenli tiplere dönüştürür', () => {
   assert.deepEqual(parseRecommendationSource(validPayload), validPayload);
+});
+
+test('etiketsiz eski CMS adayını uyumluluk için boş etiket listesiyle kabul eder', () => {
+  const candidateWithoutTags: Partial<typeof validCandidate> = structuredClone(validCandidate);
+  delete candidateWithoutTags.tags;
+  const parsed = parseRecommendationSource({ ...validPayload, candidates: [candidateWithoutTags] });
+
+  assert.deepEqual(parsed.candidates[0]?.tags, []);
 });
 
 test('bozuk adayları bağımsız atar ve yinelenen içerikte ilk geçerli kaydı korur', () => {

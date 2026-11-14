@@ -17,6 +17,7 @@ const candidates: RecommendationCandidate[] = [
     href: '/ulasim-rehberi/muzeler/istanbul-oyuncak-muzesi',
     image: null,
     category: { slug: 'muzeler', name: 'Müzeler', parentSlug: 'ulasim-rehberi' },
+    tags: ['istanbul'],
     profile: {
       enabled: true,
       venueMode: 'indoor',
@@ -38,6 +39,7 @@ const candidates: RecommendationCandidate[] = [
     href: '/ulasim-rehberi/korular/ataturk-kent-ormani',
     image: null,
     category: { slug: 'korular', name: 'Korular', parentSlug: 'ulasim-rehberi' },
+    tags: ['istanbul'],
     profile: {
       enabled: true,
       venueMode: 'outdoor',

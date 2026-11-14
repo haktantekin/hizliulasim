@@ -22,6 +22,7 @@ const candidate: RecommendationCandidate = {
   href: '/ulasim-rehberi/muzeler/istanbul-oyuncak-muzesi',
   image: null,
   category: { slug: 'muzeler', name: 'Müzeler', parentSlug: 'ulasim-rehberi' },
+  tags: ['istanbul'],
   profile: {
     enabled: true,
     venueMode: 'indoor',

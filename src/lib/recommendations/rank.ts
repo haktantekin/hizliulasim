@@ -13,6 +13,7 @@ export interface RankRecommendationsInput {
   overrides: EditorialOverride[];
   weather: WeatherContext | null;
   calendar: CalendarContext;
+  cityTag?: string;
   location?: RecommendationLocation;
   now: Date;
 }
@@ -30,9 +31,12 @@ function distanceKm(left: RecommendationLocation, right: RecommendationLocation)
   return radiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function isEligible(candidate: RecommendationCandidate, calendar: CalendarContext): boolean {
+function isEligible(candidate: RecommendationCandidate, input: RankRecommendationsInput): boolean {
+  const beachTemperature = input.weather?.temperatureC;
   return candidate.profile.enabled
-    && (candidate.profile.seasonMonths.length === 0 || candidate.profile.seasonMonths.includes(calendar.month));
+    && (!input.cityTag || candidate.tags.includes(input.cityTag))
+    && (candidate.category.slug !== 'plajlar' || (typeof beachTemperature === 'number' && beachTemperature >= 30))
+    && (candidate.profile.seasonMonths.length === 0 || candidate.profile.seasonMonths.includes(input.calendar.month));
 }
 
 function weatherScore(candidate: RecommendationCandidate, weather: WeatherContext | null, calendar: CalendarContext): number {
@@ -112,7 +116,7 @@ function selectOverride(
     .sort((left, right) => right.priority - left.priority || right.id - left.id);
   for (const override of ordered) {
     const candidate = candidatesById.get(override.postId);
-    if (!candidate || used.has(candidate.id) || !isEligible(candidate, input.calendar)) continue;
+    if (!candidate || used.has(candidate.id) || !isEligible(candidate, input)) continue;
     if (slot === 'free' && candidate.profile.budget !== 'free') continue;
     return { candidate, override };
   }
@@ -126,7 +130,7 @@ function selectAutomatic(
 ): RecommendationCandidate | null {
   const candidates = input.candidates.filter((candidate) => (
     !used.has(candidate.id)
-    && isEligible(candidate, input.calendar)
+    && isEligible(candidate, input)
     && (slot !== 'free' || candidate.profile.budget === 'free')
     && (slot !== 'nearby' || !input.location || Boolean(candidate.location))
   ));

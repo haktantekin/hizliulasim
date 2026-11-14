@@ -2,7 +2,7 @@ import { parseRecommendationSource, type RecommendationSource } from './contract
 import { createRecommendationSourceCache } from './source-cache.ts';
 
 const DEFAULT_WORDPRESS_API = 'https://cms.hizliulasim.com/wp-json';
-const RECOMMENDATION_SOURCE_VERSION = '20261113-2';
+const RECOMMENDATION_SOURCE_VERSION = '20261114-1';
 const RECOMMENDATION_SOURCE_BUCKET_MS = 5 * 60 * 1_000;
 const sourceCache = createRecommendationSourceCache();
 

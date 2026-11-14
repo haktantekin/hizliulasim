@@ -32,6 +32,7 @@ export interface RecommendationCandidate {
   href: string;
   image: { url: string; alt: string } | null;
   category: { slug: string; name: string; parentSlug: string };
+  tags: string[];
   profile: RecommendationProfile;
   location?: RecommendationLocation;
 }
@@ -135,6 +136,18 @@ function readEnumList<T extends string>(value: unknown, allowed: readonly T[], m
   return result;
 }
 
+function readTagSlugs(value: unknown): string[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 50) return null;
+  const result: string[] = [];
+  for (const item of value) {
+    if (!isBoundedString(item, 100) || !/^[a-z0-9][a-z0-9_-]*$/u.test(item)) return null;
+    const normalized = item.toLowerCase();
+    if (!result.includes(normalized)) result.push(normalized);
+  }
+  return result;
+}
+
 function parseLocation(value: unknown): RecommendationLocation | undefined {
   if (!isRecord(value)) return undefined;
   if (!isFiniteRange(value.latitude, 40.5, 42) || !isFiniteRange(value.longitude, 27, 30.5)) return undefined;
@@ -170,6 +183,7 @@ function parseCandidate(value: unknown): RecommendationCandidate | null {
   const categorySlug = isBoundedString(value.category.slug, 100) ? value.category.slug.toLowerCase() : null;
   const categoryName = isBoundedString(value.category.name, 120) ? value.category.name : null;
   const parentSlug = isBoundedString(value.category.parentSlug, 100, true) ? value.category.parentSlug.toLowerCase() : null;
+  const tags = readTagSlugs(value.tags);
   const venueMode = readEnum(value.profile.venueMode, ['indoor', 'outdoor', 'mixed'] as const);
   const weatherFit = readEnumList(value.profile.weatherFit, ['rain', 'clear', 'hot', 'cold', 'wind_safe', 'windy'] as const, 6);
   const budget = readEnum(value.profile.budget, ['free', 'paid', 'unknown'] as const);
@@ -177,7 +191,7 @@ function parseCandidate(value: unknown): RecommendationCandidate | null {
   const durationBand = readEnum(value.profile.durationBand, ['short', 'half_day', 'full_day'] as const);
   const calendarTags = readEnumList(value.profile.calendarTags,
     ['republic_day', 'childrens_day', 'youth_day', 'victory_day', 'ataturk_memorial'] as const, 5);
-  if (!categorySlug || !categoryName || parentSlug === null || typeof value.profile.enabled !== 'boolean'
+  if (!categorySlug || !categoryName || parentSlug === null || !tags || typeof value.profile.enabled !== 'boolean'
     || !venueMode || !weatherFit || !budget || !audiences || !durationBand || !calendarTags
     || !Array.isArray(value.profile.seasonMonths) || value.profile.seasonMonths.length > 12
     || !value.profile.seasonMonths.every((month) => Number.isInteger(month) && month >= 1 && month <= 12)
@@ -194,6 +208,7 @@ function parseCandidate(value: unknown): RecommendationCandidate | null {
     href: value.href,
     image,
     category: { slug: categorySlug, name: categoryName, parentSlug },
+    tags,
     profile: {
       enabled: value.profile.enabled,
       venueMode,

@@ -21,6 +21,7 @@ function candidate(id: number, changes: Partial<RecommendationCandidate> = {}): 
     href: `/ulasim-rehberi/mekanlar/yer-${id}`,
     image: null,
     category: { slug: 'mekanlar', name: 'Mekânlar', parentSlug: 'ulasim-rehberi' },
+    tags: ['istanbul'],
     profile: {
       enabled: true,
       venueMode: 'mixed',
@@ -37,11 +38,11 @@ function candidate(id: number, changes: Partial<RecommendationCandidate> = {}): 
   };
 }
 
-function weather(tags: WeatherContext['tags']): WeatherContext {
+function weather(tags: WeatherContext['tags'], temperatureC = 15): WeatherContext {
   return {
     tags,
-    temperatureC: 15,
-    apparentTemperatureC: 15,
+    temperatureC,
+    apparentTemperatureC: temperatureC,
     precipitationProbability: tags.includes('rain') ? 80 : 5,
     windSpeedKmh: tags.includes('windy') ? 45 : 8,
     summary: tags.join(', '),
@@ -137,4 +138,47 @@ test('özel gün etiketi eşleşen adayı yükseltir ve aday azsa kopya kart ür
   assert.equal(cards[0]?.reasonCode, 'calendar');
   assert.equal(cards.length, 2);
   assert.equal(new Set(cards.map(({ candidate: item }) => item.id)).size, 2);
+});
+
+test('plajı 30 derecenin altında editör seçimi olsa bile eler, 30 derecede seçebilir', () => {
+  const beach = candidate(10, {
+    category: { slug: 'plajlar', name: 'Plajlar', parentSlug: 'ulasim-rehberi' },
+    profile: { ...candidate(10).profile, venueMode: 'outdoor', weatherFit: ['clear', 'hot'], editorialWeight: 100 },
+  });
+  const museum = candidate(11, {
+    category: { slug: 'muzeler', name: 'Müzeler', parentSlug: 'ulasim-rehberi' },
+  });
+  const overrides: EditorialOverride[] = [{
+    id: 50,
+    postId: beach.id,
+    slot: 'best',
+    startAt: '2026-11-13T00:00:00+03:00',
+    endAt: '2026-11-14T00:00:00+03:00',
+    priority: 100,
+    reason: 'Plaj günü.',
+  }];
+
+  const cool = rankRecommendations({
+    candidates: [beach, museum], overrides, weather: weather(['clear'], 29.9), calendar: ordinaryCalendar,
+    cityTag: 'istanbul', now: new Date('2026-11-13T09:00:00Z'),
+  });
+  const hot = rankRecommendations({
+    candidates: [beach, museum], overrides, weather: weather(['clear', 'hot'], 30), calendar: ordinaryCalendar,
+    cityTag: 'istanbul', now: new Date('2026-11-13T09:00:00Z'),
+  });
+
+  assert.ok(cool.every(({ candidate: item }) => item.id !== beach.id));
+  assert.equal(hot.find(({ slot }) => slot === 'best')?.candidate.id, beach.id);
+});
+
+test('önerileri WordPress il etiketiyle tam eşleşerek filtreler', () => {
+  const istanbul = candidate(20, { tags: ['istanbul'], profile: { ...candidate(20).profile, editorialWeight: 1 } });
+  const sanliurfa = candidate(21, { tags: ['sanliurfa'], profile: { ...candidate(21).profile, editorialWeight: 100 } });
+
+  const cards = rankRecommendations({
+    candidates: [sanliurfa, istanbul], overrides: [], weather: weather(['clear'], 22), calendar: ordinaryCalendar,
+    cityTag: 'istanbul', now: new Date('2026-11-13T09:00:00Z'),
+  });
+
+  assert.deepEqual(cards.map(({ candidate: item }) => item.id), [istanbul.id]);
 });
