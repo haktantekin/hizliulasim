@@ -75,6 +75,32 @@ export async function fetchWordPressJsonWithFreshRetry<T>({
 const CATEGORY_PAGE_SIZE = 50;
 const CATEGORY_FIELDS = 'id,name,slug,description,count,parent';
 
+async function readWordPressCategoryPage({
+  url,
+  fetchImpl,
+  requestInit,
+}: {
+  url: string;
+  fetchImpl: WordPressFetch;
+  requestInit?: RequestInit & { next?: { revalidate: number } };
+}): Promise<{ batch: WordPressCategoryRecord[]; totalPages: number }> {
+  const response = await fetchImpl(url, requestInit);
+  if (!response.ok) {
+    throw new Error(`WordPress categories request failed: ${response.status}`);
+  }
+
+  const payload: unknown = await response.json();
+  if (!Array.isArray(payload)) {
+    throw new Error('WordPress categories response is not an array');
+  }
+
+  const headerValue = Number.parseInt(response.headers.get('X-WP-TotalPages') || '1', 10);
+  return {
+    batch: payload as WordPressCategoryRecord[],
+    totalPages: Number.isSafeInteger(headerValue) && headerValue > 0 ? headerValue : 1,
+  };
+}
+
 export async function fetchAllWordPressCategories({
   endpoint,
   fetchImpl = fetch,
@@ -95,20 +121,22 @@ export async function fetchAllWordPressCategories({
       _fields: CATEGORY_FIELDS,
     });
     const separator = endpoint.includes('?') ? '&' : '?';
-    const response = await fetchImpl(`${endpoint}${separator}${query.toString()}`, requestInit);
+    const url = `${endpoint}${separator}${query.toString()}`;
+    let pageResult: { batch: WordPressCategoryRecord[]; totalPages: number };
 
-    if (!response.ok) {
-      throw new Error(`WordPress categories request failed: ${response.status}`);
+    try {
+      pageResult = await readWordPressCategoryPage({ url, fetchImpl, requestInit });
+    } catch {
+      const freshRequestInit: RequestInit & { next?: { revalidate: number } } = {
+        ...requestInit,
+        cache: 'no-store',
+      };
+      delete freshRequestInit.next;
+      pageResult = await readWordPressCategoryPage({ url, fetchImpl, requestInit: freshRequestInit });
     }
 
-    const batch: WordPressCategoryRecord[] = await response.json();
-    if (!Array.isArray(batch)) {
-      throw new Error('WordPress categories response is not an array');
-    }
-    categories.push(...batch);
-
-    const headerValue = Number.parseInt(response.headers.get('X-WP-TotalPages') || '1', 10);
-    totalPages = Number.isSafeInteger(headerValue) && headerValue > 0 ? headerValue : 1;
+    categories.push(...pageResult.batch);
+    totalPages = pageResult.totalPages;
   }
 
   return categories;

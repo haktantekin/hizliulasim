@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  fetchWordPressProxyPayload,
+  WordPressProxyHttpError,
+} from "@/lib/wordpressProxy";
 
 const WP_API_BASE =
   process.env.NEXT_PUBLIC_WP_API_URL ||
   "https://cms.hizliulasim.com/wp-json/wp/v2";
-const REVALIDATE_SECONDS = 3600;
 const EDGE_CACHE_SECONDS = 300;
 const EDGE_STALE_SECONDS = 3600;
 
@@ -49,25 +52,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const wpRes = await fetch(wpUrl.toString(), {
-      headers: { "Content-Type": "application/json" },
-      next: { revalidate: REVALIDATE_SECONDS },
-    });
-
-    if (!wpRes.ok) {
-      return NextResponse.json(
-        { error: `WordPress API error: ${wpRes.status}` },
-        { status: wpRes.status }
-      );
-    }
-
-    const data = await wpRes.json();
+    const { data, total, totalPages } = await fetchWordPressProxyPayload(wpUrl.toString());
 
     const response = NextResponse.json(data);
 
     // Forward WP pagination headers so the client can determine hasNextPage
-    const total = wpRes.headers.get("X-WP-Total");
-    const totalPages = wpRes.headers.get("X-WP-TotalPages");
     if (total) response.headers.set("X-WP-Total", total);
     if (totalPages) response.headers.set("X-WP-TotalPages", totalPages);
     response.headers.set(
@@ -77,6 +66,12 @@ export async function GET(req: NextRequest) {
 
     return response;
   } catch (err) {
+    if (err instanceof WordPressProxyHttpError) {
+      return NextResponse.json(
+        { error: `WordPress API error: ${err.status}` },
+        { status: err.status },
+      );
+    }
     console.error("WP proxy error:", err);
     return NextResponse.json(
       { error: "WordPress API isteği başarısız oldu" },

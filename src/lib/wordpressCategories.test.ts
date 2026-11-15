@@ -4,6 +4,7 @@ import http from 'node:http';
 import test from 'node:test';
 
 import * as wordpressFetch from './wordpressCategories.ts';
+import { fetchWordPressProxyPayload } from './wordpressProxy.ts';
 
 const { fetchAllWordPressCategories } = wordpressFetch;
 
@@ -121,4 +122,82 @@ test('loads every WordPress category through bounded 50-item pages', async (t) =
     '?per_page=50&page=2&hide_empty=true&_fields=id%2Cname%2Cslug%2Cdescription%2Ccount%2Cparent',
   ]);
   assert.deepEqual(categories.map((category) => category.id), [10, 11]);
+});
+
+test('retries a poisoned cached category page with no-store before returning an empty category list', async () => {
+  const requestModes: string[] = [];
+  const fetchImpl: typeof fetch = async (_input, init) => {
+    requestModes.push(init?.cache === 'no-store' ? 'fresh' : 'cached');
+
+    if (init?.cache !== 'no-store') {
+      return new Response('{"truncated":', {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-TotalPages': '1',
+        },
+      });
+    }
+
+    return Response.json([
+      {
+        id: 37,
+        name: 'Ulaşım Rehberi',
+        slug: 'ulasim-rehberi',
+        description: '',
+        count: 335,
+        parent: 0,
+      },
+      {
+        id: 38,
+        name: 'AVMler',
+        slug: 'avmler',
+        description: '',
+        count: 75,
+        parent: 37,
+      },
+    ], {
+      headers: { 'X-WP-TotalPages': '1' },
+    });
+  };
+
+  const categories = await fetchAllWordPressCategories({
+    endpoint: 'https://cms.example.test/wp-json/wp/v2/categories',
+    fetchImpl,
+    requestInit: { next: { revalidate: 3600 } },
+  });
+
+  assert.deepEqual(requestModes, ['cached', 'fresh']);
+  assert.deepEqual(categories.map(({ id, parent }) => ({ id, parent })), [
+    { id: 37, parent: 0 },
+    { id: 38, parent: 37 },
+  ]);
+});
+
+test('bypasses the Next data cache for WordPress upstream and preserves pagination metadata', async () => {
+  let upstreamInit: RequestInit | undefined;
+  const fetchImpl: typeof fetch = async (_input, init) => {
+    upstreamInit = init;
+    return Response.json([
+      { id: 37, name: 'Ulaşım Rehberi', slug: 'ulasim-rehberi', count: 335, parent: 0 },
+    ], {
+      headers: {
+        'X-WP-Total': '28',
+        'X-WP-TotalPages': '1',
+      },
+    });
+  };
+
+  const result = await fetchWordPressProxyPayload(
+    'https://cms.example.test/wp-json/wp/v2/categories?per_page=50&page=1',
+    fetchImpl,
+  );
+
+  assert.deepEqual(result, {
+    data: [{ id: 37, name: 'Ulaşım Rehberi', slug: 'ulasim-rehberi', count: 335, parent: 0 }],
+    total: '28',
+    totalPages: '1',
+  });
+  assert.equal(upstreamInit?.cache, 'no-store');
+  assert.equal('next' in (upstreamInit || {}), false);
 });
