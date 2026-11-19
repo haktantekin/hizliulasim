@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { setAvatar } from '@/store/slices/userSlice';
-import { User, MessageSquare, Bus, ParkingCircle, Camera, Loader2, LogIn } from 'lucide-react';
+import { User, MessageSquare, Bus, ParkingCircle, Camera, Loader2, LogIn, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import AuthModal from '@/components/ui/AuthModal';
 import GoogleAccountLinkCard from '@/components/auth/GoogleAccountLinkCard';
@@ -344,6 +344,22 @@ export default function UserProfilePage() {
             </div>
           </div>
         </>
+      )}
+
+      {isOwnProfile && (
+        <section className="mt-6 rounded-2xl border border-red-100 bg-white p-5 shadow-sm" aria-labelledby="account-deletion-title">
+          <h2 id="account-deletion-title" className="text-sm font-semibold text-gray-900">Hesap ve veriler</h2>
+          <p className="mt-1 text-sm leading-6 text-gray-500">
+            Hesabınızı ve hesabınızla ilişkili uygulama verilerini kalıcı olarak silebilirsiniz.
+          </p>
+          <Link
+            href="/hesap-silme"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+          >
+            <Trash2 size={18} aria-hidden="true" />
+            Hesabımı Sil
+          </Link>
+        </section>
       )}
     </div>
   );

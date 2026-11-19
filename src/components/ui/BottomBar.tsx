@@ -4,7 +4,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Bus, BusFront, Map, ParkingCircle, Menu, X, ExternalLink, UserPlus, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility } from 'lucide-react';
+import { Home, Bus, BusFront, Map, ParkingCircle, Menu, X, ExternalLink, User, UserPlus, LogIn, LogOut, Mail, TrainFront, Zap, Navigation, Accessibility, Trash2 } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -32,6 +32,7 @@ const legalLinks = [
   { href: '/kunye', label: 'Künye' },
   { href: '/gizlilik-politikasi', label: 'Gizlilik Politikası' },
   { href: '/cerez-politikasi', label: 'Çerez Politikası' },
+  { href: '/hesap-silme', label: 'Hesap Silme' },
 ];
 
 const BottomBar = () => {
@@ -133,6 +134,26 @@ const BottomBar = () => {
               </Link>
             ))}
           </div>
+          {isAuthenticated && user && (
+            <div className="mx-5 mt-4 overflow-hidden rounded-xl border border-gray-100">
+              <Link
+                href={user.username ? `/u/${user.username}` : '/profil'}
+                onClick={close}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                <User size={17} aria-hidden="true" />
+                Profil
+              </Link>
+              <Link
+                href="/hesap-silme"
+                onClick={close}
+                className="flex items-center gap-3 border-t border-gray-100 px-4 py-3 text-sm text-red-600 transition-colors hover:bg-red-50"
+              >
+                <Trash2 size={17} aria-hidden="true" />
+                Hesap ve Verilerin Silinmesi
+              </Link>
+            </div>
+          )}
           {!isAuthenticated && (
             <div className="flex gap-2 px-5 pt-4">
               <button

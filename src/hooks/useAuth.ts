@@ -8,6 +8,7 @@ import {
   registerUser,
   getProfile,
   logoutUser,
+  deleteAccount,
   updateFavorite,
   updatePreferences as updatePrefs,
   type FavoriteItem,
@@ -109,6 +110,19 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: logoutUser,
+    onSuccess: () => {
+      dispatch(logoutAction());
+      queryClient.removeQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useDeleteAccount = () => {
+  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (confirmation: string) => deleteAccount(confirmation),
     onSuccess: () => {
       dispatch(logoutAction());
       queryClient.removeQueries({ queryKey: ['profile'] });

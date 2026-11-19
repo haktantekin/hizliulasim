@@ -35,6 +35,8 @@ export interface UserPreferences {
 
 const AUTH_API_BASE = '/api/auth';
 
+export const ACCOUNT_DELETION_CONFIRMATION = 'HESABIMI SIL';
+
 async function authFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...options,
@@ -111,6 +113,16 @@ export async function logoutUser() {
   return authFetch<{ success: boolean }>(
     `${AUTH_API_BASE}/logout`,
     { method: 'POST' }
+  );
+}
+
+export async function deleteAccount(confirmation: string) {
+  return authFetch<{ deleted: true; message: string }>(
+    `${AUTH_API_BASE}/account`,
+    {
+      method: 'DELETE',
+      body: JSON.stringify({ confirmation }),
+    }
   );
 }
 

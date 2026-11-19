@@ -15,6 +15,9 @@ export default function Footer() {
             <Link href="/cerez-politikasi" className="hover:text-brand-dark-blue">Çerez Politikası</Link>
           </li>
           <li>
+            <Link href="/hesap-silme" className="hover:text-brand-dark-blue">Hesap ve Verilerin Silinmesi</Link>
+          </li>
+          <li>
             <Link href="/iletisim" className="hover:text-brand-dark-blue">İletişim</Link>
           </li>
         </ul>

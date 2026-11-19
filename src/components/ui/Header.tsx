@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { ExternalLink, Menu, X, Home, Map, Bus, BusFront, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility, TrainFront } from 'lucide-react';
+import { ExternalLink, Menu, X, Home, Map, Bus, BusFront, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility, TrainFront, Trash2 } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -30,6 +30,7 @@ const legalLinks = [
   { href: '/kunye', label: 'Künye' },
   { href: '/gizlilik-politikasi', label: 'Gizlilik Politikası' },
   { href: '/cerez-politikasi', label: 'Çerez Politikası' },
+  { href: '/hesap-silme', label: 'Hesap Silme' },
 ];
 
 const Header = () => {
@@ -200,7 +201,7 @@ const Header = () => {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-[100]">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-[100]">
                     <Link
                       href={user.username ? `/u/${user.username}` : '/profil'}
                       onClick={() => setUserMenuOpen(false)}
@@ -208,6 +209,14 @@ const Header = () => {
                     >
                       <User size={16} />
                       <span>Profil</span>
+                    </Link>
+                    <Link
+                      href="/hesap-silme"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                      <span>Hesap ve Verilerin Silinmesi</span>
                     </Link>
                     <button
                       onClick={handleLogout}
