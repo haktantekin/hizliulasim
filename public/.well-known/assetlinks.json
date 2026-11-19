@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.hizliulasim.app",
+      "sha256_cert_fingerprints":
+        ["98:D8:C2:C9:52:4E:9E:59:87:EE:DB:8E:05:1F:E7:BA:7B:D9:FE:CB:2C:4A:E3:4F:84:E9:59:67:32:45:EE:C2"]
+    }
+  }
+]
