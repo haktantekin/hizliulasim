@@ -100,6 +100,7 @@ settings.json
 *.md
 !src/app/api/auth/google/link/route.test.ts
 !src/components/auth/google-account-link-state.test.ts
+!src/app/api/contact/route.test.ts
 !docs/superpowers/plans/2026-11-13-google-account-linking.md
 !docs/superpowers/specs/2026-11-13-google-account-linking-design.md
 !src/lib/recommendations/contracts.test.ts
