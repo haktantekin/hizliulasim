@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import RayliSistemlerClient from '@/components/metro/RayliSistemlerClient';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
@@ -40,18 +41,10 @@ export default function RayliSistemlerPage() {
 
       <RayliSistemlerClient />
 
-      <p className="text-xs text-gray-500 text-center mt-6 mb-4">
-        Bu sayfadaki bilgiler{' '}
-        <a
-          href="https://www.metro.istanbul/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-brand-soft-blue"
-        >
-          Metro İstanbul
-        </a>{' '}
-        tarafından sağlanmaktadır.
-      </p>
+      <DataSourceNotice
+        sources={['metroIstanbul']}
+        note="Hat, istasyon, sefer ve hizmet durumu bilgileri Metro İstanbul kaynağından sağlanır."
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import TransitPlanner from '@/components/transit/TransitPlanner';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import { parseTransitPlannerUrl } from '@/lib/transit/share-url';
 
 export const metadata: Metadata = {
@@ -36,13 +37,10 @@ export default async function YolTarifiPage({ searchParams }: YolTarifiPageProps
 
       <TransitPlanner key={JSON.stringify(initialState)} variant="full" initialState={initialState} />
 
-      <p className="mt-6 text-center text-xs text-gray-600">
-        Rota hesabında İBB Açık Veri Portalı’ndaki{' '}
-        <a href="https://data.ibb.gov.tr/dataset/iett-gtfs-verisi" className="text-brand-soft-blue underline">
-          İETT GTFS verisi
-        </a>{' '}
-        kullanılır.
-      </p>
+      <DataSourceNotice
+        sources={['ibbOpenData']}
+        note="Toplu taşıma rotaları İBB Açık Veri Portalı'ndaki İETT GTFS verisi kullanılarak hesaplanır."
+      />
     </main>
   );
 }

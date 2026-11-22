@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import Image from 'next/image';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import { Loader2, Star, ExternalLink, MapPin, Search } from 'lucide-react';
 
 interface AccessiblePlace {
@@ -221,10 +222,10 @@ export default function EngelsizMekanlarPage() {
         </div>
       )}
 
-      <p className="text-xs text-gray-400 text-center mt-6">
-        Erişilebilirlik verileri Google Places API&apos;den alınmaktadır.
-        Lütfen ziyaret öncesinde mekanla iletişime geçerek teyit alınız.
-      </p>
+      <DataSourceNotice
+        sources={['googleMaps']}
+        note="Mekân ve erişilebilirlik bilgileri Google Maps hizmetinden sağlanır; ziyaret öncesinde mekânla iletişime geçerek teyit alınız."
+      />
     </div>
   );
 }

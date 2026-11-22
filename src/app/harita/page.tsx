@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import DirectionsForm from "@/components/maps/DirectionsForm";
+import DataSourceNotice from "@/components/ui/DataSourceNotice";
 
 export default function HaritaPage() {
   const [mapSrc, setMapSrc] = useState("https://www.google.com/maps?output=embed&q=Istanbul");
@@ -18,6 +19,12 @@ export default function HaritaPage() {
           className="w-full h-[60vh]"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+      <div className="container mx-auto px-4 pb-6">
+        <DataSourceNotice
+          sources={['googleMaps']}
+          note="Harita görünümü ve sürüş yol tarifleri kamu kurumu olmayan Google Maps hizmeti üzerinden sağlanır."
         />
       </div>
     </>

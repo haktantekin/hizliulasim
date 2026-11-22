@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import DurakDetayClient from '@/components/bus/DurakDetayClient';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import { parseDurakSlug, parseDurakName } from '@/lib/slugify';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
@@ -43,13 +44,10 @@ export default async function DurakDetayPage({
     <div className="container mx-auto px-4 py-8">
       <DurakDetayClient durakKodu={durakKodu} />
 
-      <p className="text-xs text-gray-500 text-center mt-6 mb-4">
-        Bu sayfadaki bilgiler anlık olarak{' '}
-        <a href="https://iett.istanbul/" target="_blank" rel="noopener">
-          İETT resmi kurumu
-        </a>{' '}
-        tarafından sağlanmaktadır.
-      </p>
+      <DataSourceNotice
+        sources={['iett', 'ibbOpenData']}
+        note="Durak ve geçen hat bilgileri İETT ile İBB Açık Veri kaynaklarından sağlanır."
+      />
     </div>
   );
 }

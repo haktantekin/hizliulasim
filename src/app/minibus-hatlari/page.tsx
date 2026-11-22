@@ -4,8 +4,9 @@ import { ChevronRight, MapPinned } from 'lucide-react';
 
 import StructuredData from '@/components/seo/StructuredData';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import { SUPPORTED_MINIBUS_CITIES } from '@/lib/minibusData';
-import { fetchMinibusLines, MINIBUS_SOURCE_URL } from '@/services/minibus';
+import { fetchMinibusLines } from '@/services/minibus';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 
@@ -100,13 +101,10 @@ export default async function MinibusHatlariPage() {
         </div>
       </section>
 
-      <p className="mt-8 text-xs text-gray-500">
-        Hat verileri{' '}
-        <a className="underline hover:text-brand-soft-blue" href={MINIBUS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
-          İBB Minibüsüm Nerede?
-        </a>{' '}
-        resmî kaynağından alınır.
-      </p>
+      <DataSourceNotice
+        sources={['ibbMinibus']}
+        note="Minibüs ve taksi dolmuş hatları ile güzergâh bilgileri İBB'nin resmî kaynağından sağlanır."
+      />
     </div>
   );
 }

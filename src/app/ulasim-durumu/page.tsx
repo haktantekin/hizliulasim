@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import UlasimDurumuClient from './UlasimDurumuClient';
 
 export const metadata: Metadata = {
@@ -26,6 +27,11 @@ export default function UlasimDurumuPage() {
       </div>
 
       <UlasimDurumuClient />
+
+      <DataSourceNotice
+        sources={['iett', 'metroIstanbul']}
+        note="Duyurular İETT ve Metro İstanbul kaynaklarından sağlanır; ilgili resmî bağlantı bulunan uyarılar doğrudan kaynağa açılır."
+      />
     </main>
   );
 }

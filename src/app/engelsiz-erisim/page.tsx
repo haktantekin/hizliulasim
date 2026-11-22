@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import { MapPin, ParkingCircle, Navigation } from 'lucide-react';
 
 const sections = [
@@ -61,14 +62,10 @@ export default function EngelsizErisimPage() {
         })}
       </div>
 
-      <div className="mt-8 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
-        <h3 className="font-semibold mb-2">♿ Erişilebilirlik Hakkında</h3>
-        <p>
-          Bu bölümdeki veriler İETT, İSPARK ve Google Maps API&apos;lerinden alınmaktadır.
-          Erişilebilirlik bilgileri sürekli güncellenmekte olup, lütfen ziyaret öncesinde
-          ilgili kurumdan teyit almanızı öneririz.
-        </p>
-      </div>
+      <DataSourceNotice
+        sources={['iett', 'ispark', 'googleMaps']}
+        note="Erişilebilirlik bilgileri değişebilir; ziyaret veya yolculuk öncesinde ilgili kurum ya da mekândan teyit almanızı öneririz."
+      />
     </div>
   );
 }

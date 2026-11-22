@@ -3,6 +3,7 @@ import { fetchPostBySlug } from '@/services/wordpress';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import BusRouteDetailClient from '@/components/bus/BusRouteDetailClient';
 import PostComments from '@/components/blog/PostComments';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 
 const SITE_URL = 'https://hizliulasim.com';
 const DEFAULT_IMAGE = 'https://cms.hizliulasim.com/wp-content/uploads/2026/02/otobus-hatlari.jpeg';
@@ -87,13 +88,10 @@ export default async function BusRouteDetailPage({
         wpContent={wpPost?.content || null}
       />
 
-      <p className="text-xs text-gray-500 text-center mt-6 mb-4">
-        Bu sayfadaki bilgiler anlık olarak{' '}
-        <a href="https://iett.istanbul/" target="_blank" rel="noopener">
-          İETT resmi kurumu
-        </a>{' '}
-        tarafından sağlanmaktadır.
-      </p>
+      <DataSourceNotice
+        sources={['iett', 'ibbOpenData']}
+        note="Hat, durak, sefer ve canlı araç bilgileri ilgili resmî kaynaklardan sağlanır; anlık koşullara göre değişebilir."
+      />
 
       {wpPost && <PostComments postId={wpPost.id} />}
     </div>

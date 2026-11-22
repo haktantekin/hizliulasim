@@ -4,13 +4,12 @@ import { notFound } from 'next/navigation';
 import MinibusDistrictDirectory from '@/components/minibus/MinibusDistrictDirectory';
 import StructuredData from '@/components/seo/StructuredData';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import minibusDistrictSnapshot from '@/data/minibus-districts.snapshot.json';
 import { getSupportedMinibusCity } from '@/lib/minibusData';
 import { buildMinibusCityLandingEntries, parseMinibusDirectoryPayload } from '@/lib/minibusDirectory';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
-const MINIBUS_SOURCE_URL = 'https://application2.ibb.gov.tr/tulasim/MinibusumNerede.aspx';
-
 export const revalidate = 3600;
 export const dynamicParams = true;
 
@@ -85,12 +84,10 @@ export default async function MinibusCityPage({ params }: PageProps) {
 
       <MinibusDistrictDirectory cityName={city.name} citySlug={city.slug} districts={districtEntries} />
 
-      <p className="mt-8 text-xs text-gray-500">
-        Kaynak:{' '}
-        <a className="underline hover:text-brand-soft-blue" href={MINIBUS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
-          İBB Minibüsüm Nerede?
-        </a>
-      </p>
+      <DataSourceNotice
+        sources={['ibbMinibus', 'ibbCityMap']}
+        note="Hat dizini ve ilçe eşleştirmeleri İBB'nin resmî ulaşım ve şehir haritası kaynaklarından sağlanır."
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import AutocompleteInput from '@/components/maps/AutocompleteInput';
 import { ArrowRight, Loader2, Navigation, Clock, Footprints } from 'lucide-react';
 
@@ -218,6 +219,11 @@ export default function EngelsizRotaPage() {
           <p>Başlangıç ve varış noktası girerek engelsiz rota arayın.</p>
         </div>
       )}
+
+      <DataSourceNotice
+        sources={['googleMaps']}
+        note="Dış rota alternatifleri kamu kurumu olmayan Google Maps hizmeti üzerinden açılır; erişilebilirlik koşullarını yolculuk öncesinde doğrulayın."
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import ChargingStationsClient from '@/components/charging/ChargingStationsClient';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
@@ -39,18 +40,10 @@ export default function SarjIstasyonlariPage() {
 
       <ChargingStationsClient />
 
-      <p className="text-xs text-gray-500 text-center mt-6 mb-4">
-        Bu sayfadaki bilgiler{' '}
-        <a
-          href="https://openchargemap.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-brand-soft-blue"
-        >
-          Open Charge Map
-        </a>{' '}
-        topluluğu tarafından sağlanmaktadır.
-      </p>
+      <DataSourceNotice
+        sources={['openChargeMap']}
+        note="Şarj noktası bilgileri kamu kurumu olmayan Open Charge Map topluluk kaynağından sağlanır."
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import OtoparkListClient from '@/components/parking/OtoparkListClient';
 import { ParkingCircle } from 'lucide-react';
 
@@ -41,18 +42,10 @@ export default function OtoparkUcretleriPage() {
 
       <OtoparkListClient />
 
-      <p className="text-xs text-gray-500 text-center mt-6 mb-4">
-        Bu sayfadaki bilgiler anlık olarak{' '}
-        <a
-          href="https://ispark.istanbul/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-brand-soft-blue"
-        >
-          İSPARK
-        </a>{' '}
-        tarafından sağlanmaktadır.
-      </p>
+      <DataSourceNotice
+        sources={['ispark']}
+        note="Otopark konumu, kapasitesi, doluluk ve ücret bilgileri İSPARK kaynağından sağlanır."
+      />
     </div>
   );
 }

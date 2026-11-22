@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import BusPostsClient from './BusPostsClient';
 import StructuredData from '@/components/seo/StructuredData';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hizliulasim.com';
 const DEFAULT_IMAGE = 'https://cms.hizliulasim.com/wp-content/uploads/2026/02/otobus-hatlari.jpeg';
@@ -103,6 +104,12 @@ export default async function OtobusHatlariPage() {
         subCategories={subCategories}
         initialPosts={initialPosts}
       />
+      <div className="container mx-auto px-4 pb-6">
+        <DataSourceNotice
+          sources={['iett', 'ibbOpenData']}
+          note="Otobüs hattı, durak, sefer ve güzergâh verileri İETT ile İBB Açık Veri kaynaklarından sağlanır."
+        />
+      </div>
     </>
   );
 }

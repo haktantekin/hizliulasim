@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import { Loader2, MapPin, List, Map as MapIcon } from 'lucide-react';
 import type { ISPARKPark } from '@/types/ispark';
 
@@ -280,6 +281,11 @@ export default function EngelsizOtoparklarPage() {
           Türkiye&apos;de tüm kamu otoparkları yasal olarak engelli park yeri ayırmakla yükümlüdür.
         </p>
       </div>
+
+      <DataSourceNotice
+        sources={['ispark', 'openStreetMap', 'googleMaps']}
+        note="Otopark verileri İSPARK'tan, harita altlığı OpenStreetMap'ten ve dış yol tarifi Google Maps'ten sağlanır."
+      />
     </div>
   );
 }

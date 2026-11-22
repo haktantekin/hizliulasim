@@ -5,6 +5,7 @@ import StructuredData from '@/components/seo/StructuredData';
 import MinibusDetailTabs from '@/components/minibus/MinibusDetailTabs';
 import MinibusLineList from '@/components/minibus/MinibusLineList';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import {
   getSupportedMinibusCity,
   type MinibusLine,
@@ -20,8 +21,6 @@ import {
   fetchMinibusLineDetail,
   fetchMinibusLines,
   MINIBUS_DIRECTORY_VERIFIED_AT,
-  MINIBUS_DISTRICT_SOURCE_URL,
-  MINIBUS_SOURCE_URL,
   MINIBUS_FARE_SOURCE_URL,
 } from '@/services/minibus';
 
@@ -208,17 +207,10 @@ export default async function MinibusLineDetailPage({ params }: PageProps) {
           </div>
         )}
 
-        <p className="mt-8 text-xs text-gray-500">
-          Hat verisi:{' '}
-          <a className="underline hover:text-brand-soft-blue" href={MINIBUS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
-            İBB Minibüsüm Nerede?
-          </a>
-          {' · İlçe sınırı: '}
-          <a className="underline hover:text-brand-soft-blue" href={MINIBUS_DISTRICT_SOURCE_URL} target="_blank" rel="noopener noreferrer">
-            İBB Şehir Haritası
-          </a>
-          {` · Son geometri doğrulaması: ${formatVerificationDate(MINIBUS_DIRECTORY_VERIFIED_AT)}`}
-        </p>
+        <DataSourceNotice
+          sources={['ibbMinibus', 'ibbCityMap']}
+          note={`Hat verileri ve ilçe sınırları İBB kaynaklarından sağlanır. Son geometri doğrulaması: ${formatVerificationDate(MINIBUS_DIRECTORY_VERIFIED_AT)}.`}
+        />
       </div>
     );
   }
@@ -281,12 +273,10 @@ export default async function MinibusLineDetailPage({ params }: PageProps) {
         infoHtml={infoHtml}
       />
 
-      <p className="mt-8 text-xs text-gray-500">
-        Kaynak:{' '}
-        <a className="underline hover:text-brand-soft-blue" href={MINIBUS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
-          İBB Minibüsüm Nerede?
-        </a>
-      </p>
+      <DataSourceNotice
+        sources={['ibbMinibus', 'ibbMinibusFare']}
+        note="Hat, güzergâh ve ücret bilgileri İBB'nin resmî ulaşım kaynaklarından sağlanır."
+      />
     </div>
   );
 }
