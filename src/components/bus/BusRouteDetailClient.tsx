@@ -17,6 +17,7 @@ import { selectIettRoutePath } from './route-path';
 import { loadBusRouteDetailResponses } from './bus-route-detail-data';
 import IettLineAlerts from '@/components/iett/IettLineAlerts';
 import { buildBusRouteTabs, type BusRouteTabId } from './bus-route-tabs';
+import LiveVehiclePanel from './LiveVehiclePanel';
 
 const RouteMap = dynamic(() => import('./RouteMap'), {
   ssr: false,
@@ -317,6 +318,9 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
                 {duraklar.length}
               </span>
             )}
+            {tab.id === 'live' && (
+              <span className="rounded-full bg-green-50 px-2 py-0.5 text-[11px] text-green-700">Canlı</span>
+            )}
           </button>
         ))}
       </div>
@@ -328,6 +332,15 @@ export default function BusRouteDetailClient({ hatKodu, wpContent }: Props) {
 
       {activeTab === 'route' && (
         <RouteStopsTab paths={paths} duraklar={duraklar} userLocation={userLocation} />
+      )}
+
+      {activeTab === 'live' && (
+        <LiveVehiclePanel
+          lineCode={hat.SHATKODU}
+          stops={duraklar}
+          userLocation={userLocation}
+          onRequestLocation={requestLocation}
+        />
       )}
 
       {activeTab === 'nearest' && (

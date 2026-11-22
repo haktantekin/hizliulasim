@@ -10,6 +10,7 @@ import { buildDurakSlug } from '@/lib/slugify';
 import { useAppSelector } from '@/store/hooks';
 import AuthModal from '@/components/ui/AuthModal';
 import LiveFeatureLoginPrompt from '@/components/bus/LiveFeatureLoginPrompt';
+import { getIettLiveVehicleDirection } from '@/lib/iett-live-direction';
 
 const NearestStopMap = dynamic(() => import('../bus/NearestStopMap'), {
   ssr: false,
@@ -186,7 +187,7 @@ export default function HomeBusFinder() {
   useEffect(() => {
     if (authLoading || !isAuthenticated || !hatKodu || !selectedDirection) return;
     fetchVehicles();
-    const interval = setInterval(fetchVehicles, 30000);
+    const interval = setInterval(fetchVehicles, 60000);
     return () => clearInterval(interval);
   }, [authLoading, hatKodu, isAuthenticated, selectedDirection, fetchVehicles]);
 
@@ -216,7 +217,7 @@ export default function HomeBusFinder() {
   const vehicleAtStopCodes = useMemo(() => {
     const codes = new Set<string>();
     for (const v of konumlar) {
-      if (v.yon === selectedDirection && v.yakinDurakKodu) codes.add(v.yakinDurakKodu);
+      if (getIettLiveVehicleDirection(v) === selectedDirection && v.yakinDurakKodu) codes.add(v.yakinDurakKodu);
     }
     return codes;
   }, [konumlar, selectedDirection]);
@@ -224,7 +225,7 @@ export default function HomeBusFinder() {
   const vehicleByStopCode = useMemo(() => {
     const map = new Map<string, IETTHatOtoKonum[]>();
     for (const v of konumlar) {
-      if (v.yon === selectedDirection && v.yakinDurakKodu) {
+      if (getIettLiveVehicleDirection(v) === selectedDirection && v.yakinDurakKodu) {
         const arr = map.get(v.yakinDurakKodu) || [];
         arr.push(v);
         map.set(v.yakinDurakKodu, arr);
@@ -249,7 +250,7 @@ export default function HomeBusFinder() {
       const lng = parseFloat(v.boylam);
       if (!isFinite(lat) || !isFinite(lng)) continue;
 
-      const sameDirection = v.yon === stop.YON;
+      const sameDirection = getIettLiveVehicleDirection(v) === stop.YON;
       let vehicleStopIndex = -1;
       if (v.yakinDurakKodu) {
         vehicleStopIndex = directionStops.findIndex((d) => d.DURAKKODU === v.yakinDurakKodu);
@@ -571,7 +572,7 @@ export default function HomeBusFinder() {
                   </button>
                 )}
 
-                <div className="text-[10px] text-gray-400 mt-2 text-center">Veriler her 30 saniyede güncellenir</div>
+                <div className="text-[10px] text-gray-400 mt-2 text-center">Veriler yaklaşık her 60 saniyede güncellenir</div>
               </div>
             )}
           </div>

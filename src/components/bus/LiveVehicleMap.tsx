@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState, useMemo } from 'react';
+import type { FeatureGroup, Map as LeafletMap } from 'leaflet';
 import type { IETTDurakDetay, IETTHatOtoKonum } from '@/types/iett';
+import { getIettLiveVehicleDirection } from '@/lib/iett-live-direction';
 
 interface LiveVehicleMapProps {
   duraklar: IETTDurakDetay[];
@@ -13,27 +15,33 @@ const COLORS: Record<string, string> = {
   G: '#6bb88c',
 };
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapProps) {
   const directions = useMemo(() => {
     const dirSet = new Set(duraklar.map((d) => d.YON));
     return Array.from(dirSet);
   }, [duraklar]);
 
-  const [selectedDirection, setSelectedDirection] = useState<string>('D');
-
-  useEffect(() => {
-    if (directions.length > 0 && !directions.includes(selectedDirection)) {
-      setSelectedDirection(directions[0]);
-    }
-  }, [directions, selectedDirection]);
+  const [preferredDirection, setPreferredDirection] = useState<string>('D');
+  const selectedDirection = directions.includes(preferredDirection)
+    ? preferredDirection
+    : directions[0] ?? 'D';
 
   const DIRECTION_LABELS: Record<string, string> = { D: 'Gidiş', G: 'Dönüş' };
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const routeLayerRef = useRef<any>(null);
-  const vehicleLayerRef = useRef<any>(null);
-  const leafletRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const routeLayerRef = useRef<FeatureGroup | null>(null);
+  const vehicleLayerRef = useRef<FeatureGroup | null>(null);
+  const leafletRef = useRef<typeof import('leaflet') | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Initialize map once
@@ -41,8 +49,9 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
     const container = mapContainerRef.current;
     if (!container) return;
     if (mapRef.current) return;
-    if ((container as any)._leaflet_id) {
-      (container as any)._leaflet_id = null;
+    const leafletContainer = container as HTMLDivElement & { _leaflet_id?: number | null };
+    if (leafletContainer._leaflet_id) {
+      leafletContainer._leaflet_id = null;
       container.innerHTML = '';
     }
 
@@ -50,7 +59,7 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
 
     import('leaflet').then((L) => {
       if (cancelled || mapRef.current) return;
-      if ((container as any)._leaflet_id) return;
+      if (leafletContainer._leaflet_id) return;
 
       if (typeof window !== 'undefined' && !document.getElementById('leaflet-css')) {
         const link = document.createElement('link');
@@ -119,7 +128,7 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
         fillOpacity: 0.8,
       })
         .bindPopup(
-          `<div style="font-size:12px"><strong>${stop.DURAKADI}</strong><br/><span style="color:#666">${stop.SIRANO}. durak</span></div>`,
+          `<div style="font-size:12px"><strong>${escapeHtml(stop.DURAKADI)}</strong><br/><span style="color:#666">${stop.SIRANO}. durak</span></div>`,
           { closeButton: false }
         )
         .addTo(group);
@@ -141,9 +150,7 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
     }
 
     const vehicles = konumlar.filter((v) => {
-      const parts = v.guzergahkodu?.split('_');
-      const dirCode = parts && parts.length >= 2 ? parts[1] : '';
-      return dirCode === selectedDirection;
+      return getIettLiveVehicleDirection(v) === selectedDirection;
     });
     if (vehicles.length === 0) return;
 
@@ -162,6 +169,9 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
 
       const yakinDurakAdi = durakMap.get(v.yakinDurakKodu) || v.yakinDurakKodu;
       const timeStr = v.son_konum_zamani ? v.son_konum_zamani.split(' ')[1]?.substring(0, 5) : '';
+      const safeDoorNumber = escapeHtml(v.kapino || 'Araç');
+      const safeStopName = escapeHtml(yakinDurakAdi || 'Bilinmiyor');
+      const safeTime = escapeHtml(timeStr || '');
 
       // Bus icon using divIcon
       const busIcon = L.divIcon({
@@ -182,7 +192,7 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
           transform: translate(-50%, -50%);
         ">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M16 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H6c-1.1 0-2.1.8-2.4 1.8l-1.4 5c-.1.4-.2.8-.2 1.2 0 .4.1.8.2 1.2C2.5 16.3 3 18 3 18h3"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
-          ${v.kapino}
+          ${safeDoorNumber}
         </div>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
@@ -191,9 +201,9 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
       L.marker([lat, lng], { icon: busIcon })
         .bindPopup(
           `<div style="font-size:12px;min-width:150px">
-            <strong>🚌 ${v.kapino}</strong><br/>
-            <span style="color:#666">Yakın Durak: ${yakinDurakAdi}</span>
-            ${timeStr ? `<br/><span style="color:#999">Son Konum: ${timeStr}</span>` : ''}
+            <strong>🚌 ${safeDoorNumber}</strong><br/>
+            <span style="color:#666">Yakın Durak: ${safeStopName}</span>
+            ${safeTime ? `<br/><span style="color:#999">Son Konum: ${safeTime}</span>` : ''}
           </div>`,
           { closeButton: false }
         )
@@ -211,7 +221,7 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
           {directions.map((dir) => (
             <button
               key={dir}
-              onClick={() => setSelectedDirection(dir)}
+              onClick={() => setPreferredDirection(dir)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 selectedDirection === dir
                   ? 'bg-brand-soft-blue text-white'

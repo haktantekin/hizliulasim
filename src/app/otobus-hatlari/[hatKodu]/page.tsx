@@ -89,8 +89,8 @@ export default async function BusRouteDetailPage({
       />
 
       <DataSourceNotice
-        sources={['iett', 'ibbOpenData']}
-        note="Hat, durak, sefer ve canlı araç bilgileri ilgili resmî kaynaklardan sağlanır; anlık koşullara göre değişebilir."
+        sources={['iett', 'ibbOpenData', 'iettLive', 'ibbOpenDataLicense']}
+        note="Hat, durak ve sefer verileri ile canlı araç konumları İBB Açık Veri Lisansı kapsamında ilgili resmî kaynaklardan sağlanır; anlık koşullara göre değişebilir."
       />
 
       {wpPost && <PostComments postId={wpPost.id} />}

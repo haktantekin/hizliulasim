@@ -13,6 +13,20 @@ export const DATA_SOURCES = {
     description: 'Toplu taşıma rota planlama ve zaman çizelgesi verileri',
     official: true,
   },
+  iettLive: {
+    name: 'İBB Açık Veri Portalı – İETT Sefer Gerçekleşme',
+    url: 'https://data.ibb.gov.tr/dataset/sefer-gerceklesme-web-servisi',
+    displayUrl: 'data.ibb.gov.tr',
+    description: 'Hat bazında canlı araç konumları ve sefer gerçekleşme verileri',
+    official: true,
+  },
+  ibbOpenDataLicense: {
+    name: 'İBB Açık Veri Lisansı',
+    url: 'https://data.ibb.gov.tr/license',
+    displayUrl: 'data.ibb.gov.tr/license',
+    description: 'İBB Açık Veri Portalı üzerinden yayımlanan verilerin kullanım koşulları',
+    official: true,
+  },
   metroIstanbul: {
     name: 'Metro İstanbul',
     url: 'https://www.metro.istanbul/',

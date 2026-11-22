@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const callers = [
   'src/components/home/HomeBusFinder.tsx',
+  'src/components/bus/LiveVehiclePanel.tsx',
 ];
 
 test('every live vehicle caller checks authenticated state before polling', async () => {

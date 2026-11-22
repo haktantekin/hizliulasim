@@ -13,6 +13,7 @@ test('adds an En Yakın Durak tab when the line has stops', async () => {
     [
       { id: 'schedule', label: '78F Sefer Saatleri' },
       { id: 'route', label: 'Güzergah' },
+      { id: 'live', label: 'Canlı Araçlar' },
       { id: 'nearest', label: 'En Yakın Durak' },
       { id: 'info', label: '78F Hat Bilgileri' },
     ],

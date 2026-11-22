@@ -7,6 +7,10 @@ export type LiveSessionStatus = 'valid' | 'invalid' | 'unavailable';
 interface LiveVehicleDependencies {
   verifySession(token: string): Promise<LiveSessionStatus>;
   getLocations(lineCode: string): Promise<IETTHatOtoKonum[]>;
+  now?: () => number;
+  liveCacheTtlMs?: number;
+  liveStaleTtlMs?: number;
+  hourlyProviderRequestLimit?: number;
 }
 
 interface CachedSession {
@@ -19,11 +23,33 @@ const maxSessionCacheEntries = 256;
 const validSessionTtlMs = 60_000;
 const invalidSessionTtlMs = 15_000;
 const authTimeoutMs = 5_000;
+const defaultLiveCacheTtlMs = 60_000;
+const defaultLiveStaleTtlMs = 5 * 60_000;
+const defaultHourlyProviderRequestLimit = 90;
+const providerWindowMs = 60 * 60_000;
 
-function response(body: object | IETTHatOtoKonum[], status = 200): Response {
+interface CachedLiveVehicles {
+  data: IETTHatOtoKonum[];
+  fetchedAt: number;
+  expiresAt: number;
+  staleUntil: number;
+}
+
+type LiveCacheStatus = 'HIT' | 'MISS' | 'STALE';
+
+class LiveProviderRateLimitError extends Error {}
+
+function response(
+  body: object | IETTHatOtoKonum[],
+  status = 200,
+  extraHeaders?: Record<string, string>,
+): Response {
   return Response.json(body, {
     status,
-    headers: { 'Cache-Control': 'private, no-store' },
+    headers: {
+      'Cache-Control': 'private, no-store',
+      ...extraHeaders,
+    },
   });
 }
 
@@ -84,6 +110,63 @@ export async function verifyLiveIettSession(token: string): Promise<LiveSessionS
 }
 
 export function createLiveVehicleHandler(dependencies: LiveVehicleDependencies) {
+  const now = dependencies.now ?? Date.now;
+  const liveCacheTtlMs = dependencies.liveCacheTtlMs ?? defaultLiveCacheTtlMs;
+  const liveStaleTtlMs = dependencies.liveStaleTtlMs ?? defaultLiveStaleTtlMs;
+  const hourlyProviderRequestLimit = dependencies.hourlyProviderRequestLimit ?? defaultHourlyProviderRequestLimit;
+  const locationCache = new Map<string, CachedLiveVehicles>();
+  const pendingLocations = new Map<string, Promise<CachedLiveVehicles>>();
+  let providerCallTimes: number[] = [];
+
+  async function loadLocations(lineCode: string): Promise<{ entry: CachedLiveVehicles; cacheStatus: LiveCacheStatus }> {
+    const currentTime = now();
+    const cached = locationCache.get(lineCode);
+    if (cached && cached.expiresAt > currentTime) {
+      return { entry: cached, cacheStatus: 'HIT' };
+    }
+
+    const pending = pendingLocations.get(lineCode);
+    if (pending) {
+      return { entry: await pending, cacheStatus: 'HIT' };
+    }
+
+    providerCallTimes = providerCallTimes.filter((timestamp) => timestamp > currentTime - providerWindowMs);
+    if (providerCallTimes.length >= hourlyProviderRequestLimit) {
+      if (cached && cached.staleUntil > currentTime) {
+        return { entry: cached, cacheStatus: 'STALE' };
+      }
+      throw new LiveProviderRateLimitError('IETT live provider request budget exhausted');
+    }
+
+    providerCallTimes.push(currentTime);
+    const request = dependencies.getLocations(lineCode).then((data) => {
+      const fetchedAt = now();
+      const entry: CachedLiveVehicles = {
+        data,
+        fetchedAt,
+        expiresAt: fetchedAt + liveCacheTtlMs,
+        staleUntil: fetchedAt + liveStaleTtlMs,
+      };
+      if (locationCache.size >= 512 && !locationCache.has(lineCode)) {
+        locationCache.delete(locationCache.keys().next().value as string);
+      }
+      locationCache.set(lineCode, entry);
+      return entry;
+    });
+    pendingLocations.set(lineCode, request);
+
+    try {
+      return { entry: await request, cacheStatus: 'MISS' };
+    } catch (error) {
+      if (cached && cached.staleUntil > now()) {
+        return { entry: cached, cacheStatus: 'STALE' };
+      }
+      throw error;
+    } finally {
+      pendingLocations.delete(lineCode);
+    }
+  }
+
   return async function getLiveVehicles(request: Request): Promise<Response> {
     const lineCode = normalizeIettStaticCode(new URL(request.url).searchParams.get('hatKodu') ?? '');
     if (lineCode === null) {
@@ -113,8 +196,20 @@ export function createLiveVehicleHandler(dependencies: LiveVehicleDependencies) 
     }
 
     try {
-      return response(await dependencies.getLocations(lineCode));
+      const { entry, cacheStatus } = await loadLocations(lineCode);
+      return response(entry.data, 200, {
+        'X-IETT-Live-Cache': cacheStatus,
+        'X-IETT-Live-Updated-At': new Date(entry.fetchedAt).toISOString(),
+        'X-IETT-Live-Refresh-Seconds': String(Math.round(liveCacheTtlMs / 1000)),
+        ...(cacheStatus === 'STALE' ? { Warning: '110 - "Response is stale"' } : {}),
+      });
     } catch (error) {
+      if (error instanceof LiveProviderRateLimitError) {
+        return response({
+          code: 'LIVE_RATE_LIMITED',
+          error: 'Canlı araç hizmeti istek sınırı nedeniyle geçici olarak kullanılamıyor.',
+        }, 503, { 'Retry-After': '60' });
+      }
       console.error('IETT konum API error:', error);
       return response({ error: 'Araç konum bilgileri alınamadı' }, 500);
     }

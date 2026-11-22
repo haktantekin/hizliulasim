@@ -64,3 +64,53 @@ test('a verified member can request the normalized line code', async () => {
   assert.deepEqual(requested, ['500T']);
   assert.deepEqual(await response.json(), payload);
 });
+
+test('verified members share one provider result per line during the live cache window', async () => {
+  let now = Date.parse('2026-11-22T10:00:00.000Z');
+  let providerCalls = 0;
+  const handler = createLiveVehicleHandler({
+    verifySession: async () => 'valid',
+    getLocations: async () => {
+      providerCalls++;
+      return [{ kapino: `K-${providerCalls}` }] as never;
+    },
+    now: () => now,
+    liveCacheTtlMs: 60_000,
+  });
+
+  const first = await handler(request('hatKodu=500t', 'first-token'));
+  const second = await handler(request('hatKodu=500T', 'second-token'));
+
+  assert.equal(first.headers.get('X-IETT-Live-Cache'), 'MISS');
+  assert.equal(second.headers.get('X-IETT-Live-Cache'), 'HIT');
+  assert.equal(providerCalls, 1);
+
+  now += 60_001;
+  const refreshed = await handler(request('hatKodu=500t', 'third-token'));
+  assert.equal(refreshed.headers.get('X-IETT-Live-Cache'), 'MISS');
+  assert.equal(providerCalls, 2);
+});
+
+test('provider failures use a recent stale result without breaking the line page', async () => {
+  let now = Date.parse('2026-11-22T10:00:00.000Z');
+  let shouldFail = false;
+  const handler = createLiveVehicleHandler({
+    verifySession: async () => 'valid',
+    getLocations: async () => {
+      if (shouldFail) throw new Error('provider unavailable');
+      return [{ kapino: 'K-1' }] as never;
+    },
+    now: () => now,
+    liveCacheTtlMs: 60_000,
+    liveStaleTtlMs: 5 * 60_000,
+  });
+
+  await handler(request('hatKodu=500t', 'token'));
+  now += 60_001;
+  shouldFail = true;
+
+  const response = await handler(request('hatKodu=500t', 'token'));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('X-IETT-Live-Cache'), 'STALE');
+  assert.deepEqual(await response.json(), [{ kapino: 'K-1' }]);
+});
