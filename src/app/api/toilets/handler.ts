@@ -11,7 +11,9 @@ export function createToiletsHandler(load: () => Promise<ToiletEnvelope>) {
         });
       }
       return Response.json(encodeToiletEnvelope(data), {
-        headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' },
+        headers: {
+          'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60, must-revalidate',
+        },
       });
     } catch {
       return Response.json({ error: 'Tuvalet bilgileri şu anda alınamıyor.' }, {

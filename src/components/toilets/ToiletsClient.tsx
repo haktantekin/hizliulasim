@@ -81,7 +81,10 @@ export default function ToiletsClient() {
       setLoading(true);
       setError(false);
       try {
-        const response = await fetch('/api/toilets', { signal: controller.signal });
+        const response = await fetch('/api/toilets', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
         if (!response.ok) throw new Error('Tuvalet verileri alınamadı.');
         const result = decodeToiletEnvelope(await response.json());
         if (!controller.signal.aborted) setData(result);

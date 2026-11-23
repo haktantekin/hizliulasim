@@ -5,10 +5,13 @@ import { createToiletsHandler } from './handler.ts';
 import { decodeToiletEnvelope } from '../../../lib/toilets/wire.ts';
 import { getToilets } from '../../../lib/toilets/source.ts';
 
-test('serves CMS data with shared cache headers', async () => {
+test('serves CMS data with a short shared cache and no browser freshness window', async () => {
   const response = await createToiletsHandler(async () => fixtureEnvelope())();
   assert.equal(response.status, 200);
-  assert.match(response.headers.get('cache-control') ?? '', /s-maxage=600/u);
+  assert.equal(
+    response.headers.get('cache-control'),
+    'public, max-age=0, s-maxage=300, stale-while-revalidate=60, must-revalidate',
+  );
   const body = await response.json();
   assert.equal(body.encoding, 'compact-v1');
   assert.deepEqual(decodeToiletEnvelope(body), fixtureEnvelope());
