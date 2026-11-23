@@ -5,6 +5,8 @@ import Breadcrumb from '@/components/ui/Breadcrumb';
 import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import { Loader2, MapPin, List, Map as MapIcon } from 'lucide-react';
 import type { ISPARKPark } from '@/types/ispark';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 export default function EngelsizOtoparklarPage() {
   const [parks, setParks] = useState<ISPARKPark[]>([]);
@@ -86,10 +88,11 @@ export default function EngelsizOtoparklarPage() {
         scrollWheelZoom: true,
         zoomControl: true,
       }).setView([41.0082, 28.9784], 11);
+      compactLeafletAttribution(map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer(OPENSTREETMAP_TILE_URL, {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
 
       leafletRef.current = L;
@@ -225,10 +228,12 @@ export default function EngelsizOtoparklarPage() {
       {error && <div className="text-center py-12 text-red-500">{error}</div>}
 
       {!loading && !error && viewMode === 'map' && (
-        <div
-          ref={mapContainerRef}
-          className="w-full h-[400px] md:h-[500px] border border-gray-200 rounded-xl overflow-hidden"
-        />
+        <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
+          <div
+            ref={mapContainerRef}
+            className="map-fullscreen-canvas h-[400px] w-full overflow-hidden rounded-xl border border-gray-200 md:h-[500px]"
+          />
+        </MapFullscreenFrame>
       )}
 
       {!loading && !error && viewMode === 'list' && (

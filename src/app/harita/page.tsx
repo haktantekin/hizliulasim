@@ -3,6 +3,7 @@
 import { useState } from "react";
 import DirectionsForm from "@/components/maps/DirectionsForm";
 import DataSourceNotice from "@/components/ui/DataSourceNotice";
+import MapFullscreenFrame from "@/components/maps/MapFullscreenFrame";
 
 export default function HaritaPage() {
   const [mapSrc, setMapSrc] = useState("https://www.google.com/maps?output=embed&q=Istanbul");
@@ -12,15 +13,16 @@ export default function HaritaPage() {
       <div className="container mx-auto pb-4 px-4 pt-9 space-y-4">
         <DirectionsForm onNavigate={setMapSrc} />
       </div>
-      <div className="overflow-hidden">
+      <MapFullscreenFrame className="overflow-hidden">
         <iframe
           title="Harita"
           src={mapSrc}
-          className="w-full h-[60vh]"
+          className="map-fullscreen-canvas h-[60vh] w-full"
+          allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
         />
-      </div>
+      </MapFullscreenFrame>
       <div className="container mx-auto px-4 pb-6">
         <DataSourceNotice
           sources={['googleMaps']}

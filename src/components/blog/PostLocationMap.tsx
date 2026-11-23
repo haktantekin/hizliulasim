@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 interface PostLocationMapProps {
   latitude: number;
@@ -53,10 +55,12 @@ export default function PostLocationMap({ latitude, longitude, title }: PostLoca
         center: [latitude, longitude],
         zoom: 17,
       });
+      compactLeafletAttribution(map);
 
       // Add OpenStreetMap tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
+      L.tileLayer(OPENSTREETMAP_TILE_URL, {
+        maxZoom: 19,
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
 
       // Add marker
@@ -83,11 +87,13 @@ export default function PostLocationMap({ latitude, longitude, title }: PostLoca
 
   return (
     <div className="mb-6">
-      <div 
-        ref={mapContainerRef}
-        className="w-full h-[300px] md:h-[400px] border border-gray-200 rounded-lg overflow-hidden shadow-md"
-        style={{ background: isLoaded ? 'transparent' : '#f0f0f0' }}
-      />
+      <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
+        <div
+          ref={mapContainerRef}
+          className="map-fullscreen-canvas h-[300px] w-full overflow-hidden rounded-lg border border-gray-200 shadow-md md:h-[400px]"
+          style={{ background: isLoaded ? 'transparent' : '#f0f0f0' }}
+        />
+      </MapFullscreenFrame>
     </div>
   );
 }

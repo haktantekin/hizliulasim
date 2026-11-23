@@ -7,6 +7,8 @@ import { canDrawTransitMap } from '@/lib/transit/map-lifecycle';
 import { buildTransitMapModel, type TransitMapMarker } from '@/lib/transit/map-model';
 import { getTransitPathStyle, TRANSIT_BASEMAP_OPACITY } from '@/lib/transit/map-style';
 import { getModePresentation } from '@/lib/transit/presentation';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 export interface TransitRouteMapProps {
   itinerary: TransitItinerary;
@@ -122,11 +124,12 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative, 
     Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]).then(([leaflet]) => {
       if (cancelled) return;
       map = leaflet.map(container, { scrollWheelZoom: false });
+      compactLeafletAttribution(map);
       mapRef.current = map;
-      leaflet.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      leaflet.tileLayer(OPENSTREETMAP_TILE_URL, {
         maxZoom: 19,
         opacity: TRANSIT_BASEMAP_OPACITY,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
       setMapState({ leaflet, map });
     }).catch(() => {
@@ -170,20 +173,20 @@ export default function TransitRouteMap({ itinerary, size, selectedAlternative, 
 
   return (
     <div className="flex h-full flex-col gap-2">
-      <div className="relative isolate min-h-0 grow overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+      <MapFullscreenFrame className="min-h-0 grow overflow-hidden rounded-xl border border-gray-200 bg-gray-100" onFullscreenChange={() => mapRef.current?.invalidateSize()}>
         <div
           ref={containerRef}
           role="region"
           aria-label={`${selectedAlternative + 1}. rota haritası`}
           aria-describedby={model.hasApproximateGeometry ? legendId : undefined}
-          className={hasBounds && mapState !== 'unavailable' ? 'h-full' : 'invisible h-full'}
+          className={`map-fullscreen-canvas ${hasBounds && mapState !== 'unavailable' ? 'h-full' : 'invisible h-full'}`}
         />
         {(!hasBounds || !mapState || mapState === 'unavailable') && (
           <p role="status" className="absolute inset-0 grid place-items-center text-sm text-gray-600">
             {!hasBounds || mapState === 'unavailable' ? 'Harita yüklenemedi.' : 'Harita yükleniyor…'}
           </p>
         )}
-      </div>
+      </MapFullscreenFrame>
       {model.hasApproximateGeometry && (
         <p id={legendId} className="flex items-center gap-2 text-xs text-gray-700">
           <span aria-hidden="true" className="w-6 border-t-2 border-dashed border-gray-600" />

@@ -2,11 +2,3 @@
   /* Soften the raster background without changing marker, popup or attribution contrast. */
   filter: saturate(0.15) contrast(0.78) brightness(1.12);
 }
-
-.frame:fullscreen {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-radius: 0;
-  background: #f4f6f7;
-}

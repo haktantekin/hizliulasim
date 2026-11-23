@@ -110,3 +110,35 @@ table.has-fixed-layout td a:hover{
 :focus{
   outline: none;
 }
+
+.map-fullscreen-frame:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #f3f4f6;
+}
+
+.map-fullscreen-frame:fullscreen .map-fullscreen-canvas {
+  width: 100%;
+  height: 100% !important;
+  max-height: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Keep the required OSM credit visible without Leaflet's wider white strip. */
+.leaflet-control-attribution {
+  border-radius: 4px 0 0 0;
+  background: rgb(255 255 255 / 82%) !important;
+  box-shadow: none !important;
+  color: #4b5563 !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+  padding: 0 3px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #374151 !important;
+  text-decoration: none !important;
+}

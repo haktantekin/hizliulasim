@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import type { FeatureGroup, Map as LeafletMap } from 'leaflet';
 import type { IETTDurakDetay, IETTHatOtoKonum } from '@/types/iett';
 import { getIettLiveVehicleDirection } from '@/lib/iett-live-direction';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 interface LiveVehicleMapProps {
   duraklar: IETTDurakDetay[];
@@ -75,10 +77,11 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
         scrollWheelZoom: false,
         zoomControl: true,
       });
+      compactLeafletAttribution(map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer(OPENSTREETMAP_TILE_URL, {
         maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
 
       mapRef.current = map;
@@ -233,11 +236,13 @@ export default function LiveVehicleMap({ duraklar, konumlar }: LiveVehicleMapPro
           ))}
         </div>
       )}
-      <div
-        ref={mapContainerRef}
-        className="w-full h-[350px] md:h-[450px] border border-gray-200 rounded-xl overflow-hidden"
-        style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
-      />
+      <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
+        <div
+          ref={mapContainerRef}
+          className="map-fullscreen-canvas h-[350px] w-full overflow-hidden rounded-xl border border-gray-200 md:h-[450px]"
+          style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
+        />
+      </MapFullscreenFrame>
     </div>
   );
 }

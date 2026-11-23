@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { IETTDurakDetay, IETTHatOtoKonum } from '@/types/iett';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution } from '@/lib/maps/leafletAttribution';
 
 interface NearestStopMapProps {
   userLat: number;
@@ -71,6 +73,7 @@ export default function NearestStopMap({
         scrollWheelZoom: false,
         zoomControl: true,
       });
+      compactLeafletAttribution(map);
 
       mapRef.current = map;
       setIsLoaded(true);
@@ -323,10 +326,12 @@ export default function NearestStopMap({
   }, [selectedVehicle, otherVehicles, stop, userLat, userLng, routeStops, allDuraklar, isLoaded]);
 
   return (
-    <div
-      ref={mapContainerRef}
-      className="w-full h-[300px] md:h-[400px] border border-gray-700 rounded-xl overflow-hidden"
-      style={{ background: '#1a1a2e' }}
-    />
+    <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
+      <div
+        ref={mapContainerRef}
+        className="map-fullscreen-canvas h-[300px] w-full overflow-hidden rounded-xl border border-gray-700 md:h-[400px]"
+        style={{ background: '#1a1a2e' }}
+      />
+    </MapFullscreenFrame>
   );
 }

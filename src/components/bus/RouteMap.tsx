@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { IETTDurakDetay } from '@/types/iett';
 import type { IettRoutePathModel } from './route-path';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 interface RouteMapProps {
   duraklar: IETTDurakDetay[];
@@ -67,10 +69,11 @@ export default function RouteMap({ duraklar, selectedDirection, path }: RouteMap
         scrollWheelZoom: false,
         zoomControl: true,
       });
+      compactLeafletAttribution(map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer(OPENSTREETMAP_TILE_URL, {
         maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
 
       mapRef.current = map;
@@ -180,10 +183,10 @@ export default function RouteMap({ duraklar, selectedDirection, path }: RouteMap
   }, [duraklar, selectedDirection, path, isLoaded]);
 
   return (
-    <div className="relative">
+    <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
       <div
         ref={mapContainerRef}
-        className="w-full h-[300px] md:h-[400px] border border-gray-200 rounded-xl overflow-hidden"
+        className="map-fullscreen-canvas h-[300px] w-full overflow-hidden rounded-xl border border-gray-200 md:h-[400px]"
         style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
       />
       {path?.quality === 'approximate' && (
@@ -191,6 +194,6 @@ export default function RouteMap({ duraklar, selectedDirection, path }: RouteMap
           Kesik çizgi: duraklardan oluşturulan yaklaşık güzergâh
         </div>
       )}
-    </div>
+    </MapFullscreenFrame>
   );
 }

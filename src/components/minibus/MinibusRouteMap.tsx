@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { LayerGroup, Map as LeafletMap } from 'leaflet';
 
 import type { MinibusRoutePoint } from '@/lib/minibusData';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 export default function MinibusRouteMap({
   points,
@@ -45,9 +47,10 @@ export default function MinibusRouteMap({
         scrollWheelZoom: false,
         zoomControl: true,
       });
-      leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      compactLeafletAttribution(map);
+      leaflet.tileLayer(OPENSTREETMAP_TILE_URL, {
         maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
       map.setView([41.0082, 28.9784], 10);
 
@@ -109,12 +112,14 @@ export default function MinibusRouteMap({
   }, [color, directionLabel, isLoaded, points]);
 
   return (
-    <div
-      ref={containerRef}
-      role="img"
-      aria-label={`${directionLabel} minibüs güzergâh haritası`}
-      className="h-[340px] w-full overflow-hidden rounded-xl border border-gray-200 md:h-[440px]"
-      style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
-    />
+    <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
+      <div
+        ref={containerRef}
+        role="img"
+        aria-label={`${directionLabel} minibüs güzergâh haritası`}
+        className="map-fullscreen-canvas h-[340px] w-full overflow-hidden rounded-xl border border-gray-200 md:h-[440px]"
+        style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
+      />
+    </MapFullscreenFrame>
   );
 }

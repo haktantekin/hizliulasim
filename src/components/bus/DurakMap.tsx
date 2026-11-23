@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 interface DurakMapProps {
   lat: number;
@@ -42,11 +44,11 @@ export default function DurakMap({ lat, lng, durakAdi }: DurakMapProps) {
         zoomControl: true,
         dragging: true,
       }).setView([lat, lng], 16);
+      compactLeafletAttribution(map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer(OPENSTREETMAP_TILE_URL, {
         maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
 
       // Custom bus stop icon
@@ -95,10 +97,12 @@ export default function DurakMap({ lat, lng, durakAdi }: DurakMapProps) {
   }, [lat, lng, durakAdi]);
 
   return (
-    <div
-      ref={mapContainerRef}
-      className="w-full h-[250px] md:h-[300px] border border-gray-200 rounded-xl overflow-hidden"
-      style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
-    />
+    <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
+      <div
+        ref={mapContainerRef}
+        className="map-fullscreen-canvas h-[250px] w-full overflow-hidden rounded-xl border border-gray-200 md:h-[300px]"
+        style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
+      />
+    </MapFullscreenFrame>
   );
 }

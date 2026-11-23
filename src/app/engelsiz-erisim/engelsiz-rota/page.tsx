@@ -4,7 +4,8 @@ import { useState, useCallback } from 'react';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import DataSourceNotice from '@/components/ui/DataSourceNotice';
 import AutocompleteInput from '@/components/maps/AutocompleteInput';
-import { ArrowRight, Loader2, Navigation, Clock, Footprints } from 'lucide-react';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { Loader2, Navigation, Clock, Footprints } from 'lucide-react';
 
 interface RouteStep {
   instruction: string;
@@ -197,18 +198,19 @@ export default function EngelsizRotaPage() {
 
           {/* Embedded map */}
           {route.mapUrl && (
-            <div className="rounded-xl overflow-hidden border border-gray-200">
+            <MapFullscreenFrame className="overflow-hidden rounded-xl border border-gray-200">
               <iframe
                 src={route.mapUrl}
                 width="100%"
                 height="350"
+                className="map-fullscreen-canvas"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 title="Engelsiz Rota Haritası"
               />
-            </div>
+            </MapFullscreenFrame>
           )}
         </div>
       )}

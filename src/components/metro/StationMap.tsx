@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { MetroStation } from '@/types/metro';
+import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
+import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
 
 interface StationMapProps {
   stations: MetroStation[];
@@ -46,11 +48,12 @@ export default function StationMap({ stations, lineColor }: StationMapProps) {
 
       const map = L.map(container, {
         scrollWheelZoom: false,
-        attributionControl: false,
       });
+      compactLeafletAttribution(map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer(OPENSTREETMAP_TILE_URL, {
         maxZoom: 18,
+        attribution: OPENSTREETMAP_ATTRIBUTION,
       }).addTo(map);
 
       mapRef.current = map;
@@ -125,9 +128,11 @@ export default function StationMap({ stations, lineColor }: StationMapProps) {
   }, [stations, lineColor, isLoaded]);
 
   return (
-    <div
-      ref={mapContainerRef}
-      className="w-full h-[350px] rounded-xl overflow-hidden border border-gray-100"
-    />
+    <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
+      <div
+        ref={mapContainerRef}
+        className="map-fullscreen-canvas h-[350px] w-full overflow-hidden rounded-xl border border-gray-100"
+      />
+    </MapFullscreenFrame>
   );
 }
