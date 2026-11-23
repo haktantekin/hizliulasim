@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Map as LeafletMap, Marker } from 'leaflet';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import type { Toilet } from '@/lib/toilets/contracts';
 import styles from './ToiletMap.module.css';
 
@@ -15,10 +16,12 @@ type Props = {
 };
 
 export default function ToiletMap({ toilets, position, selectedId, onSelect }: Props) {
+  const frameRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markersRef = useRef<Map<string, Marker>>(new Map());
   const [state, setState] = useState<{ leaflet: Leaflet; map: LeafletMap } | 'error' | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -43,6 +46,15 @@ export default function ToiletMap({ toilets, position, selectedId, onSelect }: P
       if (mapRef.current === map) mapRef.current = null;
       map?.remove();
     };
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === frameRef.current);
+      requestAnimationFrame(() => mapRef.current?.invalidateSize({ pan: false }));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   useEffect(() => {
@@ -104,9 +116,30 @@ export default function ToiletMap({ toilets, position, selectedId, onSelect }: P
     marker.openPopup();
   }, [selectedId, state, toilets]);
 
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement === frameRef.current) {
+        await document.exitFullscreen();
+      } else {
+        await frameRef.current?.requestFullscreen();
+      }
+    } catch {
+      // The browser can reject fullscreen when the user gesture is interrupted.
+    }
+  }
+
   return (
-    <div className="relative isolate h-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+    <div ref={frameRef} className={`${styles.frame} relative isolate h-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100`}>
       <div ref={containerRef} role="region" aria-label="Kayıtlı tuvalet noktalarının haritası" className="h-full" style={{ backgroundColor: '#f4f6f7' }} />
+      <button
+        type="button"
+        onClick={() => { void toggleFullscreen(); }}
+        aria-label={isFullscreen ? 'Tam ekrandan çık' : 'Haritayı tam ekran göster'}
+        title={isFullscreen ? 'Tam ekrandan çık' : 'Tam ekran'}
+        className="absolute right-3 top-3 z-[600] inline-flex size-10 items-center justify-center rounded-lg border border-gray-300 bg-white/95 text-gray-700 shadow-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue"
+      >
+        {isFullscreen ? <Minimize2 aria-hidden className="size-5" /> : <Maximize2 aria-hidden className="size-5" />}
+      </button>
       {(!state || state === 'error') && <p role="status" className="absolute inset-0 z-[500] grid place-items-center bg-gray-100 px-4 text-center text-sm text-gray-600">{state === 'error' ? 'Harita yüklenemedi. Aşağıdaki listeden noktaları ve yol tarifini kullanabilirsiniz.' : 'Harita yükleniyor…'}</p>}
     </div>
   );

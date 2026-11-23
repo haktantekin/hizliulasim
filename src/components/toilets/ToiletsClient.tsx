@@ -214,8 +214,6 @@ export default function ToiletsClient() {
         <input type="checkbox" checked={accessibleOnly} onChange={(event) => { setAccessibleOnly(event.target.checked); resetVisible(); }} className="size-4 accent-brand-soft-blue" />
         Tekerlekli sandalye erişimi var olarak kayıtlı noktalar
       </label>
-      <p className="mb-4 text-xs leading-5 text-gray-500">Ücret ve çalışma saatleri her noktada belirtilmemiş olabilir. Kayıtlı saatler, şu anda açık olduğu anlamına gelmez.</p>
-      <p className="mb-4 text-xs leading-5 text-gray-500">AVM, cami ve benzin istasyonu noktaları mekânın girişini veya merkezini gösterebilir; tuvalet kullanımı mekânın çalışma saatlerine ve giriş koşullarına bağlıdır.</p>
 
       {data && (
         <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs leading-5 text-gray-600">
@@ -270,6 +268,10 @@ export default function ToiletsClient() {
       ) : (
         <div role="status" className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-10 text-center text-sm text-gray-500">Bu aramaya uygun kayıtlı tuvalet bulunamadı. Filtreleri genişleterek tekrar deneyin.</div>
       )}
+      <div className="mt-5 space-y-2 border-t border-gray-100 pt-4 text-xs leading-5 text-gray-500">
+        <p>Ücret ve çalışma saatleri her noktada belirtilmemiş olabilir. Kayıtlı saatler, şu anda açık olduğu anlamına gelmez.</p>
+        <p>AVM, cami ve benzin istasyonu noktaları mekânın girişini veya merkezini gösterebilir; tuvalet kullanımı mekânın çalışma saatlerine ve giriş koşullarına bağlıdır.</p>
+      </div>
     </div>
   );
 }
