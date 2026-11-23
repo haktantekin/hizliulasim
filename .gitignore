@@ -112,3 +112,7 @@ settings.json
 !src/app/api/recommendations/today/handler.test.ts
 !src/components/home/daily-recommendations-state.test.ts
 !src/lib/homeActionLinks.test.ts
+!src/lib/toilets/*.test.ts
+!src/app/api/toilets/*.test.ts
+/.tools/
+/.tmp/

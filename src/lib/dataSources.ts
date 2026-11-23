@@ -27,6 +27,13 @@ export const DATA_SOURCES = {
     description: 'İBB Açık Veri Portalı üzerinden yayımlanan verilerin kullanım koşulları',
     official: true,
   },
+  ibbToilets: {
+    name: 'İBB Açık Veri Portalı – Şehir Tuvaletleri',
+    url: 'https://data.ibb.gov.tr/dataset/sehir-tuvaletleri-veri-seti',
+    displayUrl: 'data.ibb.gov.tr',
+    description: 'İstanbul şehir tuvaletlerinin konumları, hizmet yerleri ve kayıtlı durumları',
+    official: true,
+  },
   metroIstanbul: {
     name: 'Metro İstanbul',
     url: 'https://www.metro.istanbul/',

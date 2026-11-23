@@ -19,6 +19,7 @@ const STATIC_PATHS = [
   '/harita',
   '/gezi',
   '/kesfet',
+  '/tuvaletler',
   '/iletisim',
   '/gizlilik-politikasi',
   '/cerez-politikasi',

@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { ExternalLink, Menu, X, Home, Map, Bus, BusFront, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility, TrainFront, Trash2 } from 'lucide-react';
+import { ExternalLink, Menu, X, Home, Map, Bus, BusFront, ParkingCircle, LogIn, User, LogOut, Mail, Zap, Navigation, Accessibility, TrainFront, Trash2, Toilet } from 'lucide-react';
 import { useDrawer } from '../providers/DrawerProvider';
 import { useAppSelector } from '../../store/hooks';
 import { useLogout } from '../../hooks/useAuth';
@@ -23,6 +23,7 @@ const drawerIcons = {
   charging: Zap,
   parking: ParkingCircle,
   accessibility: Accessibility,
+  toilets: Toilet,
   mail: Mail,
 } as const;
 

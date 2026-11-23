@@ -8,6 +8,7 @@ export type DrawerIconKey =
   | 'charging'
   | 'parking'
   | 'accessibility'
+  | 'toilets'
   | 'mail';
 
 type DrawerNavigationItem = {
@@ -24,6 +25,7 @@ export const headerDrawerItems = [
   { href: '/yol-tarifi', icon: 'navigation', label: 'Yol Tarifi' },
   { href: '/sarj-istasyonlari', icon: 'charging', label: 'Şarj İstasyonları' },
   { href: '/otopark-ucretleri', icon: 'parking', label: 'Otopark Ücretleri' },
+  { href: '/tuvaletler', icon: 'toilets', label: 'Yakınımdaki Tuvaletler' },
   { href: '/engelsiz-erisim', icon: 'accessibility', label: 'Engelsiz Erişim' },
   { href: '/iletisim', icon: 'mail', label: 'İletişim' },
 ] as const satisfies readonly DrawerNavigationItem[];
@@ -37,6 +39,7 @@ export const bottomDrawerItems = [
   { href: '/rayli-sistemler', icon: 'train', label: 'Raylı Sistemler' },
   { href: '/sarj-istasyonlari', icon: 'charging', label: 'Şarj İstasyonları' },
   { href: '/otopark-ucretleri', icon: 'parking', label: 'Otopark Ücretleri' },
+  { href: '/tuvaletler', icon: 'toilets', label: 'Yakınımdaki Tuvaletler' },
   { href: '/engelsiz-erisim', icon: 'accessibility', label: 'Engelsiz Erişim' },
   { href: '/iletisim', icon: 'mail', label: 'İletişim' },
 ] as const satisfies readonly DrawerNavigationItem[];

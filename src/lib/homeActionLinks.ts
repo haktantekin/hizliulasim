@@ -1,4 +1,4 @@
-export type HomeActionIconKey = 'guide' | 'minibus' | 'train' | 'parking' | 'charging' | 'navigation';
+export type HomeActionIconKey = 'guide' | 'minibus' | 'train' | 'parking' | 'charging' | 'navigation' | 'toilets';
 
 export type HomeActionItem = {
   href: string;
@@ -53,5 +53,12 @@ export const homeServiceItems = [
     label: 'Yol Tarifi',
     description: 'Toplu taşıma ile nereye, nasıl giderim?',
     gradient: 'from-brand-orange to-orange-600',
+  },
+  {
+    href: '/tuvaletler',
+    icon: 'toilets',
+    label: 'Yakınımdaki Tuvaletler',
+    description: 'Halka açık tuvaletleri haritada bul',
+    gradient: 'from-teal-600 to-cyan-700',
   },
 ] as const satisfies readonly HomeActionItem[];

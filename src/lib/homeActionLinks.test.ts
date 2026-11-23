@@ -13,5 +13,6 @@ test('ana sayfa rehber bağlantılarını üstte, günlük servis bağlantılar�
     '/otopark-ucretleri',
     '/sarj-istasyonlari',
     '/yol-tarifi',
+    '/tuvaletler',
   ]);
 });

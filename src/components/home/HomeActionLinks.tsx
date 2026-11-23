@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpenText, BusFront, Navigation, ParkingCircle, TrainFront, Zap } from 'lucide-react';
+import { BookOpenText, BusFront, Navigation, ParkingCircle, Toilet, TrainFront, Zap } from 'lucide-react';
 
 import {
   homeGuideItems,
@@ -14,6 +14,7 @@ const icons: Record<HomeActionIconKey, typeof BookOpenText> = {
   parking: ParkingCircle,
   charging: Zap,
   navigation: Navigation,
+  toilets: Toilet,
 };
 
 export default function HomeActionLinks({ group }: { group: 'guide' | 'services' }) {

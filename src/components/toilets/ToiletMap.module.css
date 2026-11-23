@@ -1,0 +1,4 @@
+.tiles {
+  /* Soften the raster background without changing marker, popup or attribution contrast. */
+  filter: saturate(0.15) contrast(0.78) brightness(1.12);
+}
