@@ -73,6 +73,8 @@ export default function ToiletsClient() {
   const [showCount, setShowCount] = useState(50);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const resultsContainerRef = useRef<HTMLDivElement>(null);
+  const scrollAfterLocationRef = useRef(false);
   const position = location.status === 'active' ? location.position : null;
 
   useEffect(() => {
@@ -98,6 +100,15 @@ export default function ToiletsClient() {
     return () => controller.abort();
   }, [attempt]);
 
+  useEffect(() => {
+    if (location.status !== 'active' || !scrollAfterLocationRef.current) return;
+    const frame = requestAnimationFrame(() => {
+      scrollAfterLocationRef.current = false;
+      resultsContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [location]);
+
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setLocation({ status: 'error' });
@@ -106,6 +117,7 @@ export default function ToiletsClient() {
     setLocation({ status: 'loading' });
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        scrollAfterLocationRef.current = true;
         setLocation({ status: 'active', position: { lat: coords.latitude, lng: coords.longitude } });
         setShowCount(50);
       },
@@ -228,7 +240,7 @@ export default function ToiletsClient() {
       {filtered.length > 0 ? (
         <>
           <div ref={mapContainerRef} className="mb-4 h-72 min-w-0 scroll-mt-24 sm:h-96"><ToiletMap toilets={mapToilets} position={position} selectedId={selectedId} onSelect={setSelectedId} /></div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div ref={resultsContainerRef} className="grid scroll-mt-24 gap-3 md:grid-cols-2">
             {visible.map(({ toilet, distance }) => (
               <article key={toilet.id} className={`min-w-0 rounded-xl border bg-white p-4 transition-colors ${selectedId === toilet.id ? 'border-brand-soft-blue ring-1 ring-brand-soft-blue' : 'border-gray-200'}`}>
                 <div className="flex items-start justify-between gap-3">
