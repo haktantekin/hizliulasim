@@ -1,4 +1,4 @@
-export type HomeActionIconKey = 'guide' | 'minibus' | 'train' | 'parking' | 'charging' | 'navigation' | 'toilets';
+export type HomeActionIconKey = 'guide' | 'bus' | 'minibus' | 'train' | 'parking' | 'charging' | 'navigation' | 'toilets';
 
 export type HomeActionItem = {
   href: string;
@@ -15,6 +15,13 @@ export const homeGuideItems = [
     label: 'Ulaşım Rehberi',
     description: 'İstanbul ulaşım içerikleri',
     gradient: 'from-violet-600 to-indigo-700',
+  },
+  {
+    href: '/otobus-hatlari',
+    icon: 'bus',
+    label: 'Otobüs Hatları',
+    description: 'İETT hatları ve duraklar',
+    gradient: 'from-blue-600 to-blue-800',
   },
   {
     href: '/minibus-hatlari',

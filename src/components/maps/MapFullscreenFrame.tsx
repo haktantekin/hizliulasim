@@ -16,7 +16,11 @@ export default function MapFullscreenFrame({
 }: MapFullscreenFrameProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const callbackRef = useRef(onFullscreenChange);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const previousFullscreen = useRef(false);
+  const [browserFullscreen, setBrowserFullscreen] = useState(false);
+  const [placeholderHeight, setPlaceholderHeight] = useState<number | null>(null);
+  const viewportFullscreen = placeholderHeight !== null;
+  const isFullscreen = browserFullscreen || viewportFullscreen;
 
   useEffect(() => {
     callbackRef.current = onFullscreenChange;
@@ -24,41 +28,95 @@ export default function MapFullscreenFrame({
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const active = document.fullscreenElement === frameRef.current;
-      setIsFullscreen(active);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => callbackRef.current?.(active));
-      });
+      const frame = frameRef.current;
+      const active = frame !== null && document.fullscreenElement === frame;
+      setBrowserFullscreen(active);
+      if (active) setPlaceholderHeight(null);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  useEffect(() => {
+    if (previousFullscreen.current === isFullscreen) return;
+    previousFullscreen.current = isFullscreen;
+
+    let resizeFrame = 0;
+    const layoutFrame = requestAnimationFrame(() => {
+      resizeFrame = requestAnimationFrame(() => callbackRef.current?.(isFullscreen));
+    });
+    return () => {
+      cancelAnimationFrame(layoutFrame);
+      cancelAnimationFrame(resizeFrame);
+    };
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (!viewportFullscreen) return;
+
+    const root = document.documentElement;
+    const previousOverflow = root.style.overflow;
+    root.style.overflow = 'hidden';
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setPlaceholderHeight(null);
+    }
+
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      root.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [viewportFullscreen]);
+
   async function toggleFullscreen() {
-    try {
-      if (document.fullscreenElement === frameRef.current) {
-        await document.exitFullscreen();
-      } else {
-        await frameRef.current?.requestFullscreen();
+    const frame = frameRef.current;
+    if (!frame) return;
+
+    if (viewportFullscreen) {
+      setPlaceholderHeight(null);
+      return;
+    }
+
+    if (document.fullscreenElement === frame) {
+      await document.exitFullscreen().catch(() => {});
+      return;
+    }
+
+    if (document.fullscreenEnabled && typeof frame.requestFullscreen === 'function') {
+      try {
+        await frame.requestFullscreen();
+        if (document.fullscreenElement === frame) return;
+      } catch {
+        // A WebView or browser can reject a native fullscreen request.
       }
-    } catch {
-      // Browsers can reject fullscreen when the user gesture is interrupted.
+    }
+
+    if (frame.isConnected && document.fullscreenElement !== frame) {
+      setPlaceholderHeight(frame.getBoundingClientRect().height);
     }
   }
 
   return (
-    <div ref={frameRef} className={`map-fullscreen-frame relative isolate ${className}`}>
-      {children}
-      <button
-        type="button"
-        onClick={() => { void toggleFullscreen(); }}
-        aria-label={isFullscreen ? 'Tam ekrandan çık' : 'Haritayı tam ekran göster'}
-        title={isFullscreen ? 'Tam ekrandan çık' : 'Tam ekran'}
-        className="absolute right-3 top-3 z-[1000] inline-flex size-10 items-center justify-center rounded-lg border border-gray-300 bg-white/95 text-gray-700 shadow-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue"
+    <>
+      {viewportFullscreen && <div aria-hidden style={{ height: placeholderHeight }} />}
+      <div
+        ref={frameRef}
+        data-viewport-fullscreen={viewportFullscreen || undefined}
+        className={`map-fullscreen-frame relative isolate ${className}`}
       >
-        {isFullscreen ? <Minimize2 aria-hidden className="size-5" /> : <Maximize2 aria-hidden className="size-5" />}
-      </button>
-    </div>
+        {children}
+        <button
+          type="button"
+          onClick={() => { void toggleFullscreen(); }}
+          aria-label={isFullscreen ? 'Tam ekrandan çık' : 'Haritayı tam ekran göster'}
+          title={isFullscreen ? 'Tam ekrandan çık' : 'Tam ekran'}
+          className="absolute right-3 top-3 z-[1000] inline-flex size-10 items-center justify-center rounded-lg border border-gray-300 bg-white/95 text-gray-700 shadow-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue"
+        >
+          {isFullscreen ? <Minimize2 aria-hidden className="size-5" /> : <Maximize2 aria-hidden className="size-5" />}
+        </button>
+      </div>
+    </>
   );
 }

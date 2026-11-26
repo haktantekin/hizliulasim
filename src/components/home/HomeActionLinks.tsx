@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpenText, BusFront, Navigation, ParkingCircle, Toilet, TrainFront, Zap } from 'lucide-react';
+import { BookOpenText, Bus, BusFront, Navigation, ParkingCircle, Toilet, TrainFront, Zap } from 'lucide-react';
 
 import {
   homeGuideItems,
@@ -9,6 +9,7 @@ import {
 
 const icons: Record<HomeActionIconKey, typeof BookOpenText> = {
   guide: BookOpenText,
+  bus: Bus,
   minibus: BusFront,
   train: TrainFront,
   parking: ParkingCircle,
@@ -29,7 +30,7 @@ export default function HomeActionLinks({ group }: { group: 'guide' | 'services'
             <Link
               key={item.href}
               href={item.href}
-              className={`block rounded-xl bg-gradient-to-r ${item.gradient} p-4 text-white transition-opacity hover:opacity-90`}
+              className={`block rounded-xl bg-gradient-to-r ${item.gradient} p-4 text-white transition-opacity hover:opacity-90${item.icon === 'guide' ? ' col-span-2' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <Icon aria-hidden className="h-7 w-7 flex-none" />
