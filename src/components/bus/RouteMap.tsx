@@ -1,199 +1,93 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import type { IETTDurakDetay } from '@/types/iett';
-import type { IettRoutePathModel } from './route-path';
-import MapFullscreenFrame from '@/components/maps/MapFullscreenFrame';
-import { compactLeafletAttribution, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '@/lib/maps/leafletAttribution';
+import dynamic from 'next/dynamic';
+import { Box, Map as MapIcon } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import type { RouteMap3DProps } from './route-map-journey';
 
-interface RouteMapProps {
-  duraklar: IETTDurakDetay[];
-  selectedDirection: string;
-  path: IettRoutePathModel | null;
+const RouteMap2D = dynamic(() => import('./RouteMap2D'), {
+  ssr: false,
+  loading: () => (
+    <div role="status" className="grid h-[300px] place-items-center rounded-xl bg-gray-100 text-sm text-gray-600 md:h-[400px]">
+      2B harita hazırlanıyor…
+    </div>
+  ),
+});
+
+const RouteMap3D = dynamic(() => import('./RouteMapGoogle3D'), {
+  ssr: false,
+  loading: () => (
+    <div role="status" className="grid h-[350px] place-items-center rounded-xl bg-slate-900 text-sm text-slate-200 md:h-[500px]">
+      3B harita hazırlanıyor…
+    </div>
+  ),
+});
+
+function supportsAcceleratedWebGL2() {
+  try {
+    const context = document.createElement('canvas').getContext('webgl2', {
+      failIfMajorPerformanceCaveat: true,
+    });
+    if (!context) return false;
+
+    context.getExtension('WEBGL_lose_context')?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-// Brand colors
-const COLORS: Record<string, string> = {
-  D: '#304269', // soft-blue for Gidiş
-  G: '#6bb88c', // green for Dönüş
-};
+export default function RouteMap(props: RouteMap3DProps) {
+  const [view, setView] = useState<'2B' | '3B'>('2B');
+  const [notice, setNotice] = useState<string | null>(null);
+  const views = [
+    { label: '2B', Icon: MapIcon },
+    { label: '3B', Icon: Box },
+  ] as const;
 
-export default function RouteMap({ duraklar, selectedDirection, path }: RouteMapProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const layerRef = useRef<any>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const leafletRef = useRef<any>(null);
-
-  // Initialize map
-  useEffect(() => {
-    const container = mapContainerRef.current;
-    if (!container) return;
-
-    // Prevent re-initialization (Strict Mode double-invoke)
-    if (mapRef.current) return;
-
-    // Guard: if Leaflet already attached a map to this DOM node, clean it up
-    if ((container as any)._leaflet_id) {
-      (container as any)._leaflet_id = null;
-      container.innerHTML = '';
-    }
-
-    let cancelled = false;
-
-    import('leaflet').then((L) => {
-      if (cancelled) return;
-      if (mapRef.current) return;
-      if ((container as any)._leaflet_id) return;
-
-      // Load CSS
-      if (typeof window !== 'undefined' && !document.getElementById('leaflet-css')) {
-        const link = document.createElement('link');
-        link.id = 'leaflet-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
-      }
-
-      // Custom styles for stop labels
-      if (typeof window !== 'undefined' && !document.getElementById('leaflet-stop-label-css')) {
-        const style = document.createElement('style');
-        style.id = 'leaflet-stop-label-css';
-        style.textContent = `.leaflet-stop-label { background: none !important; border: none !important; overflow: visible !important; }`;
-        document.head.appendChild(style);
-      }
-
-      leafletRef.current = L;
-
-      const map = L.map(container, {
-        scrollWheelZoom: false,
-        zoomControl: true,
-      });
-      compactLeafletAttribution(map);
-
-      L.tileLayer(OPENSTREETMAP_TILE_URL, {
-        maxZoom: 18,
-        attribution: OPENSTREETMAP_ATTRIBUTION,
-      }).addTo(map);
-
-      mapRef.current = map;
-      setIsLoaded(true);
-    });
-
-    return () => {
-      cancelled = true;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-      setIsLoaded(false);
-    };
+  const show2DInstead = useCallback((message: string) => {
+    setNotice(message);
+    setView('2B');
   }, []);
 
-  // Update markers & polyline when direction changes
-  useEffect(() => {
-    const map = mapRef.current;
-    const L = leafletRef.current;
-    if (!map || !L || !isLoaded) return;
-
-    // Remove old layers
-    if (layerRef.current) {
-      map.removeLayer(layerRef.current);
+  function selectView(nextView: '2B' | '3B') {
+    if (nextView === '3B') {
+      if (view === '3B') return;
+      if (!supportsAcceleratedWebGL2()) {
+        show2DInstead('Bu tarayıcı 3B haritayı çalıştıramıyor.');
+        return;
+      }
     }
-
-    const stops = duraklar
-      .filter((d) => d.YON === selectedDirection)
-      .sort((a, b) => a.SIRANO - b.SIRANO);
-
-    if (stops.length === 0) return;
-
-    const group = L.featureGroup();
-    const color = COLORS[selectedDirection] || '#304269';
-
-    if (path && path.coordinates.length >= 2) {
-      L.polyline(path.coordinates, {
-        color,
-        weight: 5,
-        opacity: 0.85,
-        ...(path.quality === 'approximate' ? { dashArray: '9 8' } : {}),
-      }).addTo(group);
-    }
-
-    // Stop markers with name labels
-    stops.forEach((stop, idx) => {
-      const isTerminal = idx === 0 || idx === stops.length - 1;
-
-      // Circle marker
-      L.circleMarker([stop.YKOORDINATI, stop.XKOORDINATI], {
-        radius: isTerminal ? 7 : 3.5,
-        fillColor: isTerminal ? color : '#fff',
-        color,
-        weight: isTerminal ? 3 : 2,
-        opacity: 1,
-        fillOpacity: 1,
-      })
-        .bindPopup(
-          `<div style="font-size:13px;min-width:140px">
-            <strong>${stop.DURAKADI}</strong><br/>
-            <span style="color:#666;font-size:11px">${stop.SIRANO}. durak • ${stop.DURAKKODU}</span>
-            ${stop.ILCEADI ? `<br/><span style="color:#999;font-size:11px">${stop.ILCEADI}</span>` : ''}
-          </div>`,
-          { closeButton: false }
-        )
-        .on('mouseover', function (this: any) { this.openPopup(); })
-        .addTo(group);
-
-      // Name label
-      const fontSize = isTerminal ? '11px' : '9px';
-      const fontWeight = isTerminal ? '700' : '500';
-      const textColor = isTerminal ? color : '#555';
-      const bg = isTerminal ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.7)';
-      const padding = isTerminal ? '2px 6px' : '1px 4px';
-      const shadow = isTerminal ? 'box-shadow:0 1px 4px rgba(0,0,0,0.15);' : '';
-      const arrow = isTerminal ? (idx === 0 ? '▶ ' : '◀ ') : '';
-
-      const labelIcon = L.divIcon({
-        className: 'leaflet-stop-label',
-        html: `<div style="
-          color:${textColor};
-          font-size:${fontSize};
-          font-weight:${fontWeight};
-          background:${bg};
-          padding:${padding};
-          border-radius:3px;
-          white-space:nowrap;
-          pointer-events:none;
-          position:absolute;
-          left:50%;
-          bottom:4px;
-          transform:translateX(-50%);
-          ${shadow}
-        ">${arrow}${stop.DURAKADI}</div>`,
-        iconSize: [0, 0],
-        iconAnchor: [0, 0],
-      });
-      L.marker([stop.YKOORDINATI, stop.XKOORDINATI], { icon: labelIcon, interactive: false }).addTo(group);
-    });
-
-    group.addTo(map);
-    layerRef.current = group;
-
-    // Fit bounds with padding
-    map.fitBounds(group.getBounds(), { padding: [30, 30] });
-  }, [duraklar, selectedDirection, path, isLoaded]);
+    setNotice(null);
+    setView(nextView);
+  }
 
   return (
-    <MapFullscreenFrame onFullscreenChange={() => mapRef.current?.invalidateSize()}>
-      <div
-        ref={mapContainerRef}
-        className="map-fullscreen-canvas h-[300px] w-full overflow-hidden rounded-xl border border-gray-200 md:h-[400px]"
-        style={{ background: isLoaded ? 'transparent' : '#f3f4f6' }}
-      />
-      {path?.quality === 'approximate' && (
-        <div className="absolute bottom-2 left-2 z-[500] rounded-md bg-white/95 px-2 py-1 text-[11px] text-gray-600 shadow">
-          Kesik çizgi: duraklardan oluşturulan yaklaşık güzergâh
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <div role="group" aria-label="Harita görünümü" className="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+          {views.map(({ label, Icon }) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={view === label}
+              onClick={() => selectView(label)}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft-blue ${
+                view === label ? 'bg-brand-soft-blue text-white' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Icon aria-hidden className="size-3.5" />
+              {label}
+            </button>
+          ))}
         </div>
+      </div>
+      {notice && (
+        <p role="status" className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-slate-700">
+          {notice} Güzergâh ve duraklar 2B haritada gösteriliyor.
+        </p>
       )}
-    </MapFullscreenFrame>
+      {view === '3B' ? <RouteMap3D {...props} onUnavailable={show2DInstead} /> : <RouteMap2D {...props} />}
+    </div>
   );
 }
